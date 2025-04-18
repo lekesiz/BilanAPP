@@ -1,0 +1,72 @@
+{{!-- Anket Yanıtlama Formu (Yararlanıcı) --}}
+<div class="container py-4">
+    <h1 class="mb-3">Répondre au questionnaire : {{questionnaire.title}}</h1>
+    <p class="lead mb-4">{{questionnaire.description}}</p>
+     {{#if questionnaire.dueDate}}
+        <p class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Date limite: {{formatDate questionnaire.dueDate}}</p>
+     {{/if}}
+
+    <form action="/questionnaires/{{questionnaire.id}}/answer" method="POST">
+        <div class="card">
+            <div class="card-body">
+                {{#each questionnaire.questions}}
+                    <div class="question-block mb-4 border-bottom pb-3">
+                        <p class="fw-bold">{{addOne @index}}. {{text}}</p>
+                        
+                        {{!-- Cevap Türüne Göre Input Oluştur --}}
+                        {{#ifCond type '===' 'text'}}
+                            <input type="text" class="form-control" name="answers[{{id}}]" required>
+                        {{else ifCond type '===' 'textarea'}}
+                            <textarea class="form-control" name="answers[{{id}}]" rows="4" required></textarea>
+                        {{else ifCond type '===' 'radio'}}
+                            {{#each (parseJSON options)}}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="answers[{{../id}}]" id="q_{{../id}}_opt_{{@index}}" value="{{this}}" required>
+                                    <label class="form-check-label" for="q_{{../id}}_opt_{{@index}}">
+                                        {{this}}
+                                    </label>
+                                </div>
+                            {{/each}}
+                         {{else ifCond type '===' 'checkbox'}}
+                             {{#each (parseJSON options)}}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="answers[{{../id}}]" id="q_{{../id}}_opt_{{@index}}" value="{{this}}">
+                                    <label class="form-check-label" for="q_{{../id}}_opt_{{@index}}">
+                                        {{this}}
+                                    </label>
+                                </div>
+                            {{/each}}
+                         {{else ifCond type '===' 'scale'}}
+                            <div class="d-flex justify-content-center">
+                                {{#each (range 1 5)}} {{!-- Scale 1-5 --}}
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="answers[{{../id}}]" id="q_{{../id}}_scale_{{this}}" value="{{this}}" required>
+                                        <label class="form-check-label" for="q_{{../id}}_scale_{{this}}">{{this}}</label>
+                                    </div>
+                                {{/each}}
+                            </div>
+                        {{/ifCond}}
+                    </div>
+                {{/each}}
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/questionnaires" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Soumettre mes réponses</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{{#addHelper 'range' min max}}
+    {{#block}}
+        {{#times max}}
+            {{#if (gte this min)}}
+                 {{yield this}}
+            {{/if}}
+        {{/times}}
+    {{/block}}
+{{/addHelper}}
+
+{{#addHelper 'gte' v1 v2}}
+    {{#if (v1 >= v2)}} true {{/if}}
+{{/addHelper}} 

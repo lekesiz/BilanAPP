@@ -1,0 +1,107 @@
+<div class="container py-4">
+    <h1 class="mb-4">Mon Profil</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            Informations Utilisateur
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Nom Complet</dt>
+                <dd class="col-sm-9">{{user.firstName}} {{user.lastName}}</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">{{user.email}}</dd>
+
+                <dt class="col-sm-3">Type de Compte</dt>
+                <dd class="col-sm-9 text-capitalize">{{user.userType}}</dd>
+
+                 <dt class="col-sm-3">Type de Forfait</dt>
+                <dd class="col-sm-9">
+                     {{!-- user.forfait ilişkisinden oku --}}
+                     <span class="badge bg-info me-2">{{user.forfait.name}}</span> 
+                     <small class="text-muted">({{user.forfait.description}})</small>
+                 </dd>
+
+                  <dt class="col-sm-3">Crédits Disponibles</dt>
+                 <dd class="col-sm-9">
+                     <span class="fw-bold text-primary">{{user.availableCredits}}</span>
+                 </dd>
+            </dl>
+            <hr>
+            <a href="/profile/settings" class="btn btn-outline-primary">
+                <i class="fas fa-cog me-1"></i> Modifier les Paramètres (Mot de passe)
+            </a>
+        </div>
+    </div>
+
+    {{!-- Paket Özellikleri --}}
+    <div class="card shadow-sm mt-4">
+        <div class="card-header">
+            Fonctionnalités de votre Forfait ({{user.forfait.name}})
+        </div>
+        <ul class="list-group list-group-flush">
+            {{!-- user.forfait ilişkisinden oku ve split ile işle --}}
+            {{#each (split user.forfait.features '\n')}}
+                {{#if (isNonEmptyString (trim this))}}
+                    <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i>{{trim this}}</li>
+                {{/if}}
+            {{else}}
+                 <li class="list-group-item text-muted">Aucune fonctionnalité spécifique définie pour ce forfait.</li>
+            {{/each}}
+        </ul>
+    </div>
+
+    {{!-- Son Kredi Hareketleri --}}
+    <div class="card shadow-sm mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Dernières Transactions de Crédits</span>
+            <a href="/profile/credits" class="btn btn-sm btn-outline-secondary">Voir Tout l'Historique</a>
+        </div>
+        <div class="card-body p-0">
+            {{#if recentCreditLogs.length}}
+                 <ul class="list-group list-group-flush">
+                     {{#each recentCreditLogs}}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{formatActionLabel action}}</span>
+                                {{#if description}}<small class="d-block text-muted">{{truncate description 50}}</small>{{/if}}
+                             </div>
+                             <div class="text-end">
+                                 <span class="fw-bold {{#ifCond amount '< ' 0}}text-danger{{else}}text-success{{/ifCond}}">
+                                      {{#ifCond amount '>' 0}}+{{/ifCond}}{{amount}} cr.
+                                 </span>
+                                 <small class="d-block text-muted">{{formatDateTime createdAt}}</small>
+                             </div>
+                         </li>
+                     {{/each}}
+                 </ul>
+            {{else}}
+                <p class="text-muted p-3 mb-0">Aucune transaction récente.</p>
+            {{/if}}
+        </div>
+    </div>
+
+    {{!-- TODO: Yararlanıcı ise, ilişkili danışman bilgisi gösterilebilir --}}
+    {{#ifCond user.userType '===' 'consultant'}}
+        {{#if beneficiaries.length}}
+            <div class="card shadow-sm mt-4">
+                 <div class="card-header">
+                     Mes Derniers Bénéficiaires Ajoutés
+                 </div>
+                 <ul class="list-group list-group-flush">
+                     {{#each beneficiaries}}
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{user.firstName}} {{user.lastName}}</span>
+                             <a href="/beneficiaries/{{id}}" class="btn btn-sm btn-outline-primary">Voir le dossier</a>
+                         </li>
+                     {{/each}}
+                 </ul>
+                 <div class="card-footer text-center">
+                    <a href="/beneficiaries">Voir tous les bénéficiaires</a>
+                 </div>
+             </div>
+         {{/if}}
+    {{/ifCond}}
+
+</div> 

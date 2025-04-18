@@ -1,0 +1,66 @@
+<div class="container py-4">
+    <h1 class="mb-4">Paramètres du Compte</h1>
+
+     {{> messages}}
+
+    <div class="row g-4">
+        {{!-- Bilgi Düzenleme --}}
+        <div class="col-md-6">
+             <div class="card shadow-sm">
+                <div class="card-header">Informations Personnelles</div>
+                <div class="card-body">
+                     <form action="/profile/settings/info" method="POST">
+                         <div class="mb-3">
+                            <label for="firstName" class="form-label">Prénom</label>
+                            <input type="text" class="form-control" id="firstName" name="firstName" value="{{user.firstName}}" required>
+                        </div>
+                         <div class="mb-3">
+                            <label for="lastName" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="lastName" name="lastName" value="{{user.lastName}}" required>
+                        </div>
+                         <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{user.email}}" disabled readonly>
+                            <small class="form-text text-muted">L'adresse email ne peut pas être modifiée ici.</small>
+                        </div>
+                         <button type="submit" class="btn btn-primary">Enregistrer les informations</button>
+                     </form>
+                </div>
+            </div>
+        </div>
+         {{!-- Şifre Değiştirme --}}
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">Modifier le mot de passe</div>
+                <div class="card-body">
+                    <form action="/profile/settings/password" method="POST">
+                         {{!-- ... (Şifre alanları aynı) ... --}}
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Mot de passe actuel *</label>
+                            <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                        </div>
+                         <div class="mb-3">
+                            <label for="newPassword" class="form-label">Nouveau mot de passe *</label>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword" required minlength="6">
+                             <small class="form-text text-muted">Minimum 6 caractères.</small>
+                        </div>
+                         <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirmer le nouveau mot de passe *</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enregistrer le nouveau mot de passe</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+         {{!-- Diğer Ayarlar --}}
+        {{!-- <div class="col-md-6">
+             <div class="card shadow-sm">
+                 <div class="card-header">Autres Paramètres</div>
+                 <div class="card-body">
+                     <p class="text-muted">D'autres options de configuration seront bientôt disponibles ici.</p>
+                 </div>
+             </div>
+        </div> --}}
+    </div>
+</div> 

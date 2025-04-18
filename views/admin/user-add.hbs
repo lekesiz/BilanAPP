@@ -1,0 +1,67 @@
+<div class="container py-4">
+    <h1 class="mb-4">Ajouter un Nouvel Utilisateur</h1>
+
+     {{> messages}}
+
+    {{#if errors}}
+        {{#each errors}}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{/each}}
+    {{/if}}
+
+    <form action="/admin/users/add" method="POST">
+        <div class="card shadow-sm">
+             <div class="card-header">Informations Utilisateur</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="firstName" class="form-label">Prénom *</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" value="{{formData.firstName}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="lastName" class="form-label">Nom *</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" value="{{formData.lastName}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{formData.email}}" required>
+                    </div>
+                     <div class="col-md-6">
+                        <label for="password" class="form-label">Mot de passe *</label>
+                        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                        <small class="form-text text-muted">Minimum 6 caractères.</small>
+                    </div>
+                    <hr class="my-3">
+                     <div class="col-md-4">
+                        <label for="userType" class="form-label">Type de Compte *</label>
+                        <select class="form-select" id="userType" name="userType" required>
+                             {{#each userTypeOptions}}
+                                <option value="{{this}}" {{#ifCond ../formData.userType '===' this}}selected{{/ifCond}}>{{this}}</option>
+                             {{/each}}
+                        </select>
+                    </div>
+                     <div class="col-md-4">
+                        <label for="forfaitType" class="form-label">Forfait</label>
+                        <select class="form-select" id="forfaitType" name="forfaitType">
+                            <option value="">-- Aucun --</option>
+                             {{#each forfaitOptions}}
+                                <option value="{{this}}" {{#ifCond ../formData.forfaitType '===' this}}selected{{/ifCond}}>{{this}}</option>
+                             {{/each}}
+                        </select>
+                    </div>
+                     <div class="col-md-4">
+                        <label for="availableCredits" class="form-label">Crédits Initiaux *</label>
+                        <input type="number" class="form-control" id="availableCredits" name="availableCredits" value="{{formData.availableCredits}}" min="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/admin/users" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Ajouter l'utilisateur</button>
+            </div>
+        </div>
+    </form>
+</div> 

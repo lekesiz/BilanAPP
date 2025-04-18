@@ -1,0 +1,210 @@
+{{!-- Dashboard Başlığı --}}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Mon Bilan de Compétences</h1>
+    </div>
+
+    {{!-- Danışman Bilgileri --}}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="avatar avatar-xl">
+                        <span class="avatar-initial rounded-circle bg-primary">
+                            {{firstChar beneficiary.consultant.firstName}}
+                        </span>
+                    </div>
+                </div>
+                <div class="col">
+                    <h5 class="mb-1">Mon Consultant</h5>
+                    <p class="mb-0">
+                        {{beneficiary.consultant.firstName}} {{beneficiary.consultant.lastName}}
+                        <br>
+                        <small class="text-muted">{{beneficiary.consultant.email}}</small>
+                    </p>
+                </div>
+                <div class="col-auto">
+                    <a href="/messages/new?consultant={{beneficiary.consultantId}}" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope"></i> Envoyer un message
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {{!-- Yaklaşan Randevular --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Mes Prochains Rendez-vous</h5>
+                    <a href="/appointments" class="btn btn-sm btn-outline-primary">Voir tout</a>
+                </div>
+                <div class="card-body">
+                    {{#if upcomingAppointments.length}}
+                        <div class="list-group list-group-flush">
+                            {{#each upcomingAppointments}}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{type}}</h6>
+                                        <small>{{formatDateTime date}}</small>
+                                    </div>
+                                    <p class="mb-1">{{description}}</p>
+                                </div>
+                            {{/each}}
+                        </div>
+                    {{else}}
+                        <p class="text-muted text-center my-4">Aucun rendez-vous à venir</p>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        {{!-- Bekleyen Anketler --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Questionnaires à Compléter</h5>
+                    <a href="/questionnaires" class="btn btn-sm btn-outline-primary">Voir tout</a>
+                </div>
+                <div class="card-body">
+                    {{#if pendingQuestionnaires.length}}
+                        <div class="list-group list-group-flush">
+                            {{#each pendingQuestionnaires}}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{title}}</h6>
+                                        <small>{{formatDate dueDate}}</small>
+                                    </div>
+                                    <p class="mb-1">{{description}}</p>
+                                    <a href="/questionnaires/{{id}}/answer" class="btn btn-sm btn-primary mt-2">
+                                        Répondre
+                                    </a>
+                                </div>
+                            {{/each}}
+                        </div>
+                    {{else}}
+                        <p class="text-muted text-center my-4">Aucun questionnaire en attente</p>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- İlerleme Durumu --}}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Mon Avancement</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="progress-circle" data-value="{{progress.profile}}">
+                        <div class="progress-circle-label">
+                            <h6 class="mb-0">Profil</h6>
+                            <span class="h4 mb-0">{{progress.profile}}%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="progress-circle" data-value="{{progress.skills}}">
+                        <div class="progress-circle-label">
+                            <h6 class="mb-0">Compétences</h6>
+                            <span class="h4 mb-0">{{progress.skills}}%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="progress-circle" data-value="{{progress.objectives}}">
+                        <div class="progress-circle-label">
+                            <h6 class="mb-0">Objectifs</h6>
+                            <span class="h4 mb-0">{{progress.objectives}}%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="progress-circle" data-value="{{progress.overall}}">
+                        <div class="progress-circle-label">
+                            <h6 class="mb-0">Global</h6>
+                            <span class="h4 mb-0">{{progress.overall}}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Dashboard için CSS --}}
+<style>
+.avatar {
+    width: 3rem;
+    height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-xl {
+    width: 4rem;
+    height: 4rem;
+}
+
+.avatar-initial {
+    width: 100%;
+    height: 100%;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.progress-circle {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    margin: 0 auto;
+}
+
+.progress-circle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--bs-primary) calc(var(--value) * 1%),
+        #e9ecef calc(var(--value) * 1%)
+    );
+}
+
+.progress-circle-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+
+{{!-- İlerleme çemberleri için JavaScript --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.progress-circle').forEach(circle => {
+        const value = circle.dataset.value;
+        circle.style.setProperty('--value', value);
+    });
+});
+</script>

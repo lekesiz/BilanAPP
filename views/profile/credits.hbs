@@ -1,0 +1,75 @@
+<div class="container py-4">
+    <h1 class="mb-4">Historique des Crédits</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Crédits Actuels: <span class="text-primary fw-bold">{{user.availableCredits}}</span></h5>
+            <p class="card-text text-muted mb-0">Forfait: {{#if user.forfait}}{{user.forfait.name}}{{else}}{{user.forfaitType}}{{/if}}</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+         <div class="card-header">
+            Dernières Transactions de Crédits
+         </div>
+         <div class="card-body p-0">
+             {{#if creditLogs.length}}
+                 <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                         <thead class="table-light">
+                             <tr>
+                                 <th>Date</th>
+                                 <th>Action</th>
+                                 <th>Détails / Ressource</th>
+                                 <th class="text-end">Montant</th>
+                                 <th>Effectué par</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             {{#each creditLogs}}
+                                 <tr>
+                                     <td>{{formatDateTime createdAt}}</td>
+                                     <td>{{formatActionLabel action}}</td>
+                                     <td>
+                                         {{#ifCond action '===' 'ADMIN_ADJUSTMENT'}}
+                                             <strong class="text-muted">Raison:</strong> {{#if description}}{{description}}{{else}}<span class="text-muted">Non spécifiée</span>{{/if}}
+                                         {{else}}
+                                             {{#if description}}{{description}}{{else}}<span class="text-muted">-</span>{{/if}}
+                                             {{#if relatedResourceId}}
+                                                 {{#ifCond relatedResourceType '===' 'Questionnaire'}}
+                                                    <a href="/questionnaires/{{relatedResourceId}}/results" class="d-block small text-muted" title="Voir le questionnaire"><i class="fas fa-link"></i> Questionnaire #{{relatedResourceId}}</a>
+                                                 {{else ifCond relatedResourceType '===' 'Document'}}
+                                                    <a href="/documents/{{relatedResourceId}}/edit" class="d-block small text-muted" title="Voir le document"><i class="fas fa-link"></i> Document #{{relatedResourceId}}</a>
+                                                 {{else ifCond relatedResourceType '===' 'Beneficiary'}}
+                                                    <a href="/beneficiaries/{{relatedResourceId}}" class="d-block small text-muted" title="Voir le bénéficiaire"><i class="fas fa-link"></i> Bénéficiaire #{{relatedResourceId}}</a>
+                                                 {{/ifCond}}
+                                             {{/if}}
+                                         {{/ifCond}}
+                                     </td>
+                                     <td class="fw-bold text-end {{#ifCond amount '< ' 0}}text-danger{{else}}text-success{{/ifCond}}">
+                                         {{#ifCond amount '>' 0}}+{{/ifCond}}{{amount}}
+                                     </td>
+                                     <td>
+                                         {{#if adminUser}}
+                                             <span class="badge bg-secondary">Admin: {{adminUser.firstName}}</span>
+                                         {{else}}
+                                             <span class="text-muted">Système/Utilisateur</span>
+                                         {{/if}}
+                                     </td>
+                                 </tr>
+                             {{/each}}
+                         </tbody>
+                     </table>
+                 </div>
+            {{else}}
+                 <div class="text-center p-4 mb-0 border-top">
+                      <h5 class="text-muted mb-3"><i class="fas fa-history fa-2x mb-3"></i></h5>
+                    <p class="text-muted">Aucune transaction de crédit enregistrée pour le moment.</p>
+                </div>
+            {{/if}}
+         </div>
+         <div class="card-footer bg-light">
+             {{{paginate currentPage totalPages base_url=paginationBaseUrl}}}
+         </div>
+    </div>
+</div> 

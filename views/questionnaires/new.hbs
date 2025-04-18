@@ -1,0 +1,196 @@
+{{!-- Yeni Anket Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Créer un nouveau questionnaire</h1>
+
+    {{!-- Hata mesajları için alan --}}
+    {{> messages}}
+
+    <form action="/questionnaires/new" method="POST">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Informations Générales</h5>
+            </div>
+            <div class="card-body">
+                 <div class="mb-3">
+                    <label for="title" class="form-label">Titre du questionnaire *</label>
+                    <input type="text" class="form-control" id="title" name="title" value="{{formData.title}}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description *</label>
+                    <textarea class="form-control" id="description" name="description" rows="3" required>{{formData.description}}</textarea>
+                </div>
+                 <div class="mb-3">
+                    <label for="category" class="form-label">Catégorie</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="" {{#unless formData.category}}selected{{/unless}}>-- Sélectionner --</option>
+                        <option value="Intérêts Professionnels" {{#ifCond formData.category '===' 'Intérêts Professionnels'}}selected{{/ifCond}}>Intérêts Professionnels</option>
+                        <option value="Motivation" {{#ifCond formData.category '===' 'Motivation'}}selected{{/ifCond}}>Motivation</option>
+                        <option value="Personnalité" {{#ifCond formData.category '===' 'Personnalité'}}selected{{/ifCond}}>Personnalité</option>
+                        <option value="Compétences Techniques" {{#ifCond formData.category '===' 'Compétences Techniques'}}selected{{/ifCond}}>Compétences Techniques</option>
+                        <option value="Compétences Transversales" {{#ifCond formData.category '===' 'Compétences Transversales'}}selected{{/ifCond}}>Compétences Transversales</option>
+                        <option value="Valeurs" {{#ifCond formData.category '===' 'Valeurs'}}selected{{/ifCond}}>Valeurs</option>
+                        <option value="Autre" {{#ifCond formData.category '===' 'Autre'}}selected{{/ifCond}}>Autre</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+             <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Questions</h5>
+                <button type="button" id="addQuestionBtn" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> Ajouter une question
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="questionsContainer">
+                     {{#if formData.questions}}
+                        {{#each formData.questions}}
+                            <div class="question-group border rounded p-3 mb-3">
+                                <div class="d-flex justify-content-end mb-2">
+                                    <button type="button" class="btn btn-sm btn-danger removeQuestionBtn" title="Supprimer la question">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="question_text_{{@index}}" class="form-label">Texte de la question *</label>
+                                    <textarea class="form-control" id="question_text_{{@index}}" name="questions[{{@index}}][text]" rows="2" required>{{this.text}}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="question_type_{{@index}}" class="form-label">Type de réponse *</label>
+                                    <select class="form-select question-type" id="question_type_{{@index}}" name="questions[{{@index}}][type]" required>
+                                        <option value="text" {{#ifCond this.type '===' 'text'}}selected{{/ifCond}}>Texte court</option>
+                                        <option value="textarea" {{#ifCond this.type '===' 'textarea'}}selected{{/ifCond}}>Texte long</option>
+                                        <option value="radio" {{#ifCond this.type '===' 'radio'}}selected{{/ifCond}}>Choix unique (Radio)</option>
+                                        <option value="checkbox" {{#ifCond this.type '===' 'checkbox'}}selected{{/ifCond}}>Choix multiples (Checkbox)</option>
+                                        <option value="scale" {{#ifCond this.type '===' 'scale'}}selected{{/ifCond}}>Échelle (1-5)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 options-container" {{#unless (isOptionType this.type)}}style="display: none;"{{/unless}}>
+                                    <label for="question_options_{{@index}}" class="form-label">Options (une par ligne) *</label>
+                                    <textarea class="form-control" id="question_options_{{@index}}" name="questions[{{@index}}][options]" rows="3" {{#if (isOptionType this.type)}}required{{/if}}>{{this.options}}</textarea>
+                                </div>
+                            </div>
+                        {{/each}}
+                    {{else}}
+                        {{!-- İlk soru şablonu (varsayılan) --}}
+                        <div class="question-group border rounded p-3 mb-3">
+                             <div class="d-flex justify-content-end mb-2">
+                                <button type="button" class="btn btn-sm btn-danger removeQuestionBtn" title="Supprimer la question">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <label for="question_text_0" class="form-label">Texte de la question *</label>
+                                <textarea class="form-control" id="question_text_0" name="questions[0][text]" rows="2" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="question_type_0" class="form-label">Type de réponse *</label>
+                                <select class="form-select question-type" id="question_type_0" name="questions[0][type]" required>
+                                    <option value="text" selected>Texte court</option>
+                                    <option value="textarea">Texte long</option>
+                                    <option value="radio">Choix unique (Radio)</option>
+                                    <option value="checkbox">Choix multiples (Checkbox)</option>
+                                    <option value="scale">Échelle (1-5)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 options-container" style="display: none;">
+                                <label for="question_options_0" class="form-label">Options (une par ligne) *</label>
+                                <textarea class="form-control" id="question_options_0" name="questions[0][options]" rows="3"></textarea>
+                            </div>
+                        </div>
+                    {{/if}}
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/questionnaires" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Créer le questionnaire</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{{!-- JavaScript for dynamic questions --}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionsContainer = document.getElementById('questionsContainer');
+    const addQuestionBtn = document.getElementById('addQuestionBtn');
+    let questionIndex = questionsContainer.querySelectorAll('.question-group').length; // Mevcut soru sayısından başla
+
+    // Mevcut sorular için event listenerları ekle
+    questionsContainer.querySelectorAll('.question-group').forEach(group => {
+        attachEventListeners(group);
+    });
+
+    addQuestionBtn.addEventListener('click', function() {
+        const newQuestionGroup = document.createElement('div');
+        newQuestionGroup.classList.add('question-group', 'border', 'rounded', 'p-3', 'mb-3');
+        const currentIndex = questionIndex++; // Önce indexi al sonra artır
+        newQuestionGroup.innerHTML = `
+            <div class="d-flex justify-content-end mb-2">
+                <button type="button" class="btn btn-sm btn-danger removeQuestionBtn" title="Supprimer la question">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-3">
+                <label for="question_text_${currentIndex}" class="form-label">Texte de la question *</label>
+                <textarea class="form-control" id="question_text_${currentIndex}" name="questions[${currentIndex}][text]" rows="2" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="question_type_${currentIndex}" class="form-label">Type de réponse *</label>
+                <select class="form-select question-type" id="question_type_${currentIndex}" name="questions[${currentIndex}][type]" required>
+                    <option value="text" selected>Texte court</option>
+                    <option value="textarea">Texte long</option>
+                    <option value="radio">Choix unique (Radio)</option>
+                    <option value="checkbox">Choix multiples (Checkbox)</option>
+                    <option value="scale">Échelle (1-5)</option>
+                </select>
+            </div>
+            <div class="mb-3 options-container" style="display: none;">
+                <label for="question_options_${currentIndex}" class="form-label">Options (une par ligne) *</label>
+                <textarea class="form-control" id="question_options_${currentIndex}" name="questions[${currentIndex}][options]" rows="3"></textarea>
+            </div>
+        `;
+        questionsContainer.appendChild(newQuestionGroup);
+        attachEventListeners(newQuestionGroup);
+        
+    });
+
+    function attachEventListeners(group) {
+        const removeBtn = group.querySelector('.removeQuestionBtn');
+        const typeSelect = group.querySelector('.question-type');
+        const optionsContainer = group.querySelector('.options-container');
+        const optionsTextarea = optionsContainer.querySelector('textarea');
+
+        if (removeBtn) { 
+             removeBtn.addEventListener('click', function() {
+                 // Sadece 1'den fazla soru varsa silmeye izin ver
+                 if (questionsContainer.querySelectorAll('.question-group').length > 1) {
+                    group.remove();
+                 } else {
+                     alert('Le questionnaire doit contenir au moins une question.');
+                 }
+             });
+        }
+       
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function() {
+                handleOptionsVisibility(this, optionsContainer, optionsTextarea);
+            });
+             // Sayfa yüklendiğinde de kontrol et
+             handleOptionsVisibility(typeSelect, optionsContainer, optionsTextarea);
+        }
+    }
+
+    function handleOptionsVisibility(selectElement, container, textarea) {
+         if (selectElement.value === 'radio' || selectElement.value === 'checkbox') {
+            container.style.display = 'block';
+            textarea.required = true;
+        } else {
+            container.style.display = 'none';
+            textarea.required = false;
+            // textarea.value = ''; // Mevcut değeri silme
+        }
+    }
+});
+</script> 

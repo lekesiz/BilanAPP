@@ -1,0 +1,87 @@
+{{!-- Doküman Düzenleme Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Modifier le document : {{document.originalName}}</h1>
+
+     {{> messages}}
+
+    <form action="/documents/{{document.id}}/edit" method="POST">
+        <div class="card shadow-sm">
+             <div class="card-header">
+                Informations du document
+             </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Nom du fichier</label>
+                    <input type="text" class="form-control" value="{{document.originalName}}" disabled readonly>
+                </div>
+                 <div class="mb-3">
+                    <label class="form-label">Type / Taille</label>
+                    <input type="text" class="form-control" value="{{document.fileType}} / {{formatBytes document.fileSize}}" disabled readonly>
+                </div>
+                 <div class="mb-3">
+                    <label class="form-label">Téléchargé par</label>
+                    <input type="text" class="form-control" value="{{document.uploader.firstName}} {{document.uploader.lastName}}" disabled readonly>
+                </div>
+
+                <hr>
+
+                 <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{document.description}}</textarea>
+                </div>
+
+                 <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="category" class="form-label">Catégorie</label>
+                         <select class="form-select" id="category" name="category">
+                            <option value="" {{#unless document.category}}selected{{/unless}}>-- Sélectionner --</option>
+                            <option value="CV" {{#ifCond document.category '===' 'CV'}}selected{{/ifCond}}>CV</option>
+                            <option value="Lettre de Motivation" {{#ifCond document.category '===' 'Lettre de Motivation'}}selected{{/ifCond}}>Lettre de Motivation</option>
+                            <option value="Résultats Tests" {{#ifCond document.category '===' 'Résultats Tests'}}selected{{/ifCond}}>Résultats Tests</option>
+                            <option value="Synthèse" {{#ifCond document.category '===' 'Synthèse'}}selected{{/ifCond}}>Synthèse</option>
+                            <option value="Plan d'Action" {{#ifCond document.category '===' 'Plan d\'Action'}}selected{{/ifCond}}>Plan d'Action</option>
+                            <option value="Convention" {{#ifCond document.category '===' 'Convention'}}selected{{/ifCond}}>Convention Tripartite</option>
+                            <option value="Administratif" {{#ifCond document.category '===' 'Administratif'}}selected{{/ifCond}}>Administratif</option>
+                            <option value="Portfolio" {{#ifCond document.category '===' 'Portfolio'}}selected{{/ifCond}}>Portfolio</option>
+                            <option value="Autre" {{#ifCond document.category '===' 'Autre'}}selected{{/ifCond}}>Autre</option>
+                        </select>
+                    </div>
+                     <div class="col-md-6 mb-3">
+                        <label for="bilanPhase" class="form-label">Associer à la Phase du Bilan</label>
+                        <select class="form-select" id="bilanPhase" name="bilanPhase">
+                            <option value="" {{#unless document.bilanPhase}}selected{{/unless}}>-- Non Associé / Général --</option>
+                            <option value="Preliminaire" {{#ifCond document.bilanPhase '===' 'Preliminaire'}}selected{{/ifCond}}>Phase Préliminaire</option>
+                            <option value="Investigation" {{#ifCond document.bilanPhase '===' 'Investigation'}}selected{{/ifCond}}>Phase d'Investigation</option>
+                            <option value="Conclusion" {{#ifCond document.bilanPhase '===' 'Conclusion'}}selected{{/ifCond}}>Phase de Conclusion</option>
+                            <option value="Suivi" {{#ifCond document.bilanPhase '===' 'Suivi'}}selected{{/ifCond}}>Suivi (Post-Bilan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{#if isConsultant}}
+                    <div class="mb-3">
+                        <label for="beneficiaryId" class="form-label">Assigné au Bénéficiaire</label>
+                        <select class="form-select" id="beneficiaryId" name="beneficiaryId">
+                            <option value="" {{#unless document.beneficiaryId}}selected{{/unless}}>-- Non Assigné (Document interne) --</option>
+                            {{#each beneficiaries}}
+                                <option value="{{id}}" {{#ifCond ../document.beneficiaryId '===' id}}selected{{/ifCond}}>
+                                    {{user.firstName}} {{user.lastName}}
+                                </option>
+                            {{/each}}
+                        </select>
+                        <small class="form-text text-muted">Si assigné, le bénéficiaire pourra voir ce document.</small>
+                    </div>
+                 {{else}}
+                     {{!-- Yararlanıcı kendi dokümanının atamasını değiştiremez --}}
+                     {{#if document.beneficiaryId}}
+                        <input type="hidden" name="beneficiaryId" value="{{document.beneficiaryId}}">
+                     {{/if}}
+                {{/if}}
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/documents" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </form>
+</div> 

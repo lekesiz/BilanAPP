@@ -1,0 +1,128 @@
+<h1 class="mb-4">
+  {{#if isConsultant}}
+    Visualisation du questionnaire
+  {{else}}
+    Compléter le questionnaire
+  {{/if}}
+</h1>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="card-title mb-0">{{questionnaire.title}}</h5>
+  </div>
+  <div class="card-body">
+    {{#if questionnaire.description}}
+      <div class="alert alert-info mb-4">
+        {{questionnaire.description}}
+      </div>
+    {{/if}}
+    
+    <div class="mb-3">
+      <strong>Type:</strong> 
+      {{#if (eq questionnaire.type "skills")}}
+        <span class="badge bg-primary">Compétences</span>
+      {{else if (eq questionnaire.type "interests")}}
+        <span class="badge bg-success">Intérêts</span>
+      {{else if (eq questionnaire.type "personality")}}
+        <span class="badge bg-info">Personnalité</span>
+      {{else if (eq questionnaire.type "values")}}
+        <span class="badge bg-warning">Valeurs</span>
+      {{else}}
+        <span class="badge bg-secondary">Autre</span>
+      {{/if}}
+    </div>
+    
+    {{#if questionnaire.dueDate}}
+      <div class="mb-4">
+        <strong>Date limite:</strong> {{formatDate questionnaire.dueDate}}
+      </div>
+    {{/if}}
+    
+    {{#if isConsultant}}
+      <div class="alert alert-warning mb-4">
+        <p>Vous visualisez ce questionnaire en tant que consultant. Vous ne pouvez pas soumettre de réponses.</p>
+      </div>
+    {{else if (eq questionnaire.status "completed")}}
+      <div class="alert alert-success mb-4">
+        <p>Vous avez déjà complété ce questionnaire. Vous pouvez consulter vos réponses ci-dessous.</p>
+      </div>
+    {{/if}}
+    
+    <form action="/questionnaires/{{questionnaire.id}}/complete" method="POST" {{#if isConsultant}}class="disabled-form"{{/if}} {{#if (eq questionnaire.status "completed")}}class="disabled-form"{{/if}}>
+      {{#each questionnaire.questions}}
+        <div class="mb-4 p-3 border rounded">
+          <div class="form-group">
+            <label for="question_{{id}}" class="form-label">
+              <strong>{{text}}</strong>
+              {{#if required}}<span class="text-danger">*</span>{{/if}}
+            </label>
+            
+            {{#if (eq type "text")}}
+              <textarea class="form-control" id="question_{{id}}" name="question_{{id}}" rows="3" {{#if required}}required{{/if}} {{#if ../isConsultant}}disabled{{/if}} {{#if (eq ../questionnaire.status "completed")}}disabled{{/if}}>{{lookup ../answers id.value}}</textarea>
+            {{else if (eq type "multiple_choice")}}
+              <select class="form-select" id="question_{{id}}" name="question_{{id}}" {{#if required}}required{{/if}} {{#if ../isConsultant}}disabled{{/if}} {{#if (eq ../questionnaire.status "completed")}}disabled{{/if}}>
+                <option value="">Sélectionnez une option</option>
+                {{#each options}}
+                  <option value="{{this}}" {{#if (eq this (lookup ../../answers ../id.value))}}selected{{/if}}>{{this}}</option>
+                {{/each}}
+              </select>
+            {{else if (eq type "rating")}}
+              <div class="rating-container">
+                {{#each (range 1 5)}}
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="question_{{../id}}" id="question_{{../id}}_{{this}}" value="{{this}}" {{#if (eq this (lookup ../../answers ../id.value))}}checked{{/if}} {{#if ../../isConsultant}}disabled{{/if}} {{#if (eq ../../questionnaire.status "completed")}}disabled{{/if}} {{#if ../required}}required{{/if}}>
+                    <label class="form-check-label" for="question_{{../id}}_{{this}}">{{this}}</label>
+                  </div>
+                {{/each}}
+              </div>
+            {{else if (eq type "yes_no")}}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="question_{{id}}" id="question_{{id}}_yes" value="Oui" {{#if (eq "Oui" (lookup ../answers id.value))}}checked{{/if}} {{#if ../isConsultant}}disabled{{/if}} {{#if (eq ../questionnaire.status "completed")}}disabled{{/if}} {{#if required}}required{{/if}}>
+                <label class="form-check-label" for="question_{{id}}_yes">Oui</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="question_{{id}}" id="question_{{id}}_no" value="Non" {{#if (eq "Non" (lookup ../answers id.value))}}checked{{/if}} {{#if ../isConsultant}}disabled{{/if}} {{#if (eq ../questionnaire.status "completed")}}disabled{{/if}} {{#if required}}required{{/if}}>
+                <label class="form-check-label" for="question_{{id}}_no">Non</label>
+              </div>
+            {{/if}}
+          </div>
+        </div>
+      {{/each}}
+      
+      {{#if (and (not isConsultant) (not (eq questionnaire.status "completed")))}}
+        <div class="d-flex justify-content-between mt-4">
+          <a href="/questionnaires" class="btn btn-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">Soumettre mes réponses</button>
+        </div>
+      {{else}}
+        <div class="d-flex justify-content-between mt-4">
+          <a href="/questionnaires" class="btn btn-secondary">Retour à la liste</a>
+          {{#if isConsultant}}
+            <a href="/questionnaires/{{questionnaire.id}}/results" class="btn btn-primary">Voir les résultats</a>
+          {{/if}}
+        </div>
+      {{/if}}
+    </form>
+  </div>
+</div>
+
+<style>
+  .disabled-form {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .disabled-form button[type="submit"] {
+    display: none;
+  }
+</style>
+
+<script>
+  // Helper function for range in Handlebars
+  Handlebars.registerHelper('range', function(start, end) {
+    const result = [];
+    for (let i = start; i <= end; i++) {
+      result.push(i);
+    }
+    return result;
+  });
+</script>

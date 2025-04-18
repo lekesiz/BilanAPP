@@ -1,0 +1,44 @@
+{{!-- Yeni Mesaj Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Envoyer un nouveau message</h1>
+
+    <form action="/messages/new" method="POST">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="recipientId" class="form-label">Destinataire *</label>
+                    <select class="form-select" id="recipientId" name="recipientId" required>
+                        {{#if isConsultant}}
+                            <option value="" selected disabled>Choisir un bénéficiaire...</option>
+                            {{#each recipients}}
+                                <option value="{{id}}" {{#ifCond ../preselectedRecipient '===' id}}selected{{/ifCond}}>
+                                    {{user.firstName}} {{user.lastName}}
+                                </option>
+                            {{/each}}
+                        {{else}}
+                            {{!-- Yararlanıcı sadece danışmanına gönderebilir --}}
+                            {{#each recipients}}
+                                <option value="{{id}}" selected>{{firstName}} {{lastName}} (Consultant)</option>
+                            {{/each}}
+                        {{/if}}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Sujet *</label>
+                    <input type="text" class="form-control" id="subject" name="subject" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="body" class="form-label">Message *</label>
+                    <textarea class="form-control" id="body" name="body" rows="8" required></textarea>
+                </div>
+
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/messages" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Envoyer le message</button>
+            </div>
+        </div>
+    </form>
+</div> 

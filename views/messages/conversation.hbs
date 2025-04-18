@@ -1,0 +1,63 @@
+<h1 class="mb-4">
+  {{#if beneficiary}}
+    Conversation avec {{beneficiary.firstName}} {{beneficiary.lastName}}
+  {{else}}
+    Conversation avec {{consultant.firstName}} {{consultant.lastName}}
+  {{/if}}
+</h1>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="chat-messages mb-4" style="max-height: 400px; overflow-y: auto;">
+      {{#if messages.length}}
+        {{#each messages}}
+          <div class="message {{#if (eq senderType 'consultant')}}message-consultant{{else}}message-beneficiary{{/if}} mb-3">
+            <div class="message-content p-3 rounded {{#if (eq senderType 'consultant')}}bg-light text-dark{{else}}bg-primary text-white{{/if}}" style="max-width: 80%; {{#if (eq senderType 'consultant')}}margin-right: auto;{{else}}margin-left: auto;{{/if}}">
+              <div class="message-text">{{content}}</div>
+              <div class="message-time small text-muted mt-1">{{formatDateTime createdAt}}</div>
+            </div>
+          </div>
+        {{/each}}
+      {{else}}
+        <div class="text-center text-muted py-5">
+          <p>Aucun message dans cette conversation.</p>
+          <p>Commencez à échanger des messages ci-dessous.</p>
+        </div>
+      {{/if}}
+    </div>
+    
+    <form action="{{#if beneficiary}}/messages/send/beneficiary/{{beneficiary.id}}{{else}}/messages/send/consultant{{/if}}" method="POST">
+      <div class="input-group">
+        <textarea class="form-control" name="content" placeholder="Tapez votre message ici..." rows="2" required></textarea>
+        <button class="btn btn-primary" type="submit">
+          <i class="fas fa-paper-plane"></i> Envoyer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="d-flex justify-content-between">
+  <a href="/messages" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Retour aux messages
+  </a>
+  
+  {{#if beneficiary}}
+    <div>
+      <a href="/beneficiaries/{{beneficiary.id}}" class="btn btn-outline-primary">
+        <i class="fas fa-user"></i> Voir le profil du bénéficiaire
+      </a>
+      <a href="/appointments/add?beneficiaryId={{beneficiary.id}}" class="btn btn-outline-success">
+        <i class="fas fa-calendar-plus"></i> Planifier un rendez-vous
+      </a>
+    </div>
+  {{/if}}
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Faire défiler automatiquement vers le bas pour voir les messages les plus récents
+    const chatMessages = document.querySelector('.chat-messages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+</script>

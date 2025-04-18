@@ -1,0 +1,103 @@
+<h1 class="mb-4">Mes bénéficiaires</h1>
+
+{{!-- Aktif Filtre Göstergesi --}}
+{{#if activeFilter}}
+    <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+        <span>Filtre Actif: {{activeFilter}}</span>
+         <a href="/beneficiaries" class="btn-close" aria-label="Supprimer le filtre"></a>
+    </div>
+{{/if}}
+
+<div class="mb-4">
+  <a href="/beneficiaries/add" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Ajouter un bénéficiaire
+  </a>
+</div>
+
+{{#if beneficiaries.length}}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Statut</th>
+          <th>Phase actuelle</th>
+          <th>Progression</th>
+          <th>Dernier RDV</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each beneficiaries}}
+          <tr>
+            <td>
+              <a href="/beneficiaries/{{id}}">{{user.lastName}} {{user.firstName}}</a>
+            </td>
+            <td>{{user.email}}</td>
+            <td>
+                <span class="badge bg-{{#ifCond status '===' 'active'}}success{{else ifCond status '===' 'completed'}}secondary{{else ifCond status '===' 'on_hold'}}warning{{else}}info{{/ifCond}}">
+                    {{status}}
+                </span>
+            </td>
+            <td>
+                <span class="badge bg-{{#ifCond currentPhase '===' 'investigation'}}primary{{else ifCond currentPhase '===' 'conclusion'}}success{{else}}secondary{{/ifCond}}">
+                    {{currentPhase}}
+                </span>
+            </td>
+            <td>
+                {{#with (calculateBilanProgress ../status ../currentPhase) as |progress|}}
+                    <div class="progress" style="height: 10px;" title="{{progress}}%">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{progress}}%;" aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                 {{/with}}
+            </td>
+             <td>
+                {{#if beneficiaryAppointments.length}}
+                    {{#with (first beneficiaryAppointments)}}
+                         <small>{{formatDateTime date}}</small>
+                    {{/with}}
+                {{else}}
+                    <small class="text-muted">Aucun</small>
+                {{/if}}
+             </td>
+            <td>
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/beneficiaries/{{id}}" class="btn btn-outline-primary" title="Détails">
+                  <i class="fas fa-eye"></i>
+                </a>
+                <a href="/beneficiaries/{{id}}/edit" class="btn btn-outline-secondary" title="Modifier">
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a href="/appointments/new?beneficiary={{id}}" class="btn btn-outline-success" title="Planifier RDV">
+                  <i class="fas fa-calendar-plus"></i>
+                </a>
+                <a href="/messages/new?beneficiary={{id}}" class="btn btn-outline-info" title="Envoyer Message">
+                  <i class="fas fa-envelope"></i>
+                </a>
+                 <a href="/questionnaires?beneficiary={{id}}" class="btn btn-outline-warning" title="Questionnaires">
+                  <i class="fas fa-clipboard-list"></i>
+                </a>
+                 <a href="/documents?beneficiary={{id}}" class="btn btn-outline-dark" title="Documents">
+                  <i class="fas fa-folder"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+{{else}}
+  <div class="alert alert-light text-center border shadow-sm p-4">
+    <h5 class="alert-heading"><i class="fas fa-user-plus fa-2x mb-3 text-muted"></i></h4>
+    <p class="mb-3">Vous n'avez pas encore de bénéficiaires enregistrés.</p>
+    <a href="/beneficiaries/add" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> Ajouter votre premier bénéficiaire
+    </a>
+  </div>
+{{/if}}
+
+{{#addHelper 'first' array}}
+    {{#if array}}{{array.[0]}}{{/if}}
+{{/addHelper}}

@@ -1,0 +1,62 @@
+{{!-- Anket Sonuçları Sayfası --}}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Résultats du questionnaire : {{questionnaire.title}}</h1>
+         <a href="/questionnaires" class="btn btn-secondary">
+             <i class="fas fa-arrow-left"></i> Retour à la liste
+         </a>
+    </div>
+
+     <div class="card mb-4">
+        <div class="card-body">
+            <p><strong>Description:</strong> {{questionnaire.description}}</p>
+             {{#if questionnaire.beneficiary}}
+                <p><strong>Réponses de:</strong> 
+                    <a href="/beneficiaries/{{questionnaire.beneficiary.id}}">
+                        {{questionnaire.beneficiary.user.firstName}} {{questionnaire.beneficiary.user.lastName}}
+                    </a>
+                </p>
+                 <p><strong>Statut:</strong> <span class="badge bg-success">Complété</span></p>
+             {{else if isConsultant}}
+                 <p><strong>Statut:</strong> <span class="badge bg-secondary">{{questionnaire.status}}</span> (Non assigné ou non complété)</p>
+             {{/if}}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+             <h5 class="card-title mb-0">Questions et Réponses</h5>
+        </div>
+        <div class="card-body">
+             {{#if questionnaire.questions.length}}
+                {{#each questionnaire.questions}}
+                    <div class="question-result-block mb-4 border-bottom pb-3">
+                        <p class="fw-bold">{{addOne @index}}. {{text}} <span class="badge bg-light text-dark ms-2">{{type}}</span></p>
+                        
+                        {{#if answers.length}}
+                             <div class="alert alert-light mt-2 p-3">
+                                {{#each answers}}
+                                    {{#if (lookup ../../user 'userType') '===' 'consultant'}}
+                                        {{!-- Danışman tüm cevapları veya filtreli cevapları görür --}}
+                                        <p class="mb-0"><strong>Réponse:</strong> {{answer}}</p>
+                                    {{else}}
+                                         {{!-- Yararlanıcı sadece kendi cevabını görür --}}
+                                         {{#ifCond beneficiaryId '===' ../../../user.beneficiaryProfile.id}}
+                                             <p class="mb-0"><strong>Votre Réponse:</strong> {{answer}}</p>
+                                         {{/ifCond}}
+                                    {{/if}}
+                                {{/each}}
+                            </div>
+                        {{else}}
+                            <div class="alert alert-warning mt-2 p-2">
+                                <small>Aucune réponse enregistrée pour cette question.</small>
+                            </div>
+                        {{/if}}
+                    </div>
+                {{/each}}
+             {{else}}
+                <p class="text-muted">Aucune question définie pour ce questionnaire.</p>
+             {{/if}}
+        </div>
+    </div>
+</div>

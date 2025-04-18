@@ -1,0 +1,61 @@
+<div class="container py-4">
+    <h1 class="mb-4">Modifier l'Utilisateur</h1>
+
+     {{> messages}}
+
+    <form action="/admin/users/{{userToEdit.id}}/edit" method="POST">
+        <div class="card shadow-sm">
+             <div class="card-header">
+                Informations de {{userToEdit.firstName}} {{userToEdit.lastName}}
+             </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="firstName" class="form-label">Prénom *</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" value="{{userToEdit.firstName}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="lastName" class="form-label">Nom *</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" value="{{userToEdit.lastName}}" required>
+                    </div>
+                    <div class="col-12">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{userToEdit.email}}" disabled readonly>
+                        <small class="form-text text-muted">L'email ne peut pas être modifié.</small>
+                    </div>
+                    <hr class="my-3">
+                     <div class="col-md-4">
+                        <label for="userType" class="form-label">Type de Compte *</label>
+                        <select class="form-select" id="userType" name="userType" required>
+                             {{#each userTypeOptions}}
+                                <option value="{{this}}" {{#ifCond ../userToEdit.userType '===' this}}selected{{/ifCond}}>{{this}}</option>
+                             {{/each}}
+                        </select>
+                    </div>
+                     <div class="col-md-4">
+                        <label for="forfaitType" class="form-label">Forfait Actuel</label>
+                        <select class="form-select" id="forfaitType" name="forfaitType">
+                            <option value="">-- Aucun --</option>
+                             {{#each forfaitOptions}}
+                                <option value="{{this}}" {{#ifCond ../userToEdit.forfaitType '===' this}}selected{{/ifCond}}>{{this}}</option>
+                             {{/each}}
+                        </select>
+                        <small class="form-text text-danger fw-bold">Attention: Changer le forfait réinitialisera les crédits disponibles au montant par défaut du nouveau forfait sélectionné.</small>
+                    </div>
+                     <div class="col-md-4">
+                         <label class="form-label">Crédits Actuels</label>
+                         <input type="text" class="form-control" value="{{userToEdit.availableCredits}}" disabled readonly>
+                         <small class="form-text text-muted">Ajuster depuis la liste des utilisateurs.</small>
+                    </div>
+                </div>
+                <hr>
+                {{!-- TODO: Şifre sıfırlama butonu eklenebilir --}}
+                 <p class="text-muted small">La modification du mot de passe se fait par l'utilisateur depuis ses paramètres.</p>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/admin/users" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </form>
+</div> 

@@ -1,0 +1,85 @@
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Administration - Tableau de Bord</h1>
+        {{!-- Hızlı Erişim Butonları --}}
+        <div>
+             <a href="/admin/users" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-users me-1"></i> Gérer les Utilisateurs
+            </a>
+             <a href="/admin/forfaits" class="btn btn-outline-secondary">
+                 <i class="fas fa-tags me-1"></i> Gérer les Forfaits
+            </a>
+             {{!-- İleride eklenecek diğer admin sayfalarına linkler --}}
+        </div>
+    </div>
+
+    {{> messages}}
+
+    {{!-- Genel İstatistikler --}}
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
+                 <div class="card-body">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Utilisateurs Total</h5>
+                    <p class="card-text display-6">{{totalUsers}}</p>
+                 </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+             <div class="card text-center shadow-sm h-100">
+                 <div class="card-body">
+                     <i class="fas fa-user-tie fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Consultants</h5>
+                    <p class="card-text display-6">{{totalConsultants}}</p>
+                 </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+             <div class="card text-center shadow-sm h-100">
+                 <div class="card-body">
+                     <i class="fas fa-user-graduate fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Bénéficiaires</h5>
+                    <p class="card-text display-6">{{totalBeneficiaries}}</p>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+     {{!-- Diğer Özetler ve Uyarılar --}}
+     <div class="row g-4">
+         <div class="col-md-6">
+             <div class="card shadow-sm">
+                 <div class="card-header"><i class="fas fa-tags me-2"></i> Répartition par Forfait</div>
+                 <ul class="list-group list-group-flush">
+                     {{#each forfaitCounts}}
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                             {{@key}}
+                             <span class="badge bg-secondary rounded-pill">{{this}}</span>
+                         </li>
+                     {{/each}}
+                 </ul>
+             </div>
+         </div>
+          <div class="col-md-6">
+             <div class="card shadow-sm">
+                  <div class="card-header"><i class="fas fa-exclamation-triangle text-danger me-2"></i> Actions Administratives Requises</div>
+                   <ul class="list-group list-group-flush">
+                       <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/beneficiaries?consentMissing=true" class="text-decoration-none {{#unless pendingConsentCount}}text-muted{{/unless}}">
+                                <i class="fas fa-handshake-slash me-1 {{#if pendingConsentCount}}text-warning{{/if}}"></i> Consentements Manquants
+                            </a>
+                            <span class="badge rounded-pill {{#if pendingConsentCount}}bg-warning text-dark{{else}}bg-light text-muted{{/if}}">{{pendingConsentCount}}</span>
+                        </li>
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/beneficiaries?agreementMissing=true" class="text-decoration-none {{#unless pendingAgreementCount}}text-muted{{/unless}}">
+                                <i class="fas fa-file-signature me-1 {{#if pendingAgreementCount}}text-danger{{/if}}"></i> Conventions Non Signées
+                            </a>
+                            <span class="badge rounded-pill {{#if pendingAgreementCount}}bg-danger{{else}}bg-light text-muted{{/if}}">{{pendingAgreementCount}}</span>
+                        </li>
+                         {{!-- TODO: Diğer uyarılar eklenebilir --}}
+                    </ul>
+             </div>
+         </div>
+     </div>
+</div> 

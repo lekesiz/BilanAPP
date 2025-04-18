@@ -1,0 +1,76 @@
+{{!-- Doküman Yükleme Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Télécharger un nouveau document</h1>
+
+    {{> messages}}
+
+    <form action="/documents/upload" method="POST" enctype="multipart/form-data">
+        <div class="card">
+            <div class="card-body">
+                 <div class="mb-3">
+                    <label for="documentFile" class="form-label">Choisir un fichier *</label>
+                    <input class="form-control" type="file" id="documentFile" name="documentFile" required accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xls,.xlsx,.ppt,.pptx,.txt">
+                    <small class="form-text text-muted">Types autorisés: pdf, doc(x), xls(x), ppt(x), txt, png, jpg, jpeg. Taille max: 10MB.</small>
+                </div>
+
+                {{#if isConsultant}}
+                    <div class="mb-3">
+                        <label for="beneficiaryId" class="form-label">Assigner à un bénéficiaire (optionnel)</label>
+                        <select class="form-select" id="beneficiaryId" name="beneficiaryId">
+                            <option value="" selected>Ne pas assigner (pour moi-même)</option>
+                            {{#each beneficiaries}}
+                                <option value="{{id}}" {{#ifCond ../preselectedBeneficiary '===' id}}selected{{/ifCond}}>
+                                    {{user.firstName}} {{user.lastName}}
+                                </option>
+                            {{/each}}
+                        </select>
+                         <small class="form-text text-muted">Si non assigné, le document ne sera visible que par vous.</small>
+                    </div>
+                {{else}}
+                     <input type="hidden" name="beneficiaryId" value="{{preselectedBeneficiary}}">
+                     <p><small>Ce document sera lié à votre profil.</small></p>
+                {{/if}}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="category" class="form-label">Catégorie</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="" selected>-- Sélectionner --</option>
+                            <option value="CV">CV</option>
+                            <option value="Lettre de Motivation">Lettre de Motivation</option>
+                            <option value="Résultats Tests">Résultats Tests</option>
+                            <option value="Synthèse">Synthèse</option>
+                            <option value="Plan d'Action">Plan d'Action</option>
+                            <option value="Convention">Convention Tripartite</option>
+                            <option value="Administratif">Administratif</option>
+                            <option value="Portfolio">Portfolio</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                     <div class="col-md-6 mb-3">
+                        <label for="bilanPhase" class="form-label">Associer à la Phase du Bilan</label>
+                        <select class="form-select" id="bilanPhase" name="bilanPhase">
+                            <option value="" selected>-- Non Associé / Général --</option>
+                            <option value="Preliminaire">Phase Préliminaire</option>
+                            <option value="Investigation">Phase d'Investigation</option>
+                            <option value="Conclusion">Phase de Conclusion</option>
+                            <option value="Suivi">Suivi (Post-Bilan)</option>
+                        </select>
+                    </div>
+                </div>
+                 <div class="mb-3">
+                    <label for="description" class="form-label">Description (optionnel)</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+
+            </div>
+             <div class="card-footer d-flex justify-content-between align-items-center">
+                 <a href="/documents" class="btn btn-secondary">Annuler</a>
+                 <div>
+                     <small class="text-muted me-2">Coût: 2 Crédits</small>
+                     <button type="submit" class="btn btn-primary">Télécharger le document</button>
+                 </div>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,133 @@
+{{!-- Anket Detayı / Atama Sayfası --}}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Questionnaire : {{questionnaire.title}}</h1>
+        <div>
+            {{#if questionnaire.beneficiaryId}}
+                <a href="/questionnaires/{{questionnaire.id}}/results" class="btn btn-info me-2">
+                    <i class="fas fa-chart-bar"></i> Voir les résultats
+                </a>
+            {{else}}
+                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#assignModal">
+                    <i class="fas fa-user-check"></i> Assigner à un bénéficiaire
+                </button>
+            {{/if}}
+            {{!-- Düzenleme butonu (sadece taslak ise?) --}}
+            {{!-- <a href="/questionnaires/{{questionnaire.id}}/edit" class="btn btn-secondary me-2"> --}}
+            {{!--     <i class="fas fa-edit"></i> Modifier --}}
+            {{!-- </a> --}}\n             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteQuestionnaireModal-{{questionnaire.id}}">
+                <i class="fas fa-trash"></i> Supprimer
+            </button>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <p><strong>Description:</strong> {{questionnaire.description}}</p>
+            <p><strong>Catégorie:</strong> {{#if questionnaire.category}}{{questionnaire.category}}{{else}}<span class="text-muted">Non définie</span>{{/if}}</p>
+            <p>
+                <strong>Statut:</strong> 
+                 <span class="badge bg-{{#ifCond questionnaire.status '===' 'completed'}}success{{else ifCond questionnaire.status '===' 'pending'}}warning{{else ifCond questionnaire.status '===' 'draft'}}secondary{{else}}info{{/ifCond}}">
+                    {{questionnaire.status}}
+                </span>
+            </p>
+             {{#if questionnaire.beneficiary}}
+                <p><strong>Assigné à:</strong> 
+                    <a href="/beneficiaries/{{questionnaire.beneficiary.id}}">
+                        {{questionnaire.beneficiary.user.firstName}} {{questionnaire.beneficiary.user.lastName}}
+                    </a>
+                </p>
+                 <p><strong>Date limite:</strong> {{#if questionnaire.dueDate}}{{formatDate questionnaire.dueDate}}{{else}}Non définie{{/if}}</p>
+             {{else}}
+                <p><strong>Assigné à:</strong> Non assigné</p>
+             {{/if}}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+             <h5 class="card-title mb-0">Questions ({{length questionnaire.questions}})</h5>
+        </div>
+        <div class="card-body">
+             {{#if questionnaire.questions.length}}
+                <ul class="list-group list-group-flush">
+                    {{#each questionnaire.questions}}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <span><strong>{{addOne @index}}. {{text}}</strong></span>
+                                <span class="badge bg-light text-dark">{{type}}</span>
+                            </div>
+                            {{#if options}}
+                                <ul class="list-unstyled ps-3 mt-2">
+                                    {{#each (parseJSON options)}}
+                                        <li><small>- {{this}}</small></li>
+                                    {{/each}}
+                                </ul>
+                            {{/if}}
+                        </li>
+                    {{/each}}
+                </ul>
+             {{else}}
+                <p class="text-muted">Aucune question définie pour ce questionnaire.</p>
+             {{/if}}
+        </div>
+    </div>
+
+    {{!-- Atama Modalı --}}
+    {{#unless questionnaire.beneficiaryId}}
+    <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="/questionnaires/{{questionnaire.id}}/assign" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="assignModalLabel">Assigner le questionnaire</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="beneficiaryId" class="form-label">Choisir un bénéficiaire *</label>
+                             <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+                                <option value="" selected disabled>Sélectionnez...</option>
+                                {{#each availableBeneficiaries}}
+                                    <option value="{{id}}">{{user.firstName}} {{user.lastName}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                         <div class="mb-3">
+                            <label for="dueDate" class="form-label">Date limite (optionnel)</label>
+                            <input type="date" class="form-control" id="dueDate" name="dueDate">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">Assigner (Coût: 10 Crédits)</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {{/unless}}
+
+     {{!-- Silme Modalı (duplicate from index but needed here too) --}}
+    <div class="modal fade" id="deleteQuestionnaireModal-{{questionnaire.id}}" tabindex="-1" aria-labelledby="deleteModalLabel-{{questionnaire.id}}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel-{{questionnaire.id}}">Confirmer la suppression</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Êtes-vous sûr de vouloir supprimer le questionnaire "{{questionnaire.title}}" ? Cette action supprimera également toutes les questions et réponses associées.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <form action="/questionnaires/{{questionnaire.id}}/delete" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Hatalı/Gereksiz Helper tanımları buradan kaldırıldı --}} 

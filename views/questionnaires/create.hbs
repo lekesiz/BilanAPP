@@ -1,0 +1,65 @@
+<h1 class="mb-4">Créer un questionnaire</h1>
+
+<div class="card">
+  <div class="card-body">
+    <form action="/questionnaires/create" method="POST">
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+            <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+              <option value="">Sélectionnez un bénéficiaire</option>
+              {{#each beneficiaries}}
+                <option value="{{id}}" {{#if (eq ../beneficiaryId id)}}selected{{/if}}>{{lastName}} {{firstName}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="title" class="form-label">Titre du questionnaire *</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="type" class="form-label">Type de questionnaire *</label>
+            <select class="form-select" id="type" name="type" required>
+              <option value="skills">Compétences</option>
+              <option value="interests">Intérêts</option>
+              <option value="personality">Personnalité</option>
+              <option value="values">Valeurs</option>
+              <option value="other">Autre</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="dueDate" class="form-label">Date limite</label>
+            <input type="date" class="form-control" id="dueDate" name="dueDate">
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <a href="/questionnaires" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">Créer le questionnaire</button>
+      </div>
+    </form>
+  </div>
+</div>

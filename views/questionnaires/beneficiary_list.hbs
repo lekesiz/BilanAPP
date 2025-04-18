@@ -1,0 +1,37 @@
+{{!-- Anket Listeleme (Yararlanıcı) --}}
+<div class="container py-4">
+    <h1 class="h3 mb-4">Mes Questionnaires à Compléter</h1>
+
+    {{#if questionnaires.length}}
+        <div class="list-group">
+            {{#each questionnaires}}
+                <div class="list-group-item list-group-item-action flex-column align-items-start mb-3 shadow-sm {{#ifCond status '===' 'completed'}}list-group-item-light text-muted{{/ifCond}}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{title}}</h5>
+                        <span class="badge bg-{{#ifCond status '===' 'completed'}}success{{else ifCond status '===' 'pending'}}warning{{else}}info{{/ifCond}}">
+                            {{status}}
+                        </span>
+                    </div>
+                    <p class="mb-2">{{description}}</p>
+                    <small class="text-muted">Assigné par: {{creator.firstName}} {{creator.lastName}}</small><br>
+                    {{#if dueDate}}
+                        <small class="text-danger">Date limite: {{formatDate dueDate}}</small><br>
+                    {{/if}}
+                    {{#ifCond status '===' 'pending'}}
+                        <a href="/questionnaires/{{id}}/answer" class="btn btn-primary btn-sm mt-2">
+                            <i class="fas fa-edit"></i> Répondre
+                        </a>
+                    {{else ifCond status '===' 'completed'}}
+                         <a href="/questionnaires/{{id}}/results" class="btn btn-secondary btn-sm mt-2">
+                            <i class="fas fa-eye"></i> Voir mes réponses
+                        </a>
+                    {{/ifCond}}
+                </div>
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="alert alert-info text-center">
+            <p>Vous n'avez aucun questionnaire assigné pour le moment.</p>
+        </div>
+    {{/if}}
+</div> 

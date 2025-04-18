@@ -1,0 +1,130 @@
+{{!-- Anket Listeleme (Danışman) --}}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Mes Questionnaires Créés</h1>
+        <a href="/questionnaires/new" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Créer un nouveau questionnaire
+        </a>
+    </div>
+
+    {{!-- Aktif Filtre Göstergesi --}}
+    {{#if activeFilter}}
+        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+            <span>Filtre Actif: 
+                {{#ifCond activeFilter '===' 'overdue'}}Questionnaires en retard{{/ifCond}}
+            </span>
+             <a href="/questionnaires" class="btn-close" aria-label="Supprimer le filtre"></a>
+        </div>
+    {{/if}}
+
+    {{!-- Filtreleme --}}
+    <form method="GET" action="/questionnaires" class="mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label for="beneficiaryFilter" class="form-label">Filtrer par bénéficiaire assigné</label>
+                <select class="form-select" id="beneficiaryFilter" name="beneficiary">
+                    <option value="">Tous</option>
+                    {{#each beneficiaries}}
+                        <option value="{{id}}" {{#ifCond ../selectedBeneficiary '===' id}}selected{{/ifCond}}>
+                            {{user.firstName}} {{user.lastName}}
+                        </option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-secondary">Filtrer</button>
+                 <a href="/questionnaires" class="btn btn-link">Réinitialiser</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {{#if questionnaires.length}}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Catégorie</th>
+                                <th>Assigné à</th>
+                                <th>Statut</th>
+                                <th>Date Limite</th>
+                                <th>Créé le</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each questionnaires}}
+                                <tr>
+                                    <td>
+                                        <a href="/questionnaires/{{id}}">{{title}}</a>
+                                    </td>
+                                    <td>{{#if category}}{{category}}{{else}}<span class="text-muted">-</span>{{/if}}</td>
+                                    <td>
+                                        {{#if beneficiary}}
+                                            <a href="/beneficiaries/{{beneficiary.id}}">{{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</a>
+                                        {{else}}
+                                            <span class="text-muted">Non assigné</span>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{#ifCond status '===' 'completed'}}success{{else ifCond status '===' 'pending'}}warning{{else ifCond status '===' 'draft'}}secondary{{else}}info{{/ifCond}}">
+                                            {{status}}
+                                        </span>
+                                    </td>
+                                    <td>{{#if dueDate}}{{formatDate dueDate}}{{else}}-{{/if}}</td>
+                                    <td>{{formatDateTime createdAt}}</td>
+                                    <td>
+                                         <a href="/questionnaires/{{id}}/results" class="btn btn-sm btn-outline-info" title="Voir les résultats">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </a>
+                                         <a href="/questionnaires/{{id}}" class="btn btn-sm btn-outline-primary" title="Détails / Assigner">
+                                            <i class="fas fa-user-check"></i>
+                                        </a>
+                                        {{!-- Düzenleme butonu (sadece taslak ise?) --}}
+                                        {{!-- <a href="/questionnaires/{{id}}/edit" class="btn btn-sm btn-outline-secondary" title="Modifier"> --}}
+                                        {{!--     <i class="fas fa-edit"></i> --}}
+                                        {{!-- </a> --}}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Supprimer" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteQuestionnaireModal-{{id}}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {{!-- Silme Modalı --}}
+                                <div class="modal fade" id="deleteQuestionnaireModal-{{id}}" tabindex="-1" aria-labelledby="deleteModalLabel-{{id}}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel-{{id}}">Confirmer la suppression</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Êtes-vous sûr de vouloir supprimer le questionnaire "{{title}}" ? Cette action supprimera également toutes les questions et réponses associées.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <form action="/questionnaires/{{id}}/delete" method="POST" style="display: inline;">
+                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                 <div class="text-center p-5 border-top">
+                     <h5 class="text-muted mb-3"><i class="far fa-file-alt fa-2x mb-3"></i></h5>
+                    <p class="text-muted">Aucun questionnaire trouvé {{#if selectedBeneficiary}}pour ce bénéficiaire{{/if}}.</p>
+                    <a href="/questionnaires/new" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-1"></i> Créer un nouveau questionnaire
+                    </a>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,161 @@
+{{!-- Doküman Listeleme Sayfası --}}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Mes Documents</h1>
+        <a href="/documents/upload" class="btn btn-primary">
+            <i class="fas fa-upload"></i> Télécharger un nouveau document
+        </a>
+    </div>
+
+    {{!-- Filtreleme --}}
+    <form method="GET" action="/documents" class="mb-4 border rounded p-3 bg-light">
+         <div class="row g-3 align-items-end">
+            {{#if isConsultant}}
+                <div class="col-md-4">
+                    <label for="beneficiaryFilter" class="form-label">Filtrer par Bénéficiaire</label>
+                    <select class="form-select form-select-sm" id="beneficiaryFilter" name="beneficiary">
+                        <option value="">Tous</option>
+                         <option value="consultant_only" {{#ifCond selectedBeneficiary '===' 'consultant_only'}}selected{{/ifCond}}>Seulement mes documents</option>
+                        {{#each beneficiaries}}
+                            <option value="{{id}}" {{#ifCond ../selectedBeneficiary '===' id}}selected{{/ifCond}}>
+                                {{user.firstName}} {{user.lastName}}
+                            </option>
+                        {{/each}}
+                    </select>
+                </div>
+            {{/if}}
+            <div class="col-md-4">
+                 <label for="categoryFilter" class="form-label">Filtrer par Catégorie</label>
+                 <select class="form-select form-select-sm" id="categoryFilter" name="category">
+                    <option value="">Toutes les catégories</option>
+                    {{#each categories}}
+                        <option value="{{this}}" {{#ifCond ../selectedCategory '===' this}}selected{{/ifCond}}>
+                            {{this}}
+                        </option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-secondary btn-sm">Filtrer</button>
+                 <a href="/documents" class="btn btn-link btn-sm">Réinitialiser</a>
+            </div>
+        </div>
+    </form>
+   
+    {{!-- Aktif Filtre Göstergesi --}}
+    {{#or selectedBeneficiary selectedCategory}}
+         <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+            <span>Filtre Actif: 
+                {{#if selectedBeneficiary}}
+                     Bénéficiaire{{#unless selectedCategory}} seulement{{/unless}}
+                {{/if}}
+                 {{#if selectedCategory}}
+                     {{#if selectedBeneficiary}} et {{/if}}Catégorie '{{selectedCategory}}'
+                 {{/if}}
+            </span>
+             <a href="/documents" class="btn-close" aria-label="Supprimer le filtre"></a>
+        </div>
+    {{/or}}
+
+    <div class="d-flex justify-content-end mb-3">
+
+    <div class="card">
+        <div class="card-body p-0">
+            {{#if documents.length}}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nom du fichier</th>
+                                <th>Catégorie</th>
+                                <th>Phase Bilan</th>
+                                <th>Description</th>
+                                <th>Téléchargé par</th>
+                                <th>Pour</th>
+                                <th>Type</th>
+                                <th>Taille</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each documents}}
+                                <tr>
+                                    <td>
+                                        <a href="/uploads/documents/{{encodeURI fileName}}" target="_blank" title="{{originalName}}">
+                                            <i class="fas fa-file-alt me-2"></i> {{truncate originalName 30}}
+                                        </a>
+                                    </td>
+                                    <td>{{#if category}}{{category}}{{else}}-{{/if}}</td>
+                                    <td>{{#if bilanPhase}}{{bilanPhase}}{{else}}<span class="text-muted">Général</span>{{/if}}</td>
+                                    <td>{{#if description}}{{truncate description 40}}{{else}}-{{/if}}</td>
+                                    <td>{{uploader.firstName}} {{uploader.lastName}}</td>
+                                    <td>
+                                        {{#if beneficiary}}
+                                             <a href="/beneficiaries/{{beneficiary.id}}">{{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</a>
+                                        {{else}}
+                                            <span class="text-muted">{{#if ../isConsultant}}Moi-même{{else}}-{{/if}}</span>
+                                        {{/if}}
+                                    </td>
+                                    <td><small>{{fileType}}</small></td>
+                                    <td><small>{{formatBytes fileSize}}</small></td>
+                                    <td><small>{{formatDateTime createdAt}}</small></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/uploads/documents/{{encodeURI fileName}}" target="_blank" class="btn btn-outline-primary" title="Voir / Télécharger">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="/documents/{{id}}/edit" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {{#ifCond ../user.id '===' uploader.id}}
+                                                <button class="btn btn-sm btn-outline-danger" disabled title="Vous ne pouvez pas supprimer un document que vous avez téléchargé ici (fonctionnalité à venir?)"><i class="fas fa-trash"></i></button>
+                                            {{else}}
+                                                 {{#if ../isConsultant}}
+                                                     <button type="button" class="btn btn-sm btn-outline-danger" title="Supprimer (Consultant)" 
+                                                            data-bs-toggle="modal" data-bs-target="#deleteDocumentModal-{{id}}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                 {{else}}
+                                                    <button class="btn btn-sm btn-outline-danger" disabled title="Action non autorisée"><i class="fas fa-trash"></i></button>
+                                                 {{/if}}
+                                            {{/ifCond}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{!-- Silme Modalı --}}
+                                <div class="modal fade" id="deleteDocumentModal-{{id}}" tabindex="-1" aria-labelledby="deleteModalLabel-{{id}}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel-{{id}}">Confirmer la suppression</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Êtes-vous sûr de vouloir supprimer le document "{{originalName}}" ?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <form action="/documents/{{id}}/delete" method="POST" style="display: inline;">
+                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                 <div class="text-center p-5 border-top">
+                     <h5 class="text-muted mb-3"><i class="far fa-folder-open fa-2x mb-3"></i></h5>
+                    <p class="text-muted">Aucun document trouvé{{#or selectedBeneficiary selectedCategory}} correspondant à vos filtres{{/or}}.</p>
+                     <a href="/documents/upload" class="btn btn-primary mt-2">
+                        <i class="fas fa-upload me-1"></i> Télécharger un document
+                    </a>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,69 @@
+{{!-- Randevu Ekleme Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Planifier un nouveau rendez-vous</h1>
+
+    <form action="/appointments/new" method="POST">
+        <div class="card">
+            <div class="card-body">
+                {{#if isConsultant}}
+                    <div class="mb-3">
+                        <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+                        <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+                            <option value="" selected disabled>Choisir un bénéficiaire...</option>
+                            {{#each beneficiaries}}
+                                <option value="{{id}}" {{#ifCond ../preselectedBeneficiary '===' id}}selected{{/ifCond}}>
+                                    {{user.firstName}} {{user.lastName}}
+                                </option>
+                            {{/each}}
+                        </select>
+                    </div>
+                {{else}}
+                    {{!-- Yararlanıcı kendi için randevu oluşturuyor, bu alanı göstermeye gerek yok --}}
+                    <input type="hidden" name="beneficiaryId" value="{{preselectedBeneficiary}}">
+                    <p><strong>Pour:</strong> Vous-même</p>
+                {{/if}}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date" class="form-label">Date *</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="time" class="form-label">Heure *</label>
+                        <input type="time" class="form-control" id="time" name="time" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="type" class="form-label">Type de rendez-vous *</label>
+                    <select class="form-select" id="type" name="type" required>
+                        <option value="Entretien préliminaire">Entretien préliminaire</option>
+                        <option value="Entretien d'investigation">Entretien d'investigation</option>
+                        <option value="Entretien de conclusion">Entretien de conclusion</option>
+                        <option value="Suivi">Suivi</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description (optionnel)</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="location" class="form-label">Lieu (optionnel)</label>
+                    <input type="text" class="form-control" id="location" name="location" placeholder="Ex: Bureau, Visioconférence (lien)...">
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes (optionnel)</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/appointments" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Planifier le rendez-vous</button>
+            </div>
+        </div>
+    </form>
+</div> 

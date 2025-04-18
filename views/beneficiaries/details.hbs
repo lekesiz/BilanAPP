@@ -1,0 +1,609 @@
+{{!-- Yararlanıcı Detay Sayfası - Yeniden Yapılandırılmış --}}
+<div class="container py-4">
+    {{!-- Başlık ve Ana Butonlar --}}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Bilan de Compétences : {{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</h1>
+        <div>
+             <a href="/beneficiaries/{{beneficiary.id}}/edit" class="btn btn-primary me-2">
+                <i class="fas fa-edit"></i> Modifier le Dossier Bilan
+            </a>
+             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="fas fa-trash"></i> Supprimer Bénéficiaire
+            </button>
+        </div>
+    </div>
+
+     {{> messages}}
+
+    <div class="row g-4">
+        {{!-- Sol Kolon: Profil Özeti & Bilan Durumu/Aşaması --}}
+        <div class="col-md-4">
+            {{!-- Profil Kartı --}}
+            <div class="card shadow-sm mb-4">
+                 <div class="card-body text-center">
+                    {{!-- ... (Avatar, İsim, Email, Telefon) ... --}}
+                    <div class="avatar avatar-xxl mb-3"><span class="avatar-initial rounded-circle bg-primary">{{firstChar beneficiary.user.firstName}}</span></div>
+                    <h5 class="card-title">{{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</h5>
+                    <p class="text-muted mb-1">{{beneficiary.user.email}}</p>
+                    {{#if beneficiary.phone}}<p class="text-muted mb-2"><i class="fas fa-phone me-1"></i>{{beneficiary.phone}}</p>{{/if}}
+                 </div>
+                  <div class="px-3 pb-3"> {{!-- Progress bar için padding --}}
+                     <label class="form-label small text-muted">Progression du Bilan</label>
+                     {{#with (calculateBilanProgress beneficiary.status beneficiary.currentPhase) as |progress|}}
+                        <div class="progress" style="height: 15px;" title="{{progress}}%">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{progress}}%;" aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100">{{progress}}%</div>
+                        </div>
+                     {{/with}}
+                 </div>
+                <div class="card-footer text-muted small">
+                    <div class="d-flex justify-content-between">
+                         <span>Statut:</span> 
+                         <span class="fw-bold">{{beneficiary.status}}</span>
+                     </div>
+                     <div class="d-flex justify-content-between">
+                         <span>Début:</span> 
+                         <span>{{#if beneficiary.bilanStartDate}}{{formatDate beneficiary.bilanStartDate}}{{else}}-{{/if}}</span>
+                     </div>
+                      <div class="d-flex justify-content-between">
+                         <span>Fin:</span> 
+                         <span>{{#if beneficiary.bilanEndDate}}{{formatDate beneficiary.bilanEndDate}}{{else}}-{{/if}}</span>
+                     </div>
+                      <div class="mt-1">Consultant: {{beneficiary.consultant.firstName}} {{beneficiary.consultant.lastName}}</div>
+                </div>
+                {{!-- Checklist Özeti --}}
+                <div class="card-footer bg-light border-top-0">
+                    <h6 class="mb-2 small text-uppercase text-muted">Checklist Étapes Clés</h6>
+                    <div class="form-check form-switch form-check-sm mb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" id="dispPrelim" {{#if beneficiary.preliminaryInterviewDone}}checked{{/if}} disabled>
+                        <label class="form-check-label small" for="dispPrelim">Entr. Préliminaire</label>
+                    </div>
+                    <div class="form-check form-switch form-check-sm mb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" id="dispInvest" {{#if beneficiary.investigationPhaseStarted}}checked{{/if}} disabled>
+                        <label class="form-check-label small" for="dispInvest">Investig. Démarrée</label>
+                    </div>
+                     <div class="form-check form-switch form-check-sm mb-1">
+                        <input class="form-check-input" type="checkbox" role="switch" id="dispSynth" {{#if beneficiary.synthesisMeetingDone}}checked{{/if}} disabled>
+                        <label class="form-check-label small" for="dispSynth">Entr. Synthèse</label>
+                    </div>
+                     <div class="form-check form-switch form-check-sm">
+                        <input class="form-check-input" type="checkbox" role="switch" id="dispFollowUp" {{#if beneficiary.followUpMeetingDone}}checked{{/if}} disabled>
+                        <label class="form-check-label small" for="dispFollowUp">Entr. Suivi (6m)</label>
+                    </div>
+                </div>
+            </div>
+             {{!-- Aşama Güncelleme Kartı --}}
+             <div class="card shadow-sm">
+                 <div class="card-body">
+                    <h6 class="card-title mb-3">Phase Actuelle du Bilan</h6>
+                     <form action="/beneficiaries/{{beneficiary.id}}/update-phase" method="POST">
+                          <select class="form-select form-select-sm mb-2" name="currentPhase">
+                            <option value="preliminary" {{#ifCond beneficiary.currentPhase '===' 'preliminary'}}selected{{/ifCond}}>1. Phase Préliminaire</option>
+                            <option value="investigation" {{#ifCond beneficiary.currentPhase '===' 'investigation'}}selected{{/ifCond}}>2. Phase d'Investigation</option>
+                            <option value="conclusion" {{#ifCond beneficiary.currentPhase '===' 'conclusion'}}selected{{/ifCond}}>3. Phase de Conclusion</option>
+                        </select>
+                         <button type="submit" class="btn btn-sm btn-primary w-100">Mettre à jour la Phase</button>
+                     </form>
+                 </div>
+             </div>
+        </div>
+
+        {{!-- Sağ Kolon: Bilan Aşamaları Detayları (Tablar) --}}
+        <div class="col-md-8">
+             <div class="card h-100 shadow-sm">
+                 <div class="card-header">
+                     <ul class="nav nav-tabs card-header-tabs" id="bilanPhaseTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {{#ifCond beneficiary.currentPhase '===' 'preliminary'}}active{{/ifCond}}" id="preliminary-tab" data-bs-toggle="tab" data-bs-target="#preliminary-content" type="button" role="tab">1. Préliminaire</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {{#ifCond beneficiary.currentPhase '===' 'investigation'}}active{{/ifCond}}" id="investigation-tab" data-bs-toggle="tab" data-bs-target="#investigation-content" type="button" role="tab">2. Investigation</button>
+                        </li>
+                         <li class="nav-item" role="presentation">
+                            <button class="nav-link {{#ifCond beneficiary.currentPhase '===' 'conclusion'}}active{{/ifCond}}" id="conclusion-tab" data-bs-toggle="tab" data-bs-target="#conclusion-content" type="button" role="tab">3. Conclusion</button>
+                        </li>
+                    </ul>
+                 </div>
+                 <div class="card-body">
+                    <div class="tab-content" id="bilanPhaseTabContent">
+                        {{!-- 1. Phase Préliminaire İçeriği --}}
+                        <div class="tab-pane fade {{#ifCond beneficiary.currentPhase '===' 'preliminary'}}show active{{/ifCond}}" id="preliminary-content" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                     <h5 class="mb-1">Phase Préliminaire</h5>
+                                     <p class="text-muted small mb-0">Analyse de la demande, définition des modalités, établissement de la relation de confiance.</p>
+                                </div>
+                                <a href="/beneficiaries/{{beneficiary.id}}/edit#edit-profile-section" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-1"></i> Profil</a>
+                           </div>
+                             <hr>
+                             {{!-- Rıza Durumu --}}
+                             <div class="mb-3">
+                                 <strong>Consentement du Bénéficiaire:</strong>
+                                 {{#if beneficiary.consentGiven}}
+                                     <span class="badge bg-success"><i class="fas fa-check me-1"></i> Reçu</span>
+                                     {{#if beneficiary.consentDate}}
+                                        <span class="text-muted small">(le {{formatDate beneficiary.consentDate}})</span>
+                                     {{/if}}
+                                 {{else}}
+                                     <span class="badge bg-danger"><i class="fas fa-times me-1"></i> Non Reçu</span>
+                                 {{/if}}
+                                 <a href="/beneficiaries/{{beneficiary.id}}/edit#edit-consent-section" class="ms-2 small">(Modifier)</a> {{!-- Düzenleme linki için edit.hbs'e ID ekle --}}
+                             </div>
+                             {{!-- Sözleşme Durumu --}}
+                             <div class="mb-3 border-start border-3 ps-3 {{#if beneficiary.agreementSigned}}border-success{{else}}border-danger{{/if}}">
+                                 <strong>Convention Tripartite:</strong>
+                                 {{#if beneficiary.agreementSigned}}
+                                     <span class="badge bg-success"><i class="fas fa-check me-1"></i> Signée</span>
+                                     {{#if beneficiary.agreementDate}}
+                                        <span class="text-muted small">(le {{formatDate beneficiary.agreementDate}})</span>
+                                     {{/if}}
+                                     <br>
+                                     {{!-- İlgili Dokümanı Bul (Önce Convention, sonra Administratif) --}}
+                                     {{#findDocument beneficiary.beneficiaryDocuments category='Convention' as |convDoc|}}
+                                        {{!-- filePath URL encode edildi --}}
+                                        <a href="/uploads/documents/{{encodeURI convDoc.fileName}}" target="_blank" class="btn btn-sm btn-outline-success mt-1" title="Voir la convention signée"> <i class="fas fa-file-signature me-1"></i> Voir Document</a>
+                                     {{else}}
+                                         {{#findDocument beneficiary.beneficiaryDocuments category='Administratif' as |adminDoc|}}
+                                             {{!-- filePath URL encode edildi --}}
+                                             <a href="/uploads/documents/{{encodeURI adminDoc.fileName}}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" title="Voir document administratif possible"> <i class="fas fa-file-alt me-1"></i> Doc. Admin?</a>
+                                          {{else}}
+                                                <span class="badge bg-warning text-dark mt-1" title="La convention est marquée signée mais aucun document de catégorie 'Convention' ou 'Administratif' n'est associé à ce bénéficiaire."><i class="fas fa-exclamation-triangle"></i> Document Manquant?</span>
+                                         {{/findDocument}}
+                                     {{/findDocument}}
+                                 {{else}}
+                                     <span class="badge bg-danger"><i class="fas fa-times me-1"></i> Non Signée</span>
+                                     <br><small class="text-muted">Doit être signée avant la phase d'investigation.</small>
+                                 {{/if}}
+                                 <a href="/beneficiaries/{{beneficiary.id}}/edit#edit-agreement-section" class="ms-2 small">(Modifier Statut)</a>
+                             </div>
+                             <hr>
+                             {{!-- Profil Bölümü (AJAX Düzenleme Eklendi) --}}
+                             <div class="editable-section mb-3" data-field="education" data-url="/beneficiaries/{{beneficiary.id}}/update-education">
+                                 <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6>Profil: Formation / Niveau d'études</h6>
+                                    <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                </div>
+                                <div class="display-area">
+                                     <p class="mb-0">{{#if (isNonEmptyString beneficiary.education)}}{{nl2br beneficiary.education}}{{else}}<span class="text-muted">Non renseigné</span>{{/if}}</p>
+                                </div>
+                                <div class="edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="education" rows="3">{{beneficiary.education}}</textarea>
+                                    <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                </div>
+                             </div>
+                             <div class="editable-section mb-3" data-field="experience" data-url="/beneficiaries/{{beneficiary.id}}/update-experience">
+                                 <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6>Profil: Expérience professionnelle</h6>
+                                    <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                </div>
+                                <div class="display-area">
+                                    <p class="mb-0">{{#if (isNonEmptyString beneficiary.experience)}}{{nl2br beneficiary.experience}}{{else}}<span class="text-muted">Non renseigné</span>{{/if}}</p>
+                                </div>
+                                <div class="edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="experience" rows="4">{{beneficiary.experience}}</textarea>
+                                    <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                </div>
+                             </div>
+                             <hr>
+                            {{!-- Notlar Bölümü (AJAX Düzenleme Eklendi) --}}
+                             <div class="editable-section mb-3" data-field="notes" data-url="/beneficiaries/{{beneficiary.id}}/update-notes">
+                                 <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6>Notes Générales (Consultant)</h6>
+                                    <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                </div>
+                                <div class="display-area">
+                                    <p class="mb-0">{{#if (isNonEmptyString beneficiary.notes)}}{{nl2br beneficiary.notes}}{{else}}<span class="text-muted">Aucune note.</span>{{/if}}</p>
+                                </div>
+                                <div class="edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="notes" rows="3">{{beneficiary.notes}}</textarea>
+                                    <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                </div>
+                             </div>
+                             <hr>
+                             <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6>Documents Associés</h6>
+                                {{!-- Helper adı güncellendi --}}
+                                {{#filterDocumentsByPhase beneficiary.beneficiaryDocuments 'Preliminaire'}}
+                                    {{!-- filePath URL encode edildi --}}
+                                    <a href="/uploads/documents/{{encodeURI fileName}}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1 me-1">
+                                       <i class="fas fa-file-alt me-1"></i> {{originalName}} {{#if category}}({{category}}){{/if}}
+                                   </a>
+                                {{else}}
+                                   <p class="text-muted small">Aucun document associé à cette phase.</p>
+                                {{/filterDocumentsByPhase}}
+                             </div>
+                         </div>
+                        {{!-- 2. Phase d'Investigation İçeriği --}}
+                        <div class="tab-pane fade {{#ifCond beneficiary.currentPhase '===' 'investigation'}}show active{{/ifCond}}" id="investigation-content" role="tabpanel">
+                             <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                     <h5 class="mb-1">Phase d'Investigation</h5>
+                                      <p class="text-muted small mb-0">Exploration du parcours, évaluation des compétences, analyse des motivations, élaboration du projet professionnel.</p>
+                                </div>
+                                <a href="/beneficiaries/{{beneficiary.id}}/edit#edit-skills-section" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-1"></i> Comp./Proj.</a>
+                           </div>
+                             <hr>
+                             {{!-- Beceriler Bölümü (Mevcut AJAX yapısı korunuyor, class/data eklendi) --}}
+                             <div class="editable-section mb-3 skills-section" data-field="identifiedSkills" data-url="/beneficiaries/{{beneficiary.id}}/update-skills">
+                                 <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6>Compétences Identifiées</h6>
+                                    <button class="btn btn-sm btn-outline-secondary edit-btn edit-skills-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                </div>
+                                <div class="display-area skills-display">
+                                    {{!-- ... (beceri badge'leri) ... --}}
+                                     {{#if (isNonEmptyString beneficiary.identifiedSkills)}}
+                                        <div class="skills-container"> {{!-- skills-container eklendi --}}
+                                            {{#each (split beneficiary.identifiedSkills ',')}}
+                                                {{#if (isNonEmptyString (trim this))}}
+                                                    <span class="badge bg-info me-1 mb-1 fs-6">{{trim this}}</span>
+                                                {{/if}}
+                                            {{/each}}
+                                        </div>
+                                    {{else}}
+                                        <p class="text-muted skills-placeholder">Compétences non encore définies.</p>
+                                    {{/if}}
+                                </div>
+                                <div class="edit-form skills-edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="identifiedSkills" rows="4">{{beneficiary.identifiedSkills}}</textarea>
+                                     <small class="form-text text-muted d-block mb-2">Séparez les compétences par des virgules.</small>
+                                    <div><button class="btn btn-sm btn-primary save-btn save-skills-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn cancel-skills-btn" type="button">Annuler</button> <span class="feedback skills-feedback ms-2 small"></span></div>
+                                </div>
+                             </div>
+                             <hr>
+                             {{!-- Hedefler Bölümü (AJAX Düzenleme Eklendi) --}}
+                             <div class="editable-section mb-3" data-field="careerObjectives" data-url="/beneficiaries/{{beneficiary.id}}/update-objectives">
+                                 <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6>Projet(s) Professionnel(s) Envisagé(s)</h6>
+                                     <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                </div>
+                                <div class="display-area">
+                                    <p class="mb-0">{{#if (isNonEmptyString beneficiary.careerObjectives)}}{{nl2br beneficiary.careerObjectives}}{{else}}<span class="text-muted">Non défini.</span>{{/if}}</p>
+                                </div>
+                                <div class="edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="careerObjectives" rows="4">{{beneficiary.careerObjectives}}</textarea>
+                                    <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                </div>
+                             </div>
+                             <hr>
+                             <div class="d-flex justify-content-between align-items-center mb-2">
+                                 <h6>Questionnaires & Tests</h6>
+                                 <a href="/questionnaires?beneficiary={{beneficiary.id}}" class="btn btn-sm btn-outline-warning" title="Voir/Assigner Questionnaires">
+                                    <i class="fas fa-tasks me-1"></i> Gérer Quest.
+                                </a>
+                             </div>
+                              {{#filterQuestionnaires beneficiary.assignedQuestionnaires 'Intérêts Professionnels' 'Motivation' 'Personnalité' 'Compétences Techniques' 'Compétences Transversales' 'Valeurs'}}
+                                 <div class="mb-2">
+                                     <a href="/questionnaires/{{id}}/results" class="me-2">{{title}}</a> 
+                                     <span class="badge bg-{{#ifCond status '===' 'completed'}}success{{else ifCond status '===' 'pending'}}warning{{else}}secondary{{/ifCond}}">{{status}}</span>
+                                     {{#ifCond status '===' 'pending'}}
+                                        <span class="text-muted small"> (Attente réponse)</span>
+                                    {{/ifCond}}
+                                 </div>
+                             {{else}}
+                                <p class="text-muted small">Aucun questionnaire d'évaluation assigné ou complété.</p>
+                             {{/filterQuestionnaires}}
+                              <hr>
+                             <div class="d-flex justify-content-between align-items-center mb-2">
+                                 <h6>Résultats Tests (Documents)</h6>
+                                 {{!-- Helper adı güncellendi --}}
+                                 {{#filterDocumentsByPhase beneficiary.beneficiaryDocuments 'Investigation'}}
+                                     {{!-- filePath URL encode edildi --}}
+                                     <a href="/uploads/documents/{{encodeURI fileName}}" target="_blank" class="btn btn-sm btn-outline-secondary mb-1 me-1">
+                                        <i class="fas fa-file-alt me-1"></i> {{originalName}} {{#if category}}({{category}}){{/if}}
+                                    </a>
+                                 {{else}}
+                                    <p class="text-muted small">Aucun document de résultats de test associé à cette phase.</p>
+                                 {{/filterDocumentsByPhase}}
+                             </div>
+                         </div>
+                        {{!-- 3. Phase de Conclusion İçeriği --}}
+                         <div class="tab-pane fade {{#ifCond beneficiary.currentPhase '===' 'conclusion'}}show active{{/ifCond}}" id="conclusion-content" role="tabpanel">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                     <h5 class="mb-1">Phase de Conclusion</h5>
+                                      <p class="text-muted small mb-0">Appropriation des résultats, élaboration du plan d'action, finalisation de la synthèse.</p>
+                                </div>
+                                 <a href="/beneficiaries/{{beneficiary.id}}/edit#edit-actionplan-section" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-1"></i> Plan/Synth.</a>
+                           </div>
+                             <hr>
+                             {{!-- Sentez Bölümü --}}
+                             <div class="editable-section mb-3" data-field="synthesis" data-url="/beneficiaries/{{beneficiary.id}}/update-synthesis">
+                                 <div class="d-flex justify-content-between align-items-center mb-2">
+                                     <h6 class="mb-0">Synthèse du Bilan (Résumé Consultant)</h6>
+                                     <div>
+                                         {{!-- AI Butonu - Koşul geçici olarak kaldırıldı --}}
+                                         {{!-- {{#isForfaitOrHigher ../user.forfaitType 'Premium'}} --}}
+                                             <form action="/beneficiaries/{{beneficiary.id}}/generate-synthesis" method="POST" class="d-inline"> 
+                                                <button type="submit" class="btn btn-sm btn-outline-primary me-1" title="Générer une ébauche avec l'IA (Simulation) - Coût: 20 Crédits">
+                                                    <i class="fas fa-magic"></i> Générer Ébauche
+                                                </button>
+                                            </form>
+                                         {{!-- {{/isForfaitOrHigher}} --}}
+                                         {{#if (isAIDraft beneficiary.synthesis)}}
+                                            <span class="badge bg-warning text-dark me-1" title="Ébauche générée par IA - Validation requise"><i class="fas fa-exclamation-triangle"></i> À Valider</span>
+                                         {{/if}}
+                                         <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                     </div>
+                                </div>
+                                 <div class="display-area">
+                                     {{#if (isAIDraft beneficiary.synthesis)}}<em class="text-muted">{{/if}}
+                                         <p class="mb-0">{{#if (isNonEmptyString beneficiary.synthesis)}}{{nl2br beneficiary.synthesis}}{{else}}<span class="text-muted">Non rédigée.</span>{{/if}}</p>
+                                     {{#if (isAIDraft beneficiary.synthesis)}}</em>{{/if}}
+                                 </div>
+                                 <div class="edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="synthesis" rows="5">{{beneficiary.synthesis}}</textarea>
+                                    <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                 </div>
+                                 {{!-- Sentez Tamamlama Durumu --}}
+                                 <div class="mt-2">
+                                     {{#if beneficiary.synthesisFinalized}}
+                                         <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Synthèse Finalisée/Remise</span>
+                                         {{#if beneficiary.synthesisFinalizedDate}}
+                                            <span class="text-muted small ms-1">(le {{formatDate beneficiary.synthesisFinalizedDate}})</span>
+                                         {{/if}}
+                                     {{else}}
+                                         <span class="badge bg-light text-dark"><i class="fas fa-spinner me-1"></i> Synthèse non finalisée</span>
+                                     {{/if}}
+                                     <a href="/beneficiaries/{{beneficiary.id}}/edit#edit-synthesis-final-section" class="ms-2 small">(Modifier Statut)</a>
+                                 </div>
+                             </div>
+                              <hr>
+                             {{!-- Aksiyon Planı Bölümü --}}
+                             <div class="editable-section mb-3" data-field="actionPlan" data-url="/beneficiaries/{{beneficiary.id}}/update-actionplan">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                     <h6 class="mb-0">Plan d'Action Post-Bilan</h6>
+                                      <div>
+                                         {{!-- AI Butonu - Koşul geçici olarak kaldırıldı --}}
+                                          {{!-- {{#isForfaitOrHigher ../user.forfaitType 'Premium'}} --}}
+                                             <form action="/beneficiaries/{{beneficiary.id}}/generate-actionplan" method="POST" class="d-inline"> 
+                                                <button type="submit" class="btn btn-sm btn-outline-primary me-1" title="Générer une ébauche avec l'IA (Simulation) - Coût: 15 Crédits">
+                                                    <i class="fas fa-magic"></i> Générer Ébauche
+                                                </button>
+                                            </form>
+                                          {{!-- {{/isForfaitOrHigher}} --}}
+                                         {{#if (isAIDraft beneficiary.actionPlan)}}
+                                            <span class="badge bg-warning text-dark me-1" title="Ébauche générée par IA - Validation requise"><i class="fas fa-exclamation-triangle"></i> À Valider</span>
+                                         {{/if}}
+                                        <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                      </div>
+                                </div>
+                                <div class="display-area">
+                                    <p class="mb-0">{{#if (isNonEmptyString beneficiary.actionPlan)}}{{nl2br beneficiary.actionPlan}}{{else}}<span class="text-muted">Non défini.</span>{{/if}}</p>
+                                </div>
+                                <div class="edit-form" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" name="actionPlan" rows="4">{{beneficiary.actionPlan}}</textarea>
+                                    <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                </div>
+                             </div>
+                             <hr>
+                             {{!-- Takip Görüşmesi Bilgisi --}}
+                             <h6 class="mt-4">Entretien de Suivi (à 6 mois)</h6>
+                             {{#if beneficiary.followUpDate}}
+                                 <p class="mb-1">
+                                     <strong>Date Prévue:</strong> 
+                                     <span class="badge {{dateStatusClass beneficiary.followUpDate}}">{{formatDate beneficiary.followUpDate}}</span>
+                                 </p>
+                                 <div class="editable-section mt-2" data-field="followUpNotes" data-url="/beneficiaries/{{beneficiary.id}}/update-followup-notes"> {{!-- Yeni route gerekli --}}
+                                     <div class="d-flex justify-content-between align-items-center mb-2">
+                                         <h6 class="mb-0 small">Notes de Suivi:</h6>
+                                         <button class="btn btn-sm btn-outline-secondary edit-btn" type="button"><i class="fas fa-edit me-1"></i> Modifier</button>
+                                    </div>
+                                    <div class="display-area">
+                                        <p class="mb-0"><small>{{#if (isNonEmptyString beneficiary.followUpNotes)}}{{nl2br beneficiary.followUpNotes}}{{else}}<span class="text-muted">Aucune note.</span>{{/if}}</small></p>
+                                    </div>
+                                    <div class="edit-form" style="display: none;">
+                                        <textarea class="form-control form-control-sm mb-2" name="followUpNotes" rows="3">{{beneficiary.followUpNotes}}</textarea>
+                                        <div><button class="btn btn-sm btn-primary save-btn" type="button">Enregistrer</button> <button class="btn btn-sm btn-light cancel-btn" type="button">Annuler</button> <span class="feedback ms-2 small"></span></div>
+                                    </div>
+                                </div>
+                             {{else}}
+                                <p class="text-muted">Date de suivi non encore définie.</p>
+                             {{/if}}
+                             <p class="mt-3"><small class="text-muted">Définissez la date de suivi via "Modifier le Dossier Bilan".</small></p>
+                             <hr>
+                             <div class="d-flex justify-content-between align-items-center mb-2">
+                                 <h6>Documents Finaux</h6>
+                                  {{!-- Helper adı güncellendi --}}
+                                 {{#filterDocumentsByPhase beneficiary.beneficiaryDocuments 'Conclusion'}}
+                                      {{!-- filePath URL encode edildi --}}
+                                      <a href="/uploads/documents/{{encodeURI fileName}}" target="_blank" class="btn btn-sm btn-outline-primary d-block mb-1">
+                                         <i class="fas fa-file-alt me-1"></i> {{originalName}} {{#if category}}({{category}}){{/if}}
+                                    </a>
+                                 {{else}}
+                                    <p class="text-muted small ms-2">Aucun document final associé à cette phase.</p>
+                                 {{/filterDocumentsByPhase}}
+                             </div>
+                         </div>
+                    </div>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    {{!-- Alt Kısım: Randevular ve Mesajlar (Ayrı Kartlar) --}}
+    <div class="row g-4 mt-2">
+        <div class="col-md-6">
+            {{> beneficiary_details_appointments}}
+        </div>
+         <div class="col-md-6">
+             {{> beneficiary_details_messages}}
+        </div>
+    </div>
+
+    {{!-- Silme Modalı --}}
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirmer la suppression</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Êtes-vous sûr de vouloir supprimer le bénéficiaire "{{beneficiary.user.firstName}} {{beneficiary.user.lastName}}" ? Cette action est irréversible et supprimera toutes les données associées (rendez-vous, messages, réponses aux questionnaires, documents).
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <form action="/beneficiaries/{{beneficiary.id}}/delete" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- AJAX Editing JavaScript --}}
+{{#addScript}}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const beneficiaryId = '{{beneficiary.id}}';
+
+    document.querySelectorAll('.editable-section').forEach(section => {
+        const fieldName = section.dataset.field;
+        const updateUrl = section.dataset.url;
+        const editBtn = section.querySelector('.edit-btn');
+        const displayArea = section.querySelector('.display-area');
+        const editForm = section.querySelector('.edit-form');
+        const textarea = editForm.querySelector('textarea'); // Genel textarea seçimi
+        const saveBtn = editForm.querySelector('.save-btn');
+        const cancelBtn = editForm.querySelector('.cancel-btn');
+        const feedbackSpan = editForm.querySelector('.feedback');
+
+        if (!editBtn || !displayArea || !editForm || !textarea || !saveBtn || !cancelBtn || !feedbackSpan) {
+            console.warn('Editable section elements not found for:', fieldName);
+            return; // Gerekli elementler yoksa devam etme
+        }
+
+        let originalValue = textarea.value; // İptal durumu için orijinal değeri sakla
+
+        editBtn.addEventListener('click', () => {
+            originalValue = textarea.value; // Düzenlemeye başlarken değeri tekrar al
+            displayArea.style.display = 'none';
+            editForm.style.display = 'block';
+            editBtn.style.display = 'none';
+            feedbackSpan.textContent = '';
+            textarea.focus(); // Textarea'ya odaklan
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            textarea.value = originalValue; // Değişiklikleri geri al
+            displayArea.style.display = 'block';
+            editForm.style.display = 'none';
+            editBtn.style.display = 'block';
+            feedbackSpan.textContent = '';
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            const updatedValue = textarea.value.trim();
+            feedbackSpan.textContent = 'Enregistrement...';
+            feedbackSpan.className = 'feedback ms-2 small text-muted'; 
+            saveBtn.disabled = true;
+            cancelBtn.disabled = true;
+
+            try {
+                const response = await fetch(updateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // TODO: CSRF Token
+                    },
+                    body: JSON.stringify({ [fieldName]: updatedValue })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    feedbackSpan.textContent = result.message || 'Succès!';
+                    feedbackSpan.classList.add('text-success');
+
+                    // Display alanını güncelle (Helper'ları burada kullanamayız, JS ile manuel güncelleme)
+                    updateDisplayArea(displayArea, fieldName, result.updatedValue);
+                    originalValue = result.updatedValue; // Orijinal değeri güncelle
+                    textarea.value = result.updatedValue; // Textarea'yı da güncelle
+
+                    // Formu gizle
+                    setTimeout(() => { 
+                        displayArea.style.display = 'block';
+                        editForm.style.display = 'none';
+                        editBtn.style.display = 'block';
+                        feedbackSpan.textContent = '';
+                    }, 1500); 
+
+                } else {
+                    feedbackSpan.textContent = 'Erreur: ' + (result.message || 'Inconnue');
+                    feedbackSpan.classList.add('text-danger');
+                }
+
+            } catch (error) {
+                console.error('Fetch error for', fieldName, ':', error);
+                feedbackSpan.textContent = 'Erreur de communication.';
+                 feedbackSpan.classList.add('text-danger');
+            } finally {
+                 saveBtn.disabled = false;
+                 cancelBtn.disabled = false;
+            }
+        });
+    });
+
+    // Display alanını güncellemek için yardımcı fonksiyon
+    function updateDisplayArea(displayArea, fieldName, newValue) {
+        const displayContent = displayArea.querySelector('p') || displayArea.querySelector('.skills-container') || displayArea.querySelector('ol');
+        const placeholder = displayArea.querySelector('.text-muted'); // '.skills-placeholder' veya '.actionplan-placeholder' da olabilir
+        
+        if (!displayContent) return;
+        
+        const isEmpty = !newValue || newValue.trim().length === 0;
+        
+        if (placeholder) placeholder.style.display = isEmpty ? 'block' : 'none';
+        
+        if (fieldName === 'identifiedSkills') {
+            const container = displayArea.querySelector('.skills-container') || document.createElement('div');
+            container.className = 'skills-container mt-2';
+            container.innerHTML = ''; // Temizle
+            if (!isEmpty) {
+                newValue.split(',').forEach(skill => {
+                     const trimmedSkill = skill.trim();
+                     if (trimmedSkill) {
+                         const badge = document.createElement('span');
+                         badge.className = 'badge bg-info me-1 mb-1 fs-6';
+                         badge.textContent = trimmedSkill;
+                         container.appendChild(badge);
+                     }
+                 });
+                 // Eğer container yeni oluşturulduysa, displayArea'ya ekle
+                 if (!displayArea.querySelector('.skills-container')) displayArea.appendChild(container);
+             } else {
+                  if (displayArea.querySelector('.skills-container')) displayArea.querySelector('.skills-container').remove(); // Varsa container'ı kaldır
+             }
+        } else if (fieldName === 'actionPlan') {
+             const list = displayArea.querySelector('ol') || document.createElement('ol');
+             list.className = 'list-group list-group-numbered mt-2';
+             list.innerHTML = ''; // Temizle
+              if (!isEmpty) {
+                 newValue.split('\n').forEach(step => {
+                     const trimmedStep = step.trim();
+                     if (trimmedStep) {
+                         const li = document.createElement('li');
+                         li.className = 'list-group-item list-group-item-action';
+                         li.textContent = trimmedStep;
+                         list.appendChild(li);
+                     }
+                 });
+                  if (!displayArea.querySelector('ol')) displayArea.appendChild(list);
+             } else {
+                 if (displayArea.querySelector('ol')) displayArea.querySelector('ol').remove();
+             }
+        } else {
+            // Diğer text/textarea alanları için (nl2br benzeri)
+            const contentP = displayArea.querySelector('p') || document.createElement('p');
+            contentP.className = 'mb-0';
+            if (!isEmpty) {
+                 contentP.innerHTML = newValue.replace(/\n/g, '<br>');
+             } else {
+                 contentP.innerHTML = '<span class="text-muted">Non renseigné</span>'; // Veya uygun placeholder
+             }
+             if (!displayArea.querySelector('p')) displayArea.appendChild(contentP);
+        }
+    }
+});
+</script>
+{{/addScript}}

@@ -1,0 +1,109 @@
+{{!-- Yararlanıcı Ekleme Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Ajouter un nouveau bénéficiaire</h1>
+    {{> messages}}
+    <form action="/beneficiaries/add" method="POST">
+        {{!-- Kişisel Bilgiler ve Profil --}}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header"><h5 class="mb-0">Informations Personnelles & Profil</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="firstName" class="form-label">Prénom *</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" value="{{beneficiaryData.firstName}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="lastName" class="form-label">Nom *</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" value="{{beneficiaryData.lastName}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{beneficiaryData.email}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Téléphone</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{beneficiaryData.phone}}">
+                    </div>
+                     <div class="col-12">
+                        <label for="education" class="form-label">Formation / Niveau d'études</label>
+                        <textarea class="form-control" id="education" name="education" rows="3">{{beneficiaryData.education}}</textarea>
+                    </div>
+                     <div class="col-12">
+                        <label for="experience" class="form-label">Expérience professionnelle significative</label>
+                        <textarea class="form-control" id="experience" name="experience" rows="4">{{beneficiaryData.experience}}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{!-- Bilan Bilgileri ve Takibi --}}
+         <div class="card mb-4 shadow-sm">
+            <div class="card-header"><h5 class="mb-0">Informations & Suivi Bilan</h5></div>
+            <div class="card-body">
+                 <div class="row g-3">
+                     <div class="col-md-6">
+                        <label for="status" class="form-label">Statut Bilan</label>
+                        <select class="form-select" id="status" name="status">
+                            {{!-- Options --}}
+                             <option value="initial" {{#ifCond beneficiaryData.status '===' 'initial'}}selected{{/ifCond}}>Initial</option>
+                            <option value="active" {{#ifCond beneficiaryData.status '===' 'active'}}selected{{/ifCond}}>Actif</option>
+                            <option value="completed" {{#ifCond beneficiaryData.status '===' 'completed'}}selected{{/ifCond}}>Terminé</option>
+                            <option value="on_hold" {{#ifCond beneficiaryData.status '===' 'on_hold'}}selected{{/ifCond}}>En attente</option>
+                        </select>
+                    </div>
+                     <div class="col-md-6">
+                        <label for="currentPhase" class="form-label">Phase Actuelle</label>
+                        <select class="form-select" id="currentPhase" name="currentPhase">
+                             {{!-- Options --}}
+                             <option value="preliminary" {{#ifCond beneficiaryData.currentPhase '===' 'preliminary'}}selected{{/ifCond}}>Phase préliminaire</option>
+                            <option value="investigation" {{#ifCond beneficiaryData.currentPhase '===' 'investigation'}}selected{{/ifCond}}>Phase d'investigation</option>
+                            <option value="conclusion" {{#ifCond beneficiaryData.currentPhase '===' 'conclusion'}}selected{{/ifCond}}>Phase de conclusion</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="bilanStartDate" class="form-label">Date de début du Bilan</label>
+                        <input type="date" class="form-control" id="bilanStartDate" name="bilanStartDate" value="{{formatDateForInput beneficiaryData.bilanStartDate}}">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="bilanEndDate" class="form-label">Date de fin du Bilan</label>
+                        <input type="date" class="form-control" id="bilanEndDate" name="bilanEndDate" value="{{formatDateForInput beneficiaryData.bilanEndDate}}">
+                    </div>
+                     <div class="col-12">
+                        <label for="notes" class="form-label">Notes générales (Consultant)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{beneficiaryData.notes}}</textarea>
+                    </div>
+                 </div>
+            </div>
+        </div>
+        
+        {{!-- Bilan İçeriği --}}
+        <div class="card mb-4 shadow-sm">
+             <div class="card-header"><h5 class="mb-0">Contenu du Bilan</h5></div>
+             <div class="card-body">
+                  <div class="mb-3">
+                    <label for="identifiedSkills" class="form-label">Compétences identifiées</label>
+                    <textarea class="form-control" id="identifiedSkills" name="identifiedSkills" rows="4">{{beneficiaryData.identifiedSkills}}</textarea>
+                     <small class="form-text text-muted">Séparez les compétences par des virgules ou écrivez une liste.</small>
+                </div>
+                 <div class="mb-3">
+                    <label for="careerObjectives" class="form-label">Projet(s) professionnel(s) envisagé(s)</label>
+                    <textarea class="form-control" id="careerObjectives" name="careerObjectives" rows="4">{{beneficiaryData.careerObjectives}}</textarea>
+                </div>
+                 <div class="mb-3">
+                    <label for="actionPlan" class="form-label">Plan d'action post-bilan</label>
+                    <textarea class="form-control" id="actionPlan" name="actionPlan" rows="4">{{beneficiaryData.actionPlan}}</textarea>
+                </div>
+                 <div class="mb-3">
+                    <label for="synthesis" class="form-label">Synthèse du bilan (résumé)</label>
+                    <textarea class="form-control" id="synthesis" name="synthesis" rows="5">{{beneficiaryData.synthesis}}</textarea>
+                </div>
+                  {{!-- Doküman İlişkilendirme (şimdilik düzenlemede) --}}
+             </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <a href="/beneficiaries" class="btn btn-secondary me-2">Annuler</a>
+            <button type="submit" class="btn btn-primary">Ajouter le bénéficiaire</button>
+        </div>
+    </form>
+</div>

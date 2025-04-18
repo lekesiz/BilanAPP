@@ -1,0 +1,128 @@
+{{!-- Randevu Listeleme Sayfası --}}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Mes Rendez-vous</h1>
+        <a href="/appointments/new" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Planifier un nouveau rendez-vous
+        </a>
+    </div>
+
+    {{!-- Aktif Filtre Göstergesi --}}
+    {{#if activeFilter}}
+        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+            <span>Filtre Actif: 
+                {{#ifCond activeFilter '===' 'upcoming_7days'}}Rendez-vous (7 prochains jours){{/ifCond}}
+                {{!-- Diğer filtreler buraya eklenebilir --}}
+            </span>
+            <a href="/appointments" class="btn-close" aria-label="Supprimer le filtre"></a>
+        </div>
+    {{/if}}
+
+    {{!-- Filtreleme (Sadece danışmanlar için) --}}
+    {{#if isConsultant}}
+        <form method="GET" action="/appointments" class="mb-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label for="beneficiaryFilter" class="form-label">Filtrer par bénéficiaire</label>
+                    <select class="form-select" id="beneficiaryFilter" name="beneficiary">
+                        <option value="">Tous les bénéficiaires</option>
+                        {{#each beneficiaries}}
+                            <option value="{{id}}" {{#ifCond ../selectedBeneficiary '===' id}}selected{{/ifCond}}>
+                                {{user.firstName}} {{user.lastName}}
+                            </option>
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-secondary">Filtrer</button>
+                    <a href="/appointments" class="btn btn-link">Réinitialiser</a>
+                </div>
+            </div>
+        </form>
+    {{/if}}
+
+    <div class="card">
+        <div class="card-body p-0">
+            {{#if appointments.length}}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm mb-0">
+                        <thead>
+                            <tr>
+                                {{#if isConsultant}}
+                                    <th>Bénéficiaire</th>
+                                {{else}}
+                                    <th>Consultant</th>
+                                {{/if}}
+                                <th>Type</th>
+                                <th>Date & Heure</th>
+                                <th>Lieu</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each appointments}}
+                                <tr>
+                                    <td>
+                                        {{#if ../isConsultant}}
+                                            <a href="/beneficiaries/{{beneficiary.id}}">{{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</a>
+                                        {{else}}
+                                            {{consultant.firstName}} {{consultant.lastName}}
+                                        {{/if}}
+                                    </td>
+                                    <td>{{type}}</td>
+                                    <td>{{formatDateTime date}}</td>
+                                    <td>{{location}}</td>
+                                    <td>
+                                        <span class="badge bg-{{#ifCond status '===' 'scheduled'}}primary{{else ifCond status '===' 'completed'}}success{{else ifCond status '===' 'cancelled'}}danger{{else}}secondary{{/ifCond}}">
+                                            {{status}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/appointments/{{id}}/edit" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" title="Supprimer" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteAppointmentModal-{{id}}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{!-- Silme Modalı --}}
+                                <div class="modal fade" id="deleteAppointmentModal-{{id}}" tabindex="-1" aria-labelledby="deleteModalLabel-{{id}}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel-{{id}}">Confirmer la suppression</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Êtes-vous sûr de vouloir supprimer ce rendez-vous du {{formatDateTime date}} ?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <form action="/appointments/{{id}}/delete" method="POST" style="display: inline;">
+                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            {{else}}
+                <div class="text-center p-5 border-top">
+                    <h5 class="text-muted mb-3"><i class="far fa-calendar-times fa-2x mb-3"></i></h5>
+                    <p class="text-muted">Aucun rendez-vous trouvé {{#if activeFilter}}pour ce filtre{{/if}}.</p>
+                     <a href="/appointments/new" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-1"></i> Planifier un nouveau rendez-vous
+                    </a>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</div>

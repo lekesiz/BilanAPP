@@ -1,0 +1,100 @@
+{{!-- Randevu Düzenleme Formu --}}
+<div class="container py-4">
+    <h1 class="mb-4">Modifier le rendez-vous du {{formatDateTime appointment.date}}</h1>
+
+    <form action="/appointments/{{appointment.id}}/edit" method="POST">
+        <div class="card">
+            <div class="card-body">
+                {{#if isConsultant}}
+                    <div class="mb-3">
+                        <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+                        <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+                            {{#each beneficiaries}}
+                                <option value="{{id}}" {{#ifCond ../appointment.beneficiaryId '===' id}}selected{{/ifCond}}>
+                                    {{user.firstName}} {{user.lastName}}
+                                </option>
+                            {{/each}}
+                        </select>
+                    </div>
+                {{else}}
+                    {{!-- Yararlanıcı kendi randevusunu düzenliyor --}}
+                    <p><strong>Pour:</strong> Vous-même</p>
+                    <input type="hidden" name="beneficiaryId" value="{{appointment.beneficiaryId}}">
+                {{/if}}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date" class="form-label">Date *</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{appointmentDate}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="time" class="form-label">Heure *</label>
+                        <input type="time" class="form-control" id="time" name="time" value="{{appointmentTime}}" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="type" class="form-label">Type de rendez-vous *</label>
+                    <select class="form-select" id="type" name="type" required>
+                        <option value="Entretien Préliminaire" {{#ifCond appointment.type '===' 'Entretien Préliminaire'}}selected{{/ifCond}}>Entretien Préliminaire</option>
+                        <option value="Entretien d'Investigation" {{#ifCond appointment.type '===' 'Entretien d\'Investigation'}}selected{{/ifCond}}>Entretien d'Investigation</option> 
+                        <option value="Entretien de Synthèse" {{#ifCond appointment.type '===' 'Entretien de Synthèse'}}selected{{/ifCond}}>Entretien de Synthèse</option> 
+                        <option value="Passation Tests" {{#ifCond appointment.type '===' 'Passation Tests'}}selected{{/ifCond}}>Passation Tests</option> 
+                        <option value="Suivi" {{#ifCond appointment.type '===' 'Suivi'}}selected{{/ifCond}}>Suivi</option> 
+                        <option value="Autre" {{#ifCond appointment.type '===' 'Autre'}}selected{{/ifCond}}>Autre</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description (optionnel)</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{appointment.description}}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="location" class="form-label">Lieu (optionnel)</label>
+                    <input type="text" class="form-control" id="location" name="location" value="{{appointment.location}}" placeholder="Ex: Bureau, Visioconférence (lien)...">
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes (optionnel)</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3">{{appointment.notes}}</textarea>
+                </div>
+
+                <div class="mb-3">
+                     <label for="status" class="form-label">Statut</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="scheduled" {{#ifCond appointment.status '===' 'scheduled'}}selected{{/ifCond}}>Planifié</option>
+                        <option value="completed" {{#ifCond appointment.status '===' 'completed'}}selected{{/ifCond}}>Terminé</option>
+                        <option value="cancelled" {{#ifCond appointment.status '===' 'cancelled'}}selected{{/ifCond}}>Annulé</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/appointments" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Afficher/masquer le champ de lien de visioconférence en fonction de la case à cocher
+    const isOnlineCheckbox = document.getElementById('isOnline');
+    const meetingLinkField = document.getElementById('meetingLink');
+    const locationField = document.getElementById('location');
+    
+    function updateFields() {
+      if (isOnlineCheckbox.checked) {
+        meetingLinkField.parentElement.style.display = 'block';
+        locationField.parentElement.style.display = 'none';
+      } else {
+        meetingLinkField.parentElement.style.display = 'none';
+        locationField.parentElement.style.display = 'block';
+      }
+    }
+    
+    isOnlineCheckbox.addEventListener('change', updateFields);
+    updateFields();
+  });
+</script>

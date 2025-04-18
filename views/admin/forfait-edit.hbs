@@ -1,0 +1,37 @@
+<div class="container py-4">
+    <h1 class="mb-4">Modifier le Forfait : {{forfaitToEdit.name}}</h1>
+
+     {{> messages}}
+
+    <form action="/admin/forfaits/{{forfaitToEdit.name}}/edit" method="POST">
+        <div class="card shadow-sm">
+             <div class="card-header">
+                Détails du Forfait
+             </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Nom du Forfait (Non modifiable)</label>
+                    <input type="text" class="form-control" value="{{forfaitToEdit.name}}" disabled readonly>
+                </div>
+                 <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{forfaitToEdit.description}}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="defaultCredits" class="form-label">Crédits par Défaut *</label>
+                    <input type="number" class="form-control" id="defaultCredits" name="defaultCredits" value="{{forfaitToEdit.defaultCredits}}" min="0" required>
+                    <small class="form-text text-muted">Crédits attribués lors d'un changement vers ce forfait.</small>
+                </div>
+                 <div class="mb-3">
+                    <label for="features" class="form-label">Fonctionnalités (une par ligne)</label>
+                    <textarea class="form-control" id="features" name="features" rows="6">{{forfaitToEdit.features}}</textarea>
+                     <small class="form-text text-muted">Ces fonctionnalités sont affichées sur la page de profil de l'utilisateur.</small>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                 <a href="/admin/forfaits" class="btn btn-secondary">Annuler</a>
+                 <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </div>
+    </form>
+</div> 

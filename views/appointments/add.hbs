@@ -1,0 +1,113 @@
+<h1 class="mb-4">Planifier un rendez-vous</h1>
+
+<div class="card">
+  <div class="card-body">
+    <form action="/appointments/add" method="POST">
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+            <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+              <option value="">Sélectionnez un bénéficiaire</option>
+              {{#each beneficiaries}}
+                <option value="{{id}}" {{#if (eq ../beneficiaryId id)}}selected{{/if}}>{{lastName}} {{firstName}}</option>
+              {{/each}}
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label for="title" class="form-label">Titre du rendez-vous *</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="date" class="form-label">Date *</label>
+            <input type="date" class="form-control" id="date" name="date" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="time" class="form-label">Heure *</label>
+            <input type="time" class="form-control" id="time" name="time" required>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="duration" class="form-label">Durée (minutes) *</label>
+            <input type="number" class="form-control" id="duration" name="duration" value="60" min="15" step="15" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="location" class="form-label">Lieu (si présentiel)</label>
+            <input type="text" class="form-control" id="location" name="location">
+          </div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="isOnline" name="isOnline">
+            <label class="form-check-label" for="isOnline">
+              Rendez-vous en ligne
+            </label>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="meetingLink" class="form-label">Lien de visioconférence</label>
+            <input type="url" class="form-control" id="meetingLink" name="meetingLink">
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label for="notes" class="form-label">Notes</label>
+        <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <a href="/appointments" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">Planifier le rendez-vous</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Définir la date par défaut à aujourd'hui
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = today;
+    
+    // Afficher/masquer le champ de lien de visioconférence en fonction de la case à cocher
+    const isOnlineCheckbox = document.getElementById('isOnline');
+    const meetingLinkField = document.getElementById('meetingLink');
+    const locationField = document.getElementById('location');
+    
+    function updateFields() {
+      if (isOnlineCheckbox.checked) {
+        meetingLinkField.parentElement.style.display = 'block';
+        locationField.parentElement.style.display = 'none';
+      } else {
+        meetingLinkField.parentElement.style.display = 'none';
+        locationField.parentElement.style.display = 'block';
+      }
+    }
+    
+    isOnlineCheckbox.addEventListener('change', updateFields);
+    updateFields();
+  });
+</script>
