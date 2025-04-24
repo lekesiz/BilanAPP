@@ -36,9 +36,7 @@ async function updateBeneficiaryField(req, res, fieldName) {
       if (requestingUser.userType === 'consultant') {
         whereClause.consultantId = requestingUser.id;
       } else {
-        return res
-          .status(403)
-          .json({ success: false, message: 'Accès non autorisé.' });
+        return res.status(403).json({ success: false, message: 'Accès non autorisé.' });
       }
     }
     const beneficiary = await Beneficiary.findOne({ where: whereClause });
@@ -55,7 +53,10 @@ async function updateBeneficiaryField(req, res, fieldName) {
       updatedValue: beneficiary[fieldName],
     });
   } catch (error) {
-    logger.error(`Beneficiary ${fieldName} update error:`, { error: error, beneficiaryId: req.params.id }); // console.error -> logger.error
+    logger.error(`Beneficiary ${fieldName} update error:`, {
+      error: error,
+      beneficiaryId: req.params.id,
+    }); // console.error -> logger.error
     res.status(500).json({
       success: false,
       message: `Erreur serveur lors de la mise à jour du champ (${fieldName}).`,
@@ -135,11 +136,8 @@ exports.listBeneficiaries = async (req, res) => {
       filters: { status: status || '', phase: phase || '' },
     });
   } catch (err) {
-    console.error('Error loading beneficiaries list:', err);
-    req.flash(
-      'error_msg',
-      'Une erreur est survenue lors du chargement des bénéficiaires.',
-    );
+    logger.error('Error loading beneficiaries list:', { error: err });
+    req.flash('error_msg', 'Une erreur est survenue lors du chargement des bénéficiaires.');
     res.redirect('/dashboard');
   }
 };
@@ -157,8 +155,8 @@ exports.addBeneficiary = async (req, res) => {
   // express-validator sonuçlarını al
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.render("beneficiaries/add", {
-      title: "Ajouter un bénéficiaire",
+    return res.render('beneficiaries/add', {
+      title: 'Ajouter un bénéficiaire',
       user: req.user,
       errors: errors.array(), // Hataları gönder
       beneficiaryData: req.body, // Formu tekrar doldurmak için
@@ -189,7 +187,7 @@ exports.addBeneficiary = async (req, res) => {
   try {
     // Forfait kontrolü ve eposta varlığı kontrolü (bunlar hala gerekli)
     const consultantUser = await User.findByPk(consultantId, {
-      include: { model: Forfait, as: "forfait" },
+      include: { model: Forfait, as: 'forfait' },
     });
     const currentBeneficiaryCount = await Beneficiary.count({
       where: { consultantId },
@@ -197,12 +195,12 @@ exports.addBeneficiary = async (req, res) => {
     const maxAllowed = consultantUser?.forfait?.maxBeneficiaries;
     if (maxAllowed !== null && currentBeneficiaryCount >= maxAllowed) {
       req.flash(
-        "error_msg",
+        'error_msg',
         `Limite de ${maxAllowed} bénéficiaires atteinte pour votre forfait (${consultantUser.forfaitType}).`,
       );
       // Hata durumunda formu tekrar render etmek daha iyi olabilir
-      return res.render("beneficiaries/add", {
-        title: "Ajouter un bénéficiaire",
+      return res.render('beneficiaries/add', {
+        title: 'Ajouter un bénéficiaire',
         user: req.user,
         errors: [{ msg: req.flash('error_msg') }],
         beneficiaryData: req.body,
@@ -211,10 +209,10 @@ exports.addBeneficiary = async (req, res) => {
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.render("beneficiaries/add", {
-        title: "Ajouter un bénéficiaire",
+      return res.render('beneficiaries/add', {
+        title: 'Ajouter un bénéficiaire',
         user: req.user,
-        errors: [{ msg: "Cet email est déjà enregistré." }],
+        errors: [{ msg: 'Cet email est déjà enregistré.' }],
         beneficiaryData: req.body,
       });
     }
@@ -222,17 +220,15 @@ exports.addBeneficiary = async (req, res) => {
     // Manuel doğrulama kodları kaldırıldı
 
     // Geri kalan kullanıcı ve faydalanıcı oluşturma mantığı aynı
-    const temporaryPassword = crypto.randomBytes(8).toString("hex");
-    console.log(
-      `Generated temporary password for ${email}: ${temporaryPassword}`,
-    ); 
+    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+    logger.info(`Generated temporary password for ${email}`);
 
     newUser = await User.create({
       email,
       password: temporaryPassword,
       firstName,
       lastName,
-      userType: "beneficiary",
+      userType: 'beneficiary',
     });
 
     await Beneficiary.create({
@@ -253,28 +249,23 @@ exports.addBeneficiary = async (req, res) => {
     });
 
     req.flash(
-      "success_msg",
+      'success_msg',
       `Bénéficiaire ${firstName} ${lastName} ajouté. Mot de passe temporaire: ${temporaryPassword} - Veuillez le communiquer au bénéficiaire et lui demander de le changer.`,
     );
-    res.redirect("/beneficiaries");
-
+    res.redirect('/beneficiaries');
   } catch (err) {
-    console.error("Beneficiary add error:", err);
-    // SequelizeValidationError artık express-validator tarafından yakalanmalı
-    req.flash("error_msg", "Erreur lors de l'ajout du bénéficiaire.");
-    
-    // Rollback işlemi aynı kalabilir
+    logger.error("Beneficiary add error:", { error: err, email: email, consultantId: req.user.id });
     if (newUser?.id) {
       try {
         await User.destroy({ where: { id: newUser.id } });
-        console.log(`Rolled back user creation for ${email}`);
+        logger.info(`Rolled back user creation for ${email}`);
       } catch (destroyError) {
-        console.error("Error rolling back user creation:", destroyError);
+        logger.error("Error rolling back user creation:", { error: destroyError, email: email });
       }
     }
-    // Hata durumunda formu tekrar render et
-    res.render("beneficiaries/add", {
-      title: "Ajouter un bénéficiaire",
+    req.flash('error_msg', "Erreur lors de l'ajout du bénéficiaire.");
+    res.render('beneficiaries/add', {
+      title: 'Ajouter un bénéficiaire',
       user: req.user,
       errors: [{ msg: req.flash('error_msg') }], // Genel hata mesajı
       beneficiaryData: req.body, // Form verilerini koru
@@ -342,7 +333,7 @@ exports.showDetails = async (req, res) => {
       isAdmin: requestingUser.forfaitType === 'Admin',
     });
   } catch (err) {
-    console.error('Beneficiary details error:', err);
+    logger.error('Beneficiary details error:', { error: err });
     req.flash('error_msg', 'Erreur lors du chargement des détails.');
     res.redirect('/beneficiaries');
   }
@@ -398,14 +389,12 @@ exports.showEditForm = async (req, res) => {
       title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
       beneficiary: beneficiary.get({ plain: true }),
       synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
-      actionPlanDocuments: actionPlanDocuments.map((d) =>
-        d.get({ plain: true }),
-      ),
+      actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
       user: req.user,
       isAdmin: requestingUser.forfaitType === 'Admin',
     });
   } catch (err) {
-    console.error('Beneficiary edit form error:', err);
+    logger.error('Beneficiary edit form error:', { error: err, beneficiaryId: req.params.id, userId: req.user.id });
     req.flash('error_msg', 'Erreur lors du chargement du formulaire.');
     res.redirect('/beneficiaries');
   }
@@ -422,45 +411,47 @@ exports.updateBeneficiary = async (req, res) => {
   if (!errors.isEmpty()) {
     // Hata varsa formu tekrar render et
     try {
-        const beneficiary = await Beneficiary.findOne({ 
-            where: { id: beneficiaryId }, 
-            include: { model: User, as: "user" } 
-        });
-        if (!beneficiary) { // Eğer faydalanıcı bulunamazsa (çok olası değil ama kontrol edelim)
-            req.flash('error_msg', 'Bénéficiaire non trouvé.');
-            return res.redirect('/beneficiaries');
-        }
-        // Formu tekrar render etmek için dokümanları al
-        const getDocuments = async (category) => Document.findAll({
-            where: { category, beneficiaryId: beneficiary.id },
-            order: [['createdAt', 'DESC']],
-        });
-        const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
-            getDocuments('Synthèse'),
-            getDocuments("Plan d'Action"),
-        ]);
-
-        return res.render("beneficiaries/edit", {
-            title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
-            beneficiary: beneficiary.get({ plain: true }),
-            synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
-            actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
-            user: req.user,
-            isAdmin: requestingUser.forfaitType === "Admin",
-            errors: errors.array(), // Doğrulama hatalarını gönder
-            beneficiaryData: formData, // Girilen verileri koru (bu satır eklenmeli mi?)
-        });
-    } catch (renderError) {
-        console.error('Error re-rendering beneficiary edit form:', renderError);
-        req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+      const beneficiary = await Beneficiary.findOne({
+        where: { id: beneficiaryId },
+        include: { model: User, as: 'user' },
+      });
+      if (!beneficiary) {
+        // Eğer faydalanıcı bulunamazsa (çok olası değil ama kontrol edelim)
+        req.flash('error_msg', 'Bénéficiaire non trouvé.');
         return res.redirect('/beneficiaries');
+      }
+      // Formu tekrar render etmek için dokümanları al
+      const getDocuments = async (category) =>
+        Document.findAll({
+          where: { category, beneficiaryId: beneficiary.id },
+          order: [['createdAt', 'DESC']],
+        });
+      const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
+        getDocuments('Synthèse'),
+        getDocuments("Plan d'Action"),
+      ]);
+
+      return res.render('beneficiaries/edit', {
+        title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+        beneficiary: beneficiary.get({ plain: true }),
+        synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
+        actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
+        user: req.user,
+        isAdmin: requestingUser.forfaitType === 'Admin',
+        errors: errors.array(), // Doğrulama hatalarını gönder
+        beneficiaryData: formData, // Girilen verileri koru (bu satır eklenmeli mi?)
+      });
+    } catch (renderError) {
+      logger.error('Error re-rendering beneficiary edit form:', { error: renderError });
+      req.flash('error_msg', "Erreur lors de l'affichage du formulaire.");
+      return res.redirect('/beneficiaries');
     }
   }
 
   // Doğrulama başarılı, devam et
   try {
     const whereClause = { id: beneficiaryId };
-    if (requestingUser.forfaitType !== "Admin") {
+    if (requestingUser.forfaitType !== 'Admin') {
       if (requestingUser.userType === 'consultant') whereClause.consultantId = requestingUser.id;
       else {
         req.flash('error_msg', 'Accès non autorisé.');
@@ -470,7 +461,7 @@ exports.updateBeneficiary = async (req, res) => {
 
     const beneficiary = await Beneficiary.findOne({
       where: whereClause,
-      include: { model: User, as: "user" },
+      include: { model: User, as: 'user' },
     });
     if (!beneficiary) {
       req.flash('error_msg', 'Bénéficiaire non trouvé ou accès non autorisé.');
@@ -485,28 +476,29 @@ exports.updateBeneficiary = async (req, res) => {
       if (existingUser && existingUser.id !== beneficiary.userId) {
         // Eposta hatası varsa formu tekrar render et
         try {
-            const getDocuments = async (category) => Document.findAll({
-                where: { category, beneficiaryId: beneficiary.id }, 
-                order: [['createdAt', 'DESC']]
+          const getDocuments = async (category) =>
+            Document.findAll({
+              where: { category, beneficiaryId: beneficiary.id },
+              order: [['createdAt', 'DESC']],
             });
-            const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
-                getDocuments('Synthèse'), 
-                getDocuments("Plan d'Action")
-            ]);
-            return res.render("beneficiaries/edit", {
-                title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
-                beneficiary: beneficiary.get({ plain: true }),
-                synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
-                actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
-                user: req.user,
-                isAdmin: requestingUser.forfaitType === "Admin",
-                errors: [{ msg: "Cet email est déjà utilisé par un autre utilisateur." }], // Özel hata
-                beneficiaryData: formData, // Girilen veriler
-            });
+          const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
+            getDocuments('Synthèse'),
+            getDocuments("Plan d'Action"),
+          ]);
+          return res.render('beneficiaries/edit', {
+            title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+            beneficiary: beneficiary.get({ plain: true }),
+            synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
+            actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
+            user: req.user,
+            isAdmin: requestingUser.forfaitType === 'Admin',
+            errors: [{ msg: 'Cet email est déjà utilisé par un autre utilisateur.' }], // Özel hata
+            beneficiaryData: formData, // Girilen veriler
+          });
         } catch (renderError) {
-             console.error('Error re-rendering beneficiary edit form (email check):', renderError);
-            req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
-            return res.redirect('/beneficiaries');
+          logger.error('Error re-rendering beneficiary edit form (email check):', { error: renderError });
+          req.flash('error_msg', "Erreur lors de l'affichage du formulaire.");
+          return res.redirect('/beneficiaries');
         }
       }
     }
@@ -563,17 +555,14 @@ exports.updateBeneficiary = async (req, res) => {
     });
 
     await beneficiary.update(updateData);
-    console.log(
-      `Beneficiary ${beneficiaryId} updated by User ${requestingUser.id}`,
-    );
+    logger.info(`Beneficiary ${beneficiaryId} updated by User ${requestingUser.id}`);
 
     req.flash('success_msg', 'Informations du bénéficiaire mises à jour.');
     res.redirect(`/beneficiaries/${beneficiary.id}`);
-
   } catch (err) {
-    console.error(
+    logger.error(
       `Beneficiary Edit POST error for ID ${beneficiaryId} by User ${requestingUser.id}:`,
-      err,
+      { error: err }
     );
     req.flash('error_msg', 'Erreur lors de la mise à jour.');
     res.redirect(`/beneficiaries/${beneficiaryId}/edit`);
@@ -608,29 +597,26 @@ exports.deleteBeneficiary = async (req, res) => {
     const userEmail = beneficiary.user?.email || `ID ${userId}`;
 
     // Delete the User record, relying on onDelete: CASCADE for Beneficiary and others
-    console.log(
-      `Attempting delete User ID: ${userId} (${userEmail}) requested by User ID: ${requestingUser.id}`,
+    logger.info(
+      `Attempting delete User ID: ${userId} (${userEmail}) requested by User ID: ${requestingUser.id}`
     );
     const deletedUserCount = await User.destroy({ where: { id: userId } });
 
     if (deletedUserCount > 0) {
-      console.log(`Successfully deleted User ID: ${userId} via cascade.`);
+      logger.info(`Successfully deleted User ID: ${userId} via cascade.`);
       req.flash('success_msg', 'Bénéficiaire supprimé.');
     } else {
       // This shouldn't happen if beneficiary was found
-      console.error(
-        `User delete failed for ID: ${userId}. Beneficiary ID: ${beneficiaryId}.`,
+      logger.error(
+        `User delete failed for ID: ${userId}. Beneficiary ID: ${beneficiaryId}.`
       );
-      req.flash(
-        'error_msg',
-        "Erreur lors de la suppression de l'utilisateur associé.",
-      );
+      req.flash('error_msg', "Erreur lors de la suppression de l'utilisateur associé.");
     }
     res.redirect('/beneficiaries');
   } catch (error) {
-    console.error(
+    logger.error(
       `Beneficiary delete error for ID ${beneficiaryId} by User ${requestingUser.id}:`,
-      error,
+      { error: error }
     );
     req.flash('error_msg', 'Erreur lors de la suppression.');
     res.redirect('/beneficiaries');
@@ -673,17 +659,14 @@ exports.updatePhase = async (req, res) => {
       !beneficiary.prelim_conventionSignee
     ) {
       canProceed = false;
-      errorMessage =
-        "Impossible de passer à l'Investigation: Convention non signée.";
+      errorMessage = "Impossible de passer à l'Investigation: Convention non signée.";
     } else if (
       targetPhase === 'conclusion' &&
       beneficiary.currentPhase === 'investigation' &&
-      (!beneficiary.invest_projetExplore ||
-        !beneficiary.invest_competencesEvaluees)
+      (!beneficiary.invest_projetExplore || !beneficiary.invest_competencesEvaluees)
     ) {
       canProceed = false;
-      errorMessage =
-        'Impossible de passer à la Conclusion: Investigation incomplète.';
+      errorMessage = 'Impossible de passer à la Conclusion: Investigation incomplète.';
     }
     if (!canProceed) {
       req.flash('error_msg', errorMessage);
@@ -695,9 +678,9 @@ exports.updatePhase = async (req, res) => {
     req.flash('success_msg', 'Phase mise à jour.');
     res.redirect(`/beneficiaries/${beneficiaryId}`);
   } catch (error) {
-    console.error(
+    logger.error(
       `Beneficiary phase update error for ID ${beneficiaryId}:`,
-      error,
+      { error: error }
     );
     req.flash('error_msg', 'Erreur lors de la mise à jour de la phase.');
     res.redirect(`/beneficiaries/${beneficiaryId}`);
@@ -705,21 +688,14 @@ exports.updatePhase = async (req, res) => {
 };
 
 // AJAX Field Update Routes (using the helper function)
-exports.updateSkills = (req, res) =>
-  updateBeneficiaryField(req, res, 'identifiedSkills');
+exports.updateSkills = (req, res) => updateBeneficiaryField(req, res, 'identifiedSkills');
 exports.updateNotes = (req, res) => updateBeneficiaryField(req, res, 'notes');
-exports.updateEducation = (req, res) =>
-  updateBeneficiaryField(req, res, 'education');
-exports.updateExperience = (req, res) =>
-  updateBeneficiaryField(req, res, 'experience');
-exports.updateObjectives = (req, res) =>
-  updateBeneficiaryField(req, res, 'careerObjectives');
-exports.updateActionPlan = (req, res) =>
-  updateBeneficiaryField(req, res, 'actionPlan');
-exports.updateSynthesis = (req, res) =>
-  updateBeneficiaryField(req, res, 'synthesis');
-exports.updateFollowUpNotes = (req, res) =>
-  updateBeneficiaryField(req, res, 'followUpNotes');
+exports.updateEducation = (req, res) => updateBeneficiaryField(req, res, 'education');
+exports.updateExperience = (req, res) => updateBeneficiaryField(req, res, 'experience');
+exports.updateObjectives = (req, res) => updateBeneficiaryField(req, res, 'careerObjectives');
+exports.updateActionPlan = (req, res) => updateBeneficiaryField(req, res, 'actionPlan');
+exports.updateSynthesis = (req, res) => updateBeneficiaryField(req, res, 'synthesis');
+exports.updateFollowUpNotes = (req, res) => updateBeneficiaryField(req, res, 'followUpNotes');
 
 // --- AI Functions ---
 const GENERATE_SYNTHESIS_COST = 20;
@@ -736,11 +712,8 @@ exports.generateSynthesis = async (req, res) => {
   // Middleware should have already checked limits and credits
   if (!limitInfo) {
     // Basic check just in case
-    console.error('Limit info missing in generateSynthesis controller');
-    req.flash(
-      'error_msg',
-      'Erreur interne: Information de limite IA manquante.',
-    );
+    logger.error('Limit info missing in generateSynthesis controller');
+    req.flash('error_msg', 'Erreur interne: Information de limite IA manquante.');
     return res.redirect(redirectUrl);
   }
   try {
@@ -784,8 +757,7 @@ exports.generateSynthesis = async (req, res) => {
       ...beneficiary.toJSON(),
       user: beneficiary.user.toJSON(),
     };
-    const generatedText =
-      await aiService.generateSynthesisDraft(beneficiaryDataForAI);
+    const generatedText = await aiService.generateSynthesisDraft(beneficiaryDataForAI);
     await beneficiary.update({ synthesis: generatedText });
 
     // AI Usage and Credit logging should ideally be handled more robustly,
@@ -808,7 +780,7 @@ exports.generateSynthesis = async (req, res) => {
     );
     res.redirect(redirectUrl);
   } catch (error) {
-    console.error('AI Synthesis Generation Error:', error);
+    logger.error('AI Synthesis Generation Error:', { error: error });
     req.flash('error_msg', `Erreur génération IA: ${error.message}`);
     res.redirect(redirectUrl);
   }
@@ -824,11 +796,8 @@ exports.generateActionPlan = async (req, res) => {
 
   if (!limitInfo) {
     // Basic check
-    console.error('Limit info missing in generateActionPlan controller');
-    req.flash(
-      'error_msg',
-      'Erreur interne: Information de limite IA manquante.',
-    );
+    logger.error('Limit info missing in generateActionPlan controller');
+    req.flash('error_msg', 'Erreur interne: Information de limite IA manquante.');
     return res.redirect(redirectUrl);
   }
   try {
@@ -860,8 +829,7 @@ exports.generateActionPlan = async (req, res) => {
       ...beneficiary.toJSON(),
       user: beneficiary.user.toJSON(),
     };
-    const generatedText =
-      await aiService.generateActionPlanDraft(beneficiaryDataForAI);
+    const generatedText = await aiService.generateActionPlanDraft(beneficiaryDataForAI);
     await beneficiary.update({ actionPlan: generatedText });
 
     // AI Usage and Credit logging - potential duplication with middleware?
@@ -882,7 +850,7 @@ exports.generateActionPlan = async (req, res) => {
     );
     res.redirect(redirectUrl);
   } catch (error) {
-    console.error('AI Action Plan Generation Error:', error);
+    logger.error('AI Action Plan Generation Error:', { error: error });
     req.flash('error_msg', `Erreur génération IA: ${error.message}`);
     res.redirect(redirectUrl);
   }

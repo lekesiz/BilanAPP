@@ -10,40 +10,15 @@ router.get('/', ensureAuthenticated, ensureAdmin, (req, res) => {
 });
 
 // Kullanıcı Yönetimi
-router.get(
-  '/users',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.listUsers,
-);
+router.get('/users', ensureAuthenticated, ensureAdmin, adminController.listUsers);
 // GET Kullanıcı Ekleme Formu
-router.get(
-  '/users/add',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.showAddUserForm,
-);
+router.get('/users/add', ensureAuthenticated, ensureAdmin, adminController.showAddUserForm);
 // POST Yeni Kullanıcı Ekleme
-router.post(
-  '/users/add',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.addUser,
-);
+router.post('/users/add', ensureAuthenticated, ensureAdmin, adminController.addUser);
 // GET Kullanıcı Düzenleme Formu
-router.get(
-  '/users/:id/edit',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.showEditUserForm,
-);
+router.get('/users/:id/edit', ensureAuthenticated, ensureAdmin, adminController.showEditUserForm);
 // POST Kullanıcı Güncelleme
-router.post(
-  '/users/:id/edit',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.updateUser,
-);
+router.post('/users/:id/edit', ensureAuthenticated, ensureAdmin, adminController.updateUser);
 
 // POST Kredi Ayarlama
 router.post(
@@ -54,20 +29,10 @@ router.post(
 );
 
 // POST Kullanıcı Silme
-router.post(
-  '/users/:id/delete',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.deleteUser,
-);
+router.post('/users/:id/delete', ensureAuthenticated, ensureAdmin, adminController.deleteUser);
 
 // --- Forfait Yönetimi ---
-router.get(
-  '/forfaits',
-  ensureAuthenticated,
-  ensureAdmin,
-  adminController.listForfaits,
-);
+router.get('/forfaits', ensureAuthenticated, ensureAdmin, adminController.listForfaits);
 router.get(
   '/forfaits/:name/edit',
   ensureAuthenticated,

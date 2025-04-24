@@ -1,10 +1,7 @@
 const express = require('express');
 
 const router = express.Router();
-const {
-  ensureAuthenticated,
-  ensureConsultantOrBeneficiary,
-} = require('../middlewares/auth');
+const { ensureAuthenticated, ensureConsultantOrBeneficiary } = require('../middlewares/auth');
 // Remove requires handled by the controller
 // const { Message, Beneficiary, User } = require('../models');
 // const { Op } = require('sequelize');

@@ -21,6 +21,7 @@ const {
   CreditLog,
 } = require('../models'); // models ana dizinde olduğu için ../
 const { logCreditChange } = require('../services/creditService'); // CreditLog burada oluşturuluyor
+const logger = require('../config/logger'); // Logger import edildi
 require('dotenv').config();
 
 let adminUser; // Global scope'a taşı
@@ -51,7 +52,10 @@ const generateDummyAnswer = (questionType, options) => {
 // Demo mesaj oluşturucu
 const createDemoMessages = async (consultantId, beneficiaryId, count = 3) => {
   const consultant = await User.findByPk(consultantId);
-  const beneficiaryUser = await User.findOne({ where: { '$beneficiaryProfile.id$': beneficiaryId }, include: 'beneficiaryProfile' });
+  const beneficiaryUser = await User.findOne({
+    where: { '$beneficiaryProfile.id$': beneficiaryId },
+    include: 'beneficiaryProfile',
+  });
 
   if (!consultant || !beneficiaryUser) return;
 
@@ -65,8 +69,8 @@ const createDemoMessages = async (consultantId, beneficiaryId, count = 3) => {
         beneficiaryId: beneficiaryId,
         subject: `Message de test ${i + 1}`,
         body: `Contenu du message de test ${i + 1} envoyé par ${fromConsultant ? 'consultant' : 'bénéficiaire'}.`,
-        isRead: Math.random() < 0.5, 
-      })
+        isRead: Math.random() < 0.5,
+      }),
     );
   }
   await Promise.all(messagePromises);
@@ -74,43 +78,43 @@ const createDemoMessages = async (consultantId, beneficiaryId, count = 3) => {
 
 // Demo kredi log oluşturucu
 const createDemoCreditLogs = async () => {
-  console.log('Demo kredi logları oluşturuluyor...');
+  logger.info('Demo kredi logları oluşturuluyor...'); // console.log -> logger.info
   const creditLogPromises = [];
   const allUsers = await User.findAll();
   const demoCreditActions = [
-      { code: 'AI_GENERATE_SYNTHESIS', note: 'AI Sentez' },
-      { code: 'DOCUMENT_UPLOAD', note: 'Belge Yükleme' },
-      { code: 'QUESTIONNAIRE_ASSIGN', note: 'Anket Atama' },
-      { code: 'ADMIN_ADJUSTMENT', note: 'Admin Ayarlama' },
-      { code: 'AI_GENERATE_ACTIONPLAN', note: 'AI Plan' }
+    { code: 'AI_GENERATE_SYNTHESIS', note: 'AI Sentez' },
+    { code: 'DOCUMENT_UPLOAD', note: 'Belge Yükleme' },
+    { code: 'QUESTIONNAIRE_ASSIGN', note: 'Anket Atama' },
+    { code: 'ADMIN_ADJUSTMENT', note: 'Admin Ayarlama' },
+    { code: 'AI_GENERATE_ACTIONPLAN', note: 'AI Plan' },
   ];
-  
+
   allUsers.forEach((user, index) => {
-      if (user.userType !== 'beneficiary') { 
-          const actionIndex = index % demoCreditActions.length; 
-          const action = demoCreditActions[actionIndex]; 
-          const amount = action.code === 'ADMIN_ADJUSTMENT' ? 50 : -(10 + index * 2);
-          creditLogPromises.push(
-               logCreditChange(
-                  user.id,
-                  amount,
-                  action.code, 
-                  action.note, 
-                  action.code === 'ADMIN_ADJUSTMENT' ? adminUser?.id : null, 
-                  null,
-                  null
-              )
-          );
-      }
+    if (user.userType !== 'beneficiary') {
+      const actionIndex = index % demoCreditActions.length;
+      const action = demoCreditActions[actionIndex];
+      const amount = action.code === 'ADMIN_ADJUSTMENT' ? 50 : -(10 + index * 2);
+      creditLogPromises.push(
+        logCreditChange(
+          user.id,
+          amount,
+          action.code,
+          action.note,
+          action.code === 'ADMIN_ADJUSTMENT' ? adminUser?.id : null,
+          null,
+          null,
+        ),
+      );
+    }
   });
   await Promise.all(creditLogPromises);
-  console.log('Demo kredi logları oluşturuldu.');
+  logger.info('Demo kredi logları oluşturuldu.'); // console.log -> logger.info
 };
 
 // --- Ana Fonksiyon ---
 const initDatabase = async (force = false, createDemoData = true) => {
   try {
-    console.log('Starting database initialization...');
+    logger.info('Starting database initialization...'); // console.log -> logger.info
 
     // Skip database creation for SQLite - it's handled by the connection
     // The CREATE DATABASE statement is not valid in SQLite
@@ -121,12 +125,12 @@ const initDatabase = async (force = false, createDemoData = true) => {
     // Create all demo data through the main function
     await createDefaultForfaits();
     if (createDemoData) {
-        await createDemoDataInternal();
+      await createDemoDataInternal();
     }
 
-    console.log('Database initialized successfully!');
+    logger.info('Database initialized successfully!'); // console.log -> logger.info
   } catch (error) {
-    console.error('Database initialization failed:', error);
+    logger.error('Database initialization failed:', { error: error }); // console.error -> logger.error
   }
 };
 
@@ -140,7 +144,7 @@ module.exports = { createDefaultForfaits, initDatabase };
 async function createDefaultForfaits() {
   // ... (Fonksiyon içeriği aynı)
   try {
-    console.log("Varsayılan Forfait'ler oluşturuluyor...");
+    logger.info("Varsayılan Forfait'ler oluşturuluyor..."); // console.log -> logger.info
     await Forfait.bulkCreate(
       [
         {
@@ -181,9 +185,9 @@ async function createDefaultForfaits() {
       ],
       { ignoreDuplicates: true },
     );
-    console.log("Varsayılan Forfait'ler başarıyla oluşturuldu/güncellendi.");
+    logger.info("Varsayılan Forfait'ler başarıyla oluşturuldu/güncellendi."); // console.log -> logger.info
   } catch (error) {
-    console.error('Varsayılan Forfait oluşturulurken hata:', error);
+    logger.error('Varsayılan Forfait oluşturulurken hata:', { error: error }); // console.error -> logger.error
     throw error;
   }
 }
@@ -191,7 +195,7 @@ async function createDefaultForfaits() {
 // Demo veri oluşturma fonksiyonu
 async function createDemoDataInternal() {
   try {
-    console.log('Demo verileri oluşturuluyor...');
+    logger.info('Demo verileri oluşturuluyor...'); // console.log -> logger.info
 
     // --- Danışmanlar Oluştur ---
     const consultant = await User.create({
@@ -203,7 +207,7 @@ async function createDemoDataInternal() {
       forfaitType: 'Premium',
       credits: 120,
     });
-    console.log('Danışman oluşturuldu:', consultant.email);
+    logger.info('Danışman oluşturuldu:', consultant.email); // console.log -> logger.info
     const consultantId = consultant.id;
 
     const consultant2 = await User.create({
@@ -215,7 +219,7 @@ async function createDemoDataInternal() {
       forfaitType: 'Standard',
       credits: 45,
     });
-    console.log('İkinci danışman oluşturuldu:', consultant2.email);
+    logger.info('İkinci danışman oluşturuldu:', consultant2.email); // console.log -> logger.info
     const consultant2Id = consultant2.id;
 
     // --- ADMIN Kullanıcısı Oluştur --- (Global değişkene ata)
@@ -228,18 +232,12 @@ async function createDemoDataInternal() {
       forfaitType: 'Admin',
       credits: 999,
     });
-    console.log('Admin kullanıcısı oluşturuldu:', adminUser.email);
+    logger.info('Admin kullanıcısı oluşturuldu:', adminUser.email); // console.log -> logger.info
 
     // --- Faydalanıcılar ve Kullanıcı Hesapları Oluştur ---
+    logger.info('Faydalanıcılar oluşturuluyor...'); // Yeni log
     const beneficiariesData = [];
-    const statuses = [
-      'initial',
-      'active',
-      'active',
-      'active',
-      'on_hold',
-      'completed',
-    ];
+    const statuses = ['initial', 'active', 'active', 'active', 'on_hold', 'completed'];
     const phases = [
       'preliminary',
       'investigation',
@@ -279,9 +277,7 @@ async function createDemoDataInternal() {
     for (let i = 1; i <= 20; i++) {
       const status = statuses[i % statuses.length];
       const phase =
-        status === 'completed' || status === 'initial' ?
-          'preliminary' :
-          phases[i % phases.length];
+        status === 'completed' || status === 'initial' ? 'preliminary' : phases[i % phases.length];
       const userEmail = `beneficiary${i}@test.com`;
 
       // Zengin isimlerin kullanımı
@@ -317,8 +313,7 @@ async function createDemoDataInternal() {
 
       // İki danışman arasında faydalanıcıları dağıt
       const assignedConsultantId = i % 3 === 0 ? consultant2Id : consultantId;
-      const assignedConsultantName =
-        i % 3 === 0 ? 'Marie Laurent' : 'Jean Dupont';
+      const assignedConsultantName = i % 3 === 0 ? 'Marie Laurent' : 'Jean Dupont';
 
       const beneficiaryUser = await User.create({
         email: userEmail,
@@ -358,12 +353,11 @@ Informations complémentaires:
         dateOfBirth: new Date(1970 + (i % 30), i % 12, 1 + (i % 28)),
       });
       beneficiariesData.push(beneficiary);
-      console.log(
-        `Faydalanıcı ${i} (${userEmail} - ${firstName} ${lastName}) oluşturuldu.`,
-      );
+      logger.info(`Faydalanıcı ${i} (${userEmail} - ${firstName} ${lastName}) oluşturuldu.`); // console.log -> logger.info
     }
 
     // --- Randevular Oluştur ---
+    logger.info('Demo randevular oluşturuluyor...'); // console.log -> logger.info
     const appointmentTypesEnum = [
       'Entretien Préliminaire',
       "Entretien d'Investigation",
@@ -382,12 +376,7 @@ Informations complémentaires:
     ];
 
     const today = new Date();
-    const appointmentStatuses = [
-      'scheduled',
-      'completed',
-      'cancelled',
-      'rescheduled',
-    ];
+    const appointmentStatuses = ['scheduled', 'completed', 'cancelled', 'rescheduled'];
     const appointmentNotes = [
       'Le bénéficiaire a exprimé ses attentes et ses craintes concernant sa reconversion professionnelle.',
       'Nous avons passé en revue le parcours professionnel et identifié les compétences transférables.',
@@ -397,28 +386,28 @@ Informations complémentaires:
       "Élaboration conjointe du plan d'action pour les prochaines étapes.",
     ];
 
+    const appointmentPromises = [];
     for (let i = 0; i < beneficiariesData.length; i++) {
       const beneficiary = beneficiariesData[i];
 
       // Geçmiş randevular (1-3 adet)
       const pastAppointmentsCount = 1 + (i % 3);
       for (let j = 0; j < pastAppointmentsCount; j++) {
-        const pastAppointmentType =
-          appointmentTypesEnum[(i + j) % appointmentTypesEnum.length];
-        await Appointment.create({
-          title: `${pastAppointmentType} - ${beneficiary.User?.firstName || `Bénéficiaire ${i + 1}`}`,
-          date: new Date(
-            today.getTime() - (i + j + 1) * 3 * 24 * 60 * 60 * 1000,
-          ),
-          type: pastAppointmentType,
-          duration: 60 + j * 30,
-          status: 'completed',
-          consultantId: beneficiary.consultantId,
-          beneficiaryId: beneficiary.id,
-          notes: appointmentNotes[j % appointmentNotes.length],
-          location: appointmentLocations[j % appointmentLocations.length],
-          reminderSent: true,
-        });
+        const pastAppointmentType = appointmentTypesEnum[(i + j) % appointmentTypesEnum.length];
+        appointmentPromises.push(
+          Appointment.create({
+            title: `${pastAppointmentType} - ${beneficiary.User?.firstName || `Bénéficiaire ${i + 1}`}`,
+            date: new Date(today.getTime() - (i + j + 1) * 3 * 24 * 60 * 60 * 1000),
+            type: pastAppointmentType,
+            duration: 60 + j * 30,
+            status: 'completed',
+            consultantId: beneficiary.consultantId,
+            beneficiaryId: beneficiary.id,
+            notes: appointmentNotes[j % appointmentNotes.length],
+            location: appointmentLocations[j % appointmentLocations.length],
+            reminderSent: true,
+          })
+        );
       }
 
       // Gelecek randevular (duruma göre 0-2 adet)
@@ -428,33 +417,31 @@ Informations complémentaires:
           const futureAppointmentType =
             appointmentTypesEnum[(i + j + 1) % appointmentTypesEnum.length];
           const futureStatus =
-            j === 0 ?
-              'scheduled' :
-              appointmentStatuses[j % appointmentStatuses.length];
-          await Appointment.create({
-            title: `${futureAppointmentType} - ${beneficiary.User?.firstName || `Bénéficiaire ${i + 1}`}`,
-            date: new Date(
-              today.getTime() + (i + j + 1) * 2 * 24 * 60 * 60 * 1000,
-            ),
-            type: futureAppointmentType,
-            duration: 90,
-            status: futureStatus,
-            consultantId: beneficiary.consultantId,
-            beneficiaryId: beneficiary.id,
-            location:
-              appointmentLocations[(j + 3) % appointmentLocations.length],
-            reminderSent: false,
-          });
+            j === 0 ? 'scheduled' : appointmentStatuses[j % appointmentStatuses.length];
+          appointmentPromises.push(
+            Appointment.create({
+              title: `${futureAppointmentType} - ${beneficiary.User?.firstName || `Bénéficiaire ${i + 1}`}`,
+              date: new Date(today.getTime() + (i + j + 1) * 2 * 24 * 60 * 60 * 1000),
+              type: futureAppointmentType,
+              duration: 90,
+              status: futureStatus,
+              consultantId: beneficiary.consultantId,
+              beneficiaryId: beneficiary.id,
+              location: appointmentLocations[(j + 3) % appointmentLocations.length],
+              reminderSent: false,
+            })
+          );
         }
       }
     }
-    console.log('Demo randevular oluşturuldu.');
+    await Promise.all(appointmentPromises);
+    logger.info('Demo randevular oluşturuldu.'); // console.log -> logger.info
 
     // --- Demo Mesajlar Oluştur ---
     await createDemoMessages(consultantId, beneficiariesData[0].id);
 
     // --- Demo Anketler ve Sorular Oluştur ---
-    console.log('Demo anketler ve sorular oluşturuluyor...');
+    logger.info('Demo anketler ve sorular oluşturuluyor...'); // console.log -> logger.info
 
     const questionnairePromises = [];
     const questionTypes = ['interests', 'skills', 'personality', 'values'];
@@ -484,13 +471,7 @@ Informations complémentaires:
           {
             text: 'Notez votre intérêt pour les domaines suivants (1-5)',
             type: 'scale',
-            options: JSON.stringify([
-              'Technologie',
-              'Santé',
-              'Éducation',
-              'Commerce',
-              'Arts',
-            ]),
+            options: JSON.stringify(['Technologie', 'Santé', 'Éducation', 'Commerce', 'Arts']),
             order: 4,
           },
         ],
@@ -534,8 +515,7 @@ Informations complémentaires:
       },
       {
         title: 'Questionnaire sur les Valeurs Professionnelles',
-        description:
-          'Identifiez les valeurs qui vous animent dans votre vie professionnelle.',
+        description: 'Identifiez les valeurs qui vous animent dans votre vie professionnelle.',
         type: 'values',
         questions: [
           {
@@ -581,9 +561,7 @@ Informations complémentaires:
         const templateIndex = (i + j) % questionnaireTemplates.length;
         const template = questionnaireTemplates[templateIndex];
         const status = statuses[i % statuses.length];
-        const dueDate = new Date(
-          Date.now() + ((i % 14) + 1) * 24 * 60 * 60 * 1000,
-        );
+        const dueDate = new Date(Date.now() + ((i % 14) + 1) * 24 * 60 * 60 * 1000);
 
         const questionnaire = await Questionnaire.create({
           title: template.title,
@@ -594,9 +572,9 @@ Informations complémentaires:
           beneficiaryId: beneficiary.id,
           dueDate,
           completedDate:
-            status === 'completed' ?
-              new Date(Date.now() - ((i % 7) + 1) * 24 * 60 * 60 * 1000) :
-              null,
+            status === 'completed'
+              ? new Date(Date.now() - ((i % 7) + 1) * 24 * 60 * 60 * 1000)
+              : null,
         });
 
         // Anket sorularını oluştur
@@ -608,20 +586,17 @@ Informations complémentaires:
             options: questionTemplate.options || null,
             order: questionTemplate.order,
             answer:
-              status === 'completed' ?
-                generateDummyAnswer(
-                  questionTemplate.type,
-                  questionTemplate.options,
-                ) :
-                null,
+              status === 'completed'
+                ? generateDummyAnswer(questionTemplate.type, questionTemplate.options)
+                : null,
           });
         }
       }
     }
-    console.log('Demo anketler ve sorular oluşturuldu.');
+    logger.info('Demo anketler ve sorular oluşturuldu.'); // console.log -> logger.info
 
     // --- Demo Belgeler Oluştur ---
-    console.log('Demo belgeler oluşturuluyor...');
+    logger.info('Demo belgeler oluşturuluyor...'); // console.log -> logger.info
 
     const documentCategories = [
       'CV',
@@ -639,8 +614,7 @@ Informations complémentaires:
       const documentCount = 1 + (i % 3); // 1-3 belge
 
       for (let j = 0; j < documentCount; j++) {
-        const category =
-          documentCategories[(i + j) % documentCategories.length];
+        const category = documentCategories[(i + j) % documentCategories.length];
         const fileType = documentTypes[(i + j) % documentTypes.length];
         const dateSuffix = Date.now() + i * 1000 + j;
 
@@ -658,17 +632,15 @@ Informations complémentaires:
           uploadedBy: beneficiary.consultantId,
           beneficiaryId: beneficiary.id,
           description: `Document ${category.toLowerCase()} pour ${beneficiary.User?.firstName || 'le bénéficiaire'} ${beneficiary.User?.lastName || i + 1}.`,
-          uploadDate: new Date(
-            Date.now() - ((i % 30) + 1) * 24 * 60 * 60 * 1000,
-          ),
+          uploadDate: new Date(Date.now() - ((i % 30) + 1) * 24 * 60 * 60 * 1000),
           isPublic: j === 0,
         });
       }
     }
-    console.log('Demo belgeler oluşturuldu.');
+    logger.info('Demo belgeler oluşturuldu.'); // console.log -> logger.info
 
     // --- AI Analiz Sonuçları Oluştur ---
-    console.log('Demo AI analiz sonuçları oluşturuluyor...');
+    logger.info('Demo AI analiz sonuçları oluşturuluyor...'); // console.log -> logger.info
 
     const aiAnalysisTypes = [
       'synthesis',
@@ -683,12 +655,8 @@ Informations complémentaires:
         type: 'synthesis',
         input: {
           beneficiaryId: 1,
-          questionnaires: [
-            { id: 1, title: "Questionnaire d'Intérêts Professionnels" },
-          ],
-          appointments: [
-            { id: 1, date: '2023-03-15', notes: 'Entretien préliminaire...' },
-          ],
+          questionnaires: [{ id: 1, title: "Questionnaire d'Intérêts Professionnels" }],
+          appointments: [{ id: 1, date: '2023-03-15', notes: 'Entretien préliminaire...' }],
         },
         results: {
           summary:
@@ -700,16 +668,14 @@ Informations complémentaires:
         input: {
           beneficiaryId: 2,
           questionnaires: [{ id: 2, title: 'Auto-évaluation des Compétences' }],
-          objectives:
-            "Reconversion professionnelle dans le secteur de l'informatique",
+          objectives: "Reconversion professionnelle dans le secteur de l'informatique",
         },
         results: {
           title: "Plan d'action pour reconversion en développement web",
           steps: [
             {
               title: 'Formation initiale',
-              description:
-                'Suivre une formation intensive en développement web (3 mois)',
+              description: 'Suivre une formation intensive en développement web (3 mois)',
               timeframe: 'Court terme (1-3 mois)',
               resources: 'École 42, OpenClassrooms, Bootcamp',
             },
@@ -722,8 +688,7 @@ Informations complémentaires:
             },
             {
               title: 'Stage ou alternance',
-              description:
-                'Rechercher une expérience professionnelle dans une entreprise tech',
+              description: 'Rechercher une expérience professionnelle dans une entreprise tech',
               timeframe: 'Moyen terme (6-9 mois)',
               resources: 'LinkedIn, Indeed, réseaux professionnels',
             },
@@ -800,32 +765,18 @@ Informations complémentaires:
               match: 85,
               description:
                 'Combiner compétences techniques et pédagogiques pour former des professionnels aux outils numériques',
-              requiredSkills: [
-                'Pédagogie',
-                'Expertise technique',
-                'Communication',
-              ],
+              requiredSkills: ['Pédagogie', 'Expertise technique', 'Communication'],
               growthPotential: 'Élevé, marché en expansion',
-              nextSteps: [
-                'Certification pédagogique',
-                'Spécialisation technique',
-              ],
+              nextSteps: ['Certification pédagogique', 'Spécialisation technique'],
             },
             {
               title: 'Chef de projet e-learning',
               match: 78,
               description:
                 'Développer des programmes de formation en ligne, gérer leur déploiement',
-              requiredSkills: [
-                'Gestion de projet',
-                'Connaissance LMS',
-                'Ingénierie pédagogique',
-              ],
+              requiredSkills: ['Gestion de projet', 'Connaissance LMS', 'Ingénierie pédagogique'],
               growthPotential: 'Moyen à élevé',
-              nextSteps: [
-                'Formation en ingénierie pédagogique',
-                "Maîtrise d'outils auteurs",
-              ],
+              nextSteps: ['Formation en ingénierie pédagogique', "Maîtrise d'outils auteurs"],
             },
           ],
         },
@@ -848,10 +799,7 @@ Informations complémentaires:
       const inputData = { ...template.input, beneficiaryId: beneficiary.id };
 
       // Eğer competency_analysis ise, faydalanıcının gerçek bilgilerini kullan
-      if (
-        analysisType === 'competency_analysis' &&
-        beneficiary.currentPosition
-      ) {
+      if (analysisType === 'competency_analysis' && beneficiary.currentPosition) {
         inputData.profile = {
           currentPosition: beneficiary.currentPosition,
           experience: `${beneficiary.yearsOfExperience || 5} ans`,
@@ -869,29 +817,34 @@ Informations complémentaires:
         creditCost: 5 + (i % 5),
       });
     }
-    console.log('Demo AI analiz sonuçları oluşturuldu.');
+    logger.info('Demo AI analiz sonuçları oluşturuldu.'); // console.log -> logger.info
 
     // --- Kredi Logları Oluştur ---
     await createDemoCreditLogs();
 
-    console.log('-----------------------------------------');
-    console.log('Demo Veri Oluşturma Tamamlandı!');
-    console.log('Danışman Girişi: consultant@test.com / consultant123');
-    console.log('İkinci Danışman: consultant2@test.com / consultant123');
-    console.log('Admin Girişi: admin@test.com / admin123');
-    console.log(
-      'Faydalanıcı Girişleri: beneficiary1@test.com / beneficiary1 ...',
-    );
-    console.log('-----------------------------------------');
+    logger.info('-----------------------------------------'); // console.log -> logger.info
+    logger.info('Demo Veri Oluşturma Tamamlandı!'); // console.log -> logger.info
+    logger.info(`Danışman Girişi: consultant@test.com / consultant123`); // console.log -> logger.info
+    logger.info(`İkinci Danışman: consultant2@test.com / consultant123`); // console.log -> logger.info
+    logger.info(`Admin Girişi: admin@test.com / admin123`); // console.log -> logger.info
+    logger.info('Faydalanıcı Girişleri: beneficiary1@test.com / beneficiary1 ...'); // console.log -> logger.info
+    logger.info('-----------------------------------------'); // console.log -> logger.info
 
     // Tamamlanmış anketlerin durumunu güncelle (questionnaireStatuses kullanımı kaldırıldı)
-    await Questionnaire.update({ status: 'completed' }, { 
-        where: { 
-            id: { [Op.in]: questionnaires.filter(q => q.category === 'skills' || q.category === 'interests').map(q => q.id) }, 
-        }
-    });
+    await Questionnaire.update(
+      { status: 'completed' },
+      {
+        where: {
+          id: {
+            [Op.in]: questionnaires
+              .filter((q) => q.category === 'skills' || q.category === 'interests')
+              .map((q) => q.id),
+          },
+        },
+      },
+    );
   } catch (error) {
-    console.error('Demo veri oluşturulurken hata:', error);
+    logger.error('Demo veri oluşturulurken hata:', { error: error }); // console.error -> logger.error
     throw error;
   }
 }

@@ -10,10 +10,7 @@
  */
 exports.getMockCareerOpportunities = async (userProfile) => {
   // Extract profile data
-  const {
-    skills, educationLevel, yearsOfExperience,
-  } =
-    userProfile;
+  const { skills, educationLevel, yearsOfExperience } = userProfile;
 
   // Base set of opportunities
   const opportunities = [
@@ -35,8 +32,7 @@ exports.getMockCareerOpportunities = async (userProfile) => {
       ],
       training:
         'Master en développement durable, environnement ou RSE + formations certifiantes (ISO 14001, Bilan Carbone®)',
-      salary:
-        "45 000€ - 70 000€ selon l'expérience et la taille de l'entreprise",
+      salary: "45 000€ - 70 000€ selon l'expérience et la taille de l'entreprise",
       advantages: [
         "Métier porteur de sens et d'impact positif",
         'Diversité des missions et des interlocuteurs',
@@ -141,8 +137,7 @@ exports.getMockCareerOpportunities = async (userProfile) => {
       ],
       training:
         "Formation initiale dans le domaine d'expertise + certification de formateur (CCP, RNCP) + certification d'outils numériques",
-      salary:
-        "35 000€ - 55 000€ selon le statut (salarié/indépendant) et l'expertise",
+      salary: "35 000€ - 55 000€ selon le statut (salarié/indépendant) et l'expertise",
       advantages: [
         "Flexibilité dans l'organisation du travail",
         "Satisfaction d'accompagner la progression des apprenants",
@@ -177,8 +172,7 @@ exports.getMockCareerOpportunities = async (userProfile) => {
       ],
       training:
         'Formation supérieure en marketing, commerce ou communication + certifications spécialisées (Google Analytics, Inbound Marketing, etc.)',
-      salary:
-        "40 000€ - 70 000€ selon l'expérience et la taille de l'entreprise",
+      salary: "40 000€ - 70 000€ selon l'expérience et la taille de l'entreprise",
       advantages: [
         'Secteur dynamique en constante évolution',
         'Missions variées entre stratégie et opérationnel',
@@ -205,25 +199,16 @@ exports.getMockCareerOpportunities = async (userProfile) => {
         let adjustedMatch = opportunity.matchPercentage;
 
         // Adjust match based on education level
-        const educationMatch = calculateEducationMatch(
-          educationLevel,
-          opportunity.training,
-        );
-        adjustedMatch *= (0.8 + educationMatch * 0.2);
+        const educationMatch = calculateEducationMatch(educationLevel, opportunity.training);
+        adjustedMatch *= 0.8 + educationMatch * 0.2;
 
         // Adjust match based on experience
-        const expMatch = calculateExperienceMatch(
-          yearsOfExperience,
-          opportunity.careerPath,
-        );
-        adjustedMatch *= (0.9 + expMatch * 0.1);
+        const expMatch = calculateExperienceMatch(yearsOfExperience, opportunity.careerPath);
+        adjustedMatch *= 0.9 + expMatch * 0.1;
 
         // Adjust match based on skills overlap
-        const skillsMatch = calculateSkillsMatch(
-          skills,
-          opportunity.requiredSkills,
-        );
-        adjustedMatch *= (0.7 + skillsMatch * 0.3);
+        const skillsMatch = calculateSkillsMatch(skills, opportunity.requiredSkills);
+        adjustedMatch *= 0.7 + skillsMatch * 0.3;
 
         // Ensure match is between 65 and 98
         adjustedMatch = Math.max(65, Math.min(98, Math.round(adjustedMatch)));
@@ -246,7 +231,13 @@ function calculateEducationMatch(userEducation, requiredEducation) {
   if (!userEducation) return 0.2; // Penalize if user has no education specified
 
   const levels = {
-    Bac: 1, 'Bac+2': 2, 'Bac+3': 3, Licence: 3, 'Bac+4': 4, 'Bac+5': 5, Master: 5,
+    Bac: 1,
+    'Bac+2': 2,
+    'Bac+3': 3,
+    Licence: 3,
+    'Bac+4': 4,
+    'Bac+5': 5,
+    Master: 5,
   };
   const userLevel = levels[userEducation] || 0;
   const requiredLevel = levels[requiredEducation] || 0;
@@ -269,10 +260,10 @@ function calculateSkillsMatch(userSkills, requiredSkills) {
   if (!requiredSkills || requiredSkills.length === 0) return 1;
   if (!userSkills || userSkills.length === 0) return 0.1;
 
-  const requiredSkillsArray = requiredSkills.map(s => s.toLowerCase());
-  const userSkillsLower = userSkills.map(s => s.toLowerCase());
+  const requiredSkillsArray = requiredSkills.map((s) => s.toLowerCase());
+  const userSkillsLower = userSkills.map((s) => s.toLowerCase());
 
-  const matchCount = requiredSkillsArray.filter(skill => userSkillsLower.includes(skill)).length;
+  const matchCount = requiredSkillsArray.filter((skill) => userSkillsLower.includes(skill)).length;
   return matchCount / requiredSkillsArray.length;
 }
 
@@ -302,7 +293,7 @@ exports.findMatchingCareers = (userSkills, userExperienceYears) => {
  * @returns {object|null} - Career details or null if not found.
  */
 exports.getCareerDetails = (careerTitle) => {
-  return careerDatabase.find(c => c.title.toLowerCase() === careerTitle.toLowerCase()) || null;
+  return careerDatabase.find((c) => c.title.toLowerCase() === careerTitle.toLowerCase()) || null;
 };
 
 /**
@@ -317,9 +308,15 @@ exports.calculateCareerMatchScore = (userProfile, career) => {
   const educationWeight = 0.2;
 
   const skillsMatch = calculateSkillsMatch(userProfile.skills, career.requiredSkills);
-  const experienceMatch = calculateExperienceMatch(userProfile.yearsOfExperience, career.requiredExperience);
+  const experienceMatch = calculateExperienceMatch(
+    userProfile.yearsOfExperience,
+    career.requiredExperience,
+  );
   const educationMatch = calculateEducationMatch(userProfile.educationLevel, career.education);
 
-  const weightedScore = (skillsMatch * skillsWeight) + (experienceMatch * experienceWeight) + (educationMatch * educationWeight);
+  const weightedScore =
+    skillsMatch * skillsWeight +
+    experienceMatch * experienceWeight +
+    educationMatch * educationWeight;
   return Math.round(weightedScore * 100);
 };

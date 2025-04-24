@@ -15,19 +15,13 @@ const {
 } = require('../models');
 const config = require('../config/constants');
 const { updateUserCredits, deductCredits } = require('../utils/credits');
-const {
-  ensureConsultant,
-  ensureBeneficiaryAccess,
-} = require('../middlewares/auth');
+const { ensureConsultant, ensureBeneficiaryAccess } = require('../middlewares/auth');
 const logger = require('../config/logger');
 const aiService = require('../services/aiService');
 const { getMockCareerOpportunities } = require('../utils/careerData');
 const { logActivity, getRecentActivitiesFor } = require('../utils/activity');
 const creditService = require('../services/creditService');
-const {
-  generateCareerExploration,
-  analyzeCompetencies,
-} = require('../services/aiService');
+const { generateCareerExploration, analyzeCompetencies } = require('../services/aiService');
 const { getOpenAIClient } = require('../services/openai');
 
 // Credit cost for this AI feature
@@ -61,10 +55,7 @@ exports.showForm = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in showForm:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement du formulaire',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement du formulaire');
     res.redirect('/dashboard');
   }
 };
@@ -103,10 +94,7 @@ exports.processForm = async (req, res) => {
       }
 
       // Check if the user has enough credits
-      const hasEnoughCredits = await deductCredits(
-        req.user.id,
-        CAREER_EXPLORATION_COST,
-      );
+      const hasEnoughCredits = await deductCredits(req.user.id, CAREER_EXPLORATION_COST);
       if (!hasEnoughCredits) {
         req.flash('error', 'Crédits insuffisants pour effectuer cette analyse');
         return res.redirect(req.headers.referer || '/career-explorer');
@@ -159,10 +147,7 @@ exports.processForm = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in processForm:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du traitement du formulaire',
-    );
+    req.flash('error', 'Une erreur est survenue lors du traitement du formulaire');
     res.redirect(req.headers.referer || '/career-explorer');
   }
 };
@@ -185,15 +170,10 @@ exports.saveResults = async (req, res) => {
     await exploration.save();
 
     req.flash('success', "Résultats d'exploration sauvegardés avec succès");
-    res.redirect(
-      `/beneficiaries/${exploration.beneficiaryId}/career-explorations`,
-    );
+    res.redirect(`/beneficiaries/${exploration.beneficiaryId}/career-explorations`);
   } catch (error) {
     console.error('Error in saveResults:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors de la sauvegarde des résultats',
-    );
+    req.flash('error', 'Une erreur est survenue lors de la sauvegarde des résultats');
     res.redirect('/beneficiaries');
   }
 };
@@ -229,10 +209,7 @@ exports.listExplorations = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in listExplorations:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement des explorations',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement des explorations');
     res.redirect('/beneficiaries');
   }
 };
@@ -265,10 +242,7 @@ exports.viewExploration = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in viewExploration:', error);
-    req.flash(
-      'error',
-      "Une erreur est survenue lors du chargement de l'exploration",
-    );
+    req.flash('error', "Une erreur est survenue lors du chargement de l'exploration");
     res.redirect('/beneficiaries');
   }
 };
@@ -279,9 +253,7 @@ exports.viewExploration = async (req, res) => {
  */
 function generateCareerExplorationResults(data) {
   // Extract the input data
-  const {
-    currentRole, targetRole, yearsExperience, skills,
-  } = data;
+  const { currentRole, targetRole, yearsExperience, skills } = data;
 
   // Generate sample career paths
   const careerPaths = [
@@ -299,7 +271,8 @@ function generateCareerExplorationResults(data) {
     },
     {
       title: `Formation Intensive ${targetRole} → ${targetRole} Junior → ${targetRole} Indépendant`,
-      description: 'Reconversion accélérée suivie d\'une période en entreprise avant de devenir consultant indépendant.',
+      description:
+        "Reconversion accélérée suivie d'une période en entreprise avant de devenir consultant indépendant.",
       timeframe: '1-3 ans',
       difficulty: 'Élevée',
     },
@@ -309,7 +282,7 @@ function generateCareerExplorationResults(data) {
   const strengths = [
     `Expertise technique en ${currentRole}`,
     'Compréhension des processus de développement logiciel',
-    'Capacité d\'adaptation à de nouveaux environnements techniques',
+    "Capacité d'adaptation à de nouveaux environnements techniques",
     'Vision systémique des projets informatiques',
   ];
 
@@ -412,10 +385,7 @@ exports.showCareerExplorerForm = async (req, res) => {
     });
   } catch (error) {
     console.error('Error loading career explorer form:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement du formulaire.',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement du formulaire.');
     res.redirect('/dashboard');
   }
 };
@@ -466,12 +436,8 @@ exports.processCareerExploration = async (req, res) => {
       educationLevel,
       yearsOfExperience,
       interests: interests.split(',').map((s) => s.trim()),
-      preferences: preferences ?
-        preferences.split(',').map((s) => s.trim()) :
-        [],
-      constraints: constraints ?
-        constraints.split(',').map((s) => s.trim()) :
-        [],
+      preferences: preferences ? preferences.split(',').map((s) => s.trim()) : [],
+      constraints: constraints ? constraints.split(',').map((s) => s.trim()) : [],
     });
 
     // Generate synthetic career analysis
@@ -502,16 +468,12 @@ exports.processCareerExploration = async (req, res) => {
       opportunities,
       careerAnalysis,
       globalActionPlan,
-      continuingEducation:
-        generateContinuingEducationRecommendations(opportunities),
+      continuingEducation: generateContinuingEducationRecommendations(opportunities),
       user: req.user,
     });
   } catch (error) {
     console.error('Error processing career exploration:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du traitement de votre demande.',
-    );
+    req.flash('error', 'Une erreur est survenue lors du traitement de votre demande.');
     res.redirect('/career-explorer');
   }
 };
@@ -526,8 +488,7 @@ function generateCareerAnalysis(opportunities) {
 
   const topMatch = opportunities[0];
   const avgMatch =
-    opportunities.reduce((sum, opp) => sum + opp.matchPercentage, 0) /
-    opportunities.length;
+    opportunities.reduce((sum, opp) => sum + opp.matchPercentage, 0) / opportunities.length;
 
   return `D'après notre analyse, votre profil présente une forte compatibilité avec le poste de ${topMatch.title} (${topMatch.matchPercentage}% de correspondance). 
   Vos compétences actuelles vous permettent d'envisager plusieurs directions professionnelles avec une compatibilité moyenne de ${Math.round(avgMatch)}%. 
@@ -581,9 +542,9 @@ function generateContinuingEducationRecommendations(opportunities) {
   opportunities.slice(0, 3).forEach((opp) => {
     if (opp.requiredSkills) {
       const skills =
-        typeof opp.requiredSkills === 'string' ?
-          opp.requiredSkills.split(',').map((s) => s.trim()) :
-          opp.requiredSkills;
+        typeof opp.requiredSkills === 'string'
+          ? opp.requiredSkills.split(',').map((s) => s.trim())
+          : opp.requiredSkills;
 
       skills.forEach((skill) => topSkills.add(skill));
     }
@@ -626,10 +587,7 @@ exports.showResults = async (req, res) => {
     });
   } catch (error) {
     console.error('Error showing career explorer results:', error);
-    req.flash(
-      'error',
-      "Une erreur est survenue lors de l'affichage des résultats",
-    );
+    req.flash('error', "Une erreur est survenue lors de l'affichage des résultats");
     res.redirect(`/beneficiaries/${req.params.id}/career-explorer`);
   }
 };
@@ -654,10 +612,7 @@ exports.showExplorerForm = async (req, res) => {
       }
     } catch (error) {
       console.error('Error fetching beneficiary:', error);
-      req.flash(
-        'error',
-        'Erreur lors du chargement des données du bénéficiaire',
-      );
+      req.flash('error', 'Erreur lors du chargement des données du bénéficiaire');
       return res.redirect('/beneficiaries');
     }
   }
@@ -688,14 +643,9 @@ exports.processExploration = async (req, res) => {
 
     // Validate required fields
     if (!currentRole || !targetRole) {
-      req.flash(
-        'error',
-        'Les champs Poste actuel et Poste visé sont obligatoires',
-      );
+      req.flash('error', 'Les champs Poste actuel et Poste visé sont obligatoires');
       return res.redirect(
-        beneficiaryId ?
-          `/career-explorer/beneficiary/${beneficiaryId}` :
-          '/career-explorer',
+        beneficiaryId ? `/career-explorer/beneficiary/${beneficiaryId}` : '/career-explorer',
       );
     }
 
@@ -737,14 +687,11 @@ exports.processExploration = async (req, res) => {
     res.redirect(`/career-explorer/results/${exploration.id}`);
   } catch (error) {
     console.error('Error processing career exploration:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du traitement de votre demande',
-    );
+    req.flash('error', 'Une erreur est survenue lors du traitement de votre demande');
     res.redirect(
-      req.body.beneficiaryId ?
-        `/career-explorer/beneficiary/${req.body.beneficiaryId}` :
-        '/career-explorer',
+      req.body.beneficiaryId
+        ? `/career-explorer/beneficiary/${req.body.beneficiaryId}`
+        : '/career-explorer',
     );
   }
 };
@@ -789,10 +736,7 @@ exports.showResults = async (req, res) => {
     });
   } catch (error) {
     console.error('Error displaying career exploration results:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement des résultats',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement des résultats');
     res.redirect('/dashboard');
   }
 };
@@ -824,10 +768,7 @@ exports.listBeneficiaryExplorations = async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing career explorations:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement des explorations',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement des explorations');
     res.redirect('/beneficiaries');
   }
 };
@@ -902,16 +843,14 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte supplémentaire.
 
       // Return a fallback response if parsing fails
       return {
-        error:
-          'Impossible de générer une analyse complète. Veuillez réessayer.',
+        error: 'Impossible de générer une analyse complète. Veuillez réessayer.',
         rawResponse: `${content.substring(0, 500)}...`, // Truncated for logging
       };
     }
   } catch (error) {
     console.error('OpenAI API error:', error);
     return {
-      error:
-        "Une erreur est survenue lors de la génération de l'analyse par l'IA.",
+      error: "Une erreur est survenue lors de la génération de l'analyse par l'IA.",
       message: error.message,
     };
   }

@@ -2,14 +2,9 @@ const express = require('express');
 
 const router = express.Router();
 const { Op, Sequelize } = require('sequelize');
-const {
-  ensureAuthenticated,
-  ensureConsultant,
-} = require('../middlewares/auth');
+const { ensureAuthenticated, ensureConsultant } = require('../middlewares/auth');
 const { checkAccessLevel } = require('../middlewares/permissions');
-const {
-  Beneficiary, Appointment, Questionnaire, User,
-} = require('../models');
+const { Beneficiary, Appointment, Questionnaire, User } = require('../models');
 
 const MIN_FORFAIT_REPORTS = 'Standard';
 
@@ -28,25 +23,18 @@ router.get(
       const next30Days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       // 1. Yararlanıcı Durum/Aşama Sayıları
-      const [beneficiaryCountsByPhase, beneficiaryCountsByStatus] =
-        await Promise.all([
-          Beneficiary.findAll({
-            where: { consultantId },
-            attributes: [
-              'currentPhase',
-              [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
-            ],
-            group: ['currentPhase'],
-          }),
-          Beneficiary.findAll({
-            where: { consultantId },
-            attributes: [
-              'status',
-              [Sequelize.fn('COUNT', Sequelize.col('id')), 'count'],
-            ],
-            group: ['status'],
-          }),
-        ]);
+      const [beneficiaryCountsByPhase, beneficiaryCountsByStatus] = await Promise.all([
+        Beneficiary.findAll({
+          where: { consultantId },
+          attributes: ['currentPhase', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          group: ['currentPhase'],
+        }),
+        Beneficiary.findAll({
+          where: { consultantId },
+          attributes: ['status', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          group: ['status'],
+        }),
+      ]);
 
       // Verileri daha kolay işlenebilir hale getir (varsayılan 0 değeri ile)
       const phaseCounts = {
@@ -89,18 +77,18 @@ router.get(
         })
       ).map((b) => b.id);
       const overdueQuestionnairesCount =
-        ownBeneficiaryIds.length > 0 ?
-          await Questionnaire.count({
-            where: {
-              beneficiaryId: { [Op.in]: ownBeneficiaryIds },
-              status: 'pending',
-              dueDate: {
-                [Op.ne]: null,
-                [Op.lt]: today,
+        ownBeneficiaryIds.length > 0
+          ? await Questionnaire.count({
+              where: {
+                beneficiaryId: { [Op.in]: ownBeneficiaryIds },
+                status: 'pending',
+                dueDate: {
+                  [Op.ne]: null,
+                  [Op.lt]: today,
+                },
               },
-            },
-          }) :
-          0;
+            })
+          : 0;
 
       // 4. Yaklaşan Takip Görüşmeleri (Sayı)
       const upcomingFollowUpsCount = await Beneficiary.count({
@@ -129,14 +117,11 @@ router.get(
         include: [{ model: User, as: 'user', attributes: ['forfaitType'] }],
         attributes: [], // Sadece include edilen User'dan forfaitType yeterli
       });
-      const beneficiaryForfaitCounts = beneficiariesWithForfait.reduce(
-        (acc, ben) => {
-          const type = ben.user?.forfaitType || 'Aucun';
-          acc[type] = (acc[type] || 0) + 1;
-          return acc;
-        },
-        {},
-      );
+      const beneficiaryForfaitCounts = beneficiariesWithForfait.reduce((acc, ben) => {
+        const type = ben.user?.forfaitType || 'Aucun';
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {});
 
       res.render('reports/index', {
         title: 'Rapports et Suivi',

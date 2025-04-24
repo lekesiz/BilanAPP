@@ -1,7 +1,5 @@
 const bcrypt = require('bcryptjs');
-const {
-  User, Beneficiary, CreditLog, Forfait,
-} = require('../models');
+const { User, Beneficiary, CreditLog, Forfait } = require('../models');
 const { validationResult } = require('express-validator');
 const logger = require('../config/logger');
 
@@ -40,9 +38,7 @@ exports.showProfile = async (req, res) => {
           attributes: ['id', 'firstName', 'lastName'],
         },
       });
-      additionalData.beneficiaries = beneficiaries.map((b) =>
-        b.get({ plain: true }),
-      ); // Get plain object
+      additionalData.beneficiaries = beneficiaries.map((b) => b.get({ plain: true })); // Get plain object
     }
 
     const recentCreditLogs = await CreditLog.findAll({
@@ -50,9 +46,7 @@ exports.showProfile = async (req, res) => {
       order: [['createdAt', 'DESC']],
       limit: 5,
     });
-    additionalData.recentCreditLogs = recentCreditLogs.map((log) =>
-      log.get({ plain: true }),
-    ); // Get plain object
+    additionalData.recentCreditLogs = recentCreditLogs.map((log) => log.get({ plain: true })); // Get plain object
 
     res.render('profile/index', {
       title: 'Mon Profil',
@@ -78,15 +72,15 @@ exports.showSettings = (req, res) => {
 // POST /profile/settings/info - Update Profile Info
 exports.updateInfo = async (req, res) => {
   const userId = req.user.id;
-  
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-      return res.render('profile/settings', {
-          title: 'Paramètres du Compte',
-          user: req.user ? req.user.get({ plain: true }) : null,
-          errors: errors.array(),
-          formData: req.body
-      });
+    return res.render('profile/settings', {
+      title: 'Paramètres du Compte',
+      user: req.user ? req.user.get({ plain: true }) : null,
+      errors: errors.array(),
+      formData: req.body,
+    });
   }
 
   const { firstName, lastName } = req.body;
@@ -110,15 +104,15 @@ exports.updateInfo = async (req, res) => {
 // POST /profile/settings/password - Change Password
 exports.changePassword = async (req, res) => {
   const userId = req.user.id;
-  
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-       return res.render('profile/settings', {
-          title: 'Paramètres du Compte',
-          user: req.user ? req.user.get({ plain: true }) : null,
-          errors: errors.array(),
-          formData: req.body
-      });
+    return res.render('profile/settings', {
+      title: 'Paramètres du Compte',
+      user: req.user ? req.user.get({ plain: true }) : null,
+      errors: errors.array(),
+      formData: req.body,
+    });
   }
 
   const { currentPassword, newPassword } = req.body;
@@ -132,11 +126,11 @@ exports.changePassword = async (req, res) => {
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-        return res.render('profile/settings', {
-            title: 'Paramètres du Compte',
-            user: req.user ? req.user.get({ plain: true }) : null,
-            errors: [{msg: 'Mot de passe actuel incorrect.'}] 
-        });
+      return res.render('profile/settings', {
+        title: 'Paramètres du Compte',
+        user: req.user ? req.user.get({ plain: true }) : null,
+        errors: [{ msg: 'Mot de passe actuel incorrect.' }],
+      });
     }
 
     user.password = newPassword;

@@ -19,7 +19,8 @@ exports.listConversations = async (req, res) => {
         user: req.user,
         isAdmin: true,
       });
-    } if (userType === 'consultant') {
+    }
+    if (userType === 'consultant') {
       // Optimized query for consultant conversations
       const beneficiaries = await Beneficiary.findAll({
         where: { consultantId: userId },
@@ -99,20 +100,14 @@ exports.listConversations = async (req, res) => {
       }
     }
 
-    conversations.sort(
-      (a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt,
-    );
+    conversations.sort((a, b) => b.lastMessage.createdAt - a.lastMessage.createdAt);
 
     const plainConversations = conversations.map((conv) => ({
-      participant: conv.participant.get ?
-        conv.participant.get({ plain: true }) :
-        conv.participant,
+      participant: conv.participant.get ? conv.participant.get({ plain: true }) : conv.participant,
       lastMessage: conv.lastMessage.get({ plain: true }),
       isRead: conv.isRead,
     }));
-    const plainParticipants = participants.map((p) =>
-      (p.get ? p.get({ plain: true }) : p),
-    );
+    const plainParticipants = participants.map((p) => (p.get ? p.get({ plain: true }) : p));
 
     res.render('messages/index', {
       title: 'Mes Messages',
@@ -174,14 +169,8 @@ exports.showNewMessageForm = async (req, res) => {
           // console.log('[DEBUG] /messages/new - Loaded beneficiary profile:', beneficiaryProfile?.id || 'Not found');
         }
       } catch (beneficiaryLoadError) {
-        console.error(
-          '[ERROR] /messages/new - Error loading beneficiaries:',
-          beneficiaryLoadError,
-        );
-        req.flash(
-          'warning_msg',
-          'Certains bénéficiaires peuvent ne pas être affichés.',
-        );
+        console.error('[ERROR] /messages/new - Error loading beneficiaries:', beneficiaryLoadError);
+        req.flash('warning_msg', 'Certains bénéficiaires peuvent ne pas être affichés.');
       }
     } else if (req.user.userType === 'Beneficiary') {
       // Beneficiary can only message their assigned consultant
@@ -245,8 +234,8 @@ exports.sendMessage = async (req, res) => {
   const senderId = req.user.id;
 
   try {
-    let consultantId; let
-      beneficiaryId;
+    let consultantId;
+    let beneficiaryId;
 
     if (req.user.userType === 'consultant') {
       consultantId = senderId;
@@ -323,10 +312,7 @@ exports.showConversation = async (req, res) => {
         },
       });
       if (!beneficiary) {
-        req.flash(
-          'error_msg',
-          'Conversation non trouvée ou accès non autorisé.',
-        );
+        req.flash('error_msg', 'Conversation non trouvée ou accès non autorisé.');
         return res.redirect('/messages');
       }
       participantUser = beneficiary.user.get({ plain: true });
@@ -343,10 +329,7 @@ exports.showConversation = async (req, res) => {
       beneficiaryId = beneficiaryProfile.id;
       consultantId = otherParticipantId;
       if (beneficiaryProfile.consultantId.toString() !== consultantId) {
-        req.flash(
-          'error_msg',
-          'Conversation non trouvée ou accès non autorisé.',
-        );
+        req.flash('error_msg', 'Conversation non trouvée ou accès non autorisé.');
         return res.redirect('/messages');
       }
       participantUser = await User.findByPk(consultantId, {

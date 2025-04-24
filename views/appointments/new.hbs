@@ -2,6 +2,8 @@
 <div class="container py-4">
     <h1 class="mb-4">Planifier un nouveau rendez-vous</h1>
 
+    {{> messages errors=errors}}
+
     <form action="/appointments/new" method="POST">
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card">
@@ -9,7 +11,7 @@
                 {{#if isConsultant}}
                     <div class="mb-3">
                         <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
-                        <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+                        <select class="form-select" id="beneficiaryId" name="beneficiaryId">
                             <option value="" selected disabled>Choisir un bénéficiaire...</option>
                             {{#each beneficiaries}}
                                 <option value="{{id}}" {{#ifCond ../preselectedBeneficiary '===' id}}selected{{/ifCond}}>

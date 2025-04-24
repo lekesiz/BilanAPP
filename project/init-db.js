@@ -101,14 +101,7 @@ async function createDemoData() {
 
     // --- Faydalanıcılar ve Kullanıcı Hesapları Oluştur (Manuel Hash ile) ---
     const beneficiariesData = [];
-    const statuses = [
-      'initial',
-      'active',
-      'active',
-      'active',
-      'on_hold',
-      'completed',
-    ];
+    const statuses = ['initial', 'active', 'active', 'active', 'on_hold', 'completed'];
     const phases = [
       'preliminary',
       'investigation',
@@ -121,9 +114,7 @@ async function createDemoData() {
     for (let i = 1; i <= 15; i++) {
       const status = statuses[i % statuses.length];
       const phase =
-        status === 'completed' || status === 'initial' ?
-          'preliminary' :
-          phases[i % phases.length];
+        status === 'completed' || status === 'initial' ? 'preliminary' : phases[i % phases.length];
       const userEmail = `beneficiary${i}@test.com`;
       const userPassword = await bcrypt.hash(`beneficiary${i}`, saltRounds);
 
@@ -163,8 +154,7 @@ async function createDemoData() {
     const today = new Date();
     for (let i = 0; i < beneficiariesData.length; i++) {
       const beneficiary = beneficiariesData[i];
-      const pastAppointmentType =
-        appointmentTypesEnum[i % appointmentTypesEnum.length];
+      const pastAppointmentType = appointmentTypesEnum[i % appointmentTypesEnum.length];
       await Appointment.create({
         title: `RDV Passé ${i + 1} - ${pastAppointmentType}`,
         date: new Date(today.getTime() - (i + 1) * 3 * 24 * 60 * 60 * 1000),
@@ -176,8 +166,7 @@ async function createDemoData() {
         notes: `Notlar için geçmiş randevu ${i + 1}`,
       });
       if (i % 2 === 0 && beneficiary.status === 'active') {
-        const futureAppointmentType =
-          appointmentTypesEnum[(i + 1) % appointmentTypesEnum.length];
+        const futureAppointmentType = appointmentTypesEnum[(i + 1) % appointmentTypesEnum.length];
         await Appointment.create({
           title: `RDV Futur ${i + 1} - ${futureAppointmentType}`,
           date: new Date(today.getTime() + (i + 1) * 2 * 24 * 60 * 60 * 1000),
@@ -308,9 +297,7 @@ async function createDemoData() {
     console.log('Demo Veri Oluşturma Tamamlandı!');
     console.log(`Danışman Girişi: ${consultant.email} / consultant123`);
     console.log(`Admin Girişi: ${adminUser.email} / admin123`);
-    console.log(
-      'Faydalanıcı Girişleri: beneficiary1@test.com / beneficiary1 ...',
-    );
+    console.log('Faydalanıcı Girişleri: beneficiary1@test.com / beneficiary1 ...');
     console.log('-----------------------------------------');
   } catch (error) {
     console.error('Demo veri oluşturulurken hata:', error);
@@ -322,9 +309,7 @@ async function createDemoData() {
 async function initializeDatabase() {
   try {
     await sequelize.sync({ force: true });
-    console.log(
-      'Veritabanı senkronize edildi (Mevcut tablolar silindi ve yeniden oluşturuldu).',
-    );
+    console.log('Veritabanı senkronize edildi (Mevcut tablolar silindi ve yeniden oluşturuldu).');
     await createDefaultForfaits();
     await createDemoData();
     console.log('Veritabanı başlatma işlemi başarıyla tamamlandı.');

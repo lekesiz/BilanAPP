@@ -17,14 +17,10 @@ module.exports = {
   formatDateTime(date) {
     if (!date) return '';
     const d = new Date(date);
-    return (
-      `${d.toLocaleDateString('fr-FR')
-      } ${
-        d.toLocaleTimeString('fr-FR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}`
-    );
+    return `${d.toLocaleDateString('fr-FR')} ${d.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
   },
 
   // Bir metnin ilk karakterini al
@@ -300,24 +296,14 @@ module.exports = {
   // Layout'ta: {{{renderScripts}}}
   addScript(options) {
     // options.data.root üzerinden res.locals'a eriş
-    if (
-      options &&
-      options.data &&
-      options.data.root &&
-      options.data.root.pageScripts
-    ) {
+    if (options && options.data && options.data.root && options.data.root.pageScripts) {
       options.data.root.pageScripts.push(options.fn(this));
     }
     return null;
   },
   renderScripts(options) {
     // options.data.root üzerinden res.locals'a eriş
-    if (
-      options &&
-      options.data &&
-      options.data.root &&
-      options.data.root.pageScripts
-    ) {
+    if (options && options.data && options.data.root && options.data.root.pageScripts) {
       const scripts = options.data.root.pageScripts;
       const result = scripts.join('\n');
       options.data.root.pageScripts = []; // Diziyi temizle
@@ -355,9 +341,7 @@ module.exports = {
     // Check if last argument is options object (from Handlebars)
     const options = arguments[arguments.length - 1];
     const isBlockHelper =
-      options &&
-      typeof options === 'object' &&
-      typeof options.fn === 'function';
+      options && typeof options === 'object' && typeof options.fn === 'function';
 
     // Determine how many arguments to check (all except options if it's a block helper)
     const argsToCheck = isBlockHelper ? arguments.length - 1 : arguments.length;
@@ -371,11 +355,11 @@ module.exports = {
     }
 
     // None of the arguments were truthy
-    return isBlockHelper ?
-      typeof options.inverse === 'function' ?
-        options.inverse(this) :
-        '' :
-      false;
+    return isBlockHelper
+      ? typeof options.inverse === 'function'
+        ? options.inverse(this)
+        : ''
+      : false;
   },
 
   // AND helper'ı (Inline için Düzeltilmiş)
@@ -383,9 +367,7 @@ module.exports = {
     // Check if last argument is options object (from Handlebars)
     const options = arguments[arguments.length - 1];
     const isBlockHelper =
-      options &&
-      typeof options === 'object' &&
-      typeof options.fn === 'function';
+      options && typeof options === 'object' && typeof options.fn === 'function';
 
     // Determine how many arguments to check (all except options if it's a block helper)
     const argsToCheck = isBlockHelper ? arguments.length - 1 : arguments.length;
@@ -394,11 +376,11 @@ module.exports = {
     for (let i = 0; i < argsToCheck; i += 1) {
       if (!arguments[i]) {
         // Herhangi biri falsy ise false döndür
-        return isBlockHelper ?
-          typeof options.inverse === 'function' ?
-            options.inverse(this) :
-            '' :
-          false;
+        return isBlockHelper
+          ? typeof options.inverse === 'function'
+            ? options.inverse(this)
+            : ''
+          : false;
       }
     }
 
@@ -441,15 +423,10 @@ module.exports = {
       .replace(/(<\/ul>\s*<ul>)/g, '');
 
     // Numbered lists
-    html = html
-      .replace(/^\d+\. (.*$)/gm, '<ol><li>$1</li></ol>')
-      .replace(/(<\/ol>\s*<ol>)/g, '');
+    html = html.replace(/^\d+\. (.*$)/gm, '<ol><li>$1</li></ol>').replace(/(<\/ol>\s*<ol>)/g, '');
 
     // Links
-    html = html.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank">$1</a>',
-    );
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
     // Line breaks
     html = html.replace(/\n/g, '<br>');
@@ -495,9 +472,7 @@ module.exports = {
   // Kullanıcının paketinin belirli bir seviyede veya üzerinde olup olmadığını kontrol et
   // Sıralama: Essentiel < Standard < Premium < Entreprise < Admin
   isForfaitOrHigher(userForfait, requiredForfait, options) {
-    console.log(
-      `isForfaitOrHigher Check: User='${userForfait}', Required='${requiredForfait}'`,
-    );
+    console.log(`isForfaitOrHigher Check: User='${userForfait}', Required='${requiredForfait}'`);
     if (!userForfait) {
       // console.warn(
       //   'isForfaitOrHigher: userForfait parameter is null or undefined',
@@ -521,11 +496,11 @@ module.exports = {
     // Handle both block and inline usage
     if (options && typeof options === 'object') {
       if (typeof options.fn === 'function') {
-        return result ?
-          options.fn(this) :
-          typeof options.inverse === 'function' ?
-            options.inverse(this) :
-            '';
+        return result
+          ? options.fn(this)
+          : typeof options.inverse === 'function'
+            ? options.inverse(this)
+            : '';
       }
     }
 
@@ -587,8 +562,7 @@ module.exports = {
     if (currentPage > 1) {
       output += `<li class="page-item"><a class="page-link" href="${baseUrl}page=${currentPage - 1}">Önceki</a></li>`;
     } else {
-      output +=
-        '<li class="page-item disabled"><span class="page-link">Önceki</span></li>';
+      output += '<li class="page-item disabled"><span class="page-link">Önceki</span></li>';
     }
 
     // Sayfa Numaraları
@@ -603,8 +577,7 @@ module.exports = {
     if (startPage > 1) {
       output += `<li class="page-item"><a class="page-link" href="${baseUrl}page=1">1</a></li>`;
       if (startPage > 2) {
-        output +=
-          '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        output += '<li class="page-item disabled"><span class="page-link">...</span></li>';
       }
     }
 
@@ -618,8 +591,7 @@ module.exports = {
 
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        output +=
-          '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        output += '<li class="page-item disabled"><span class="page-link">...</span></li>';
       }
       output += `<li class="page-item"><a class="page-link" href="${baseUrl}page=${totalPages}">${totalPages}</a></li>`;
     }
@@ -628,8 +600,7 @@ module.exports = {
     if (currentPage < totalPages) {
       output += `<li class="page-item"><a class="page-link" href="${baseUrl}page=${currentPage + 1}">Sonraki</a></li>`;
     } else {
-      output +=
-        '<li class="page-item disabled"><span class="page-link">Sonraki</span></li>';
+      output += '<li class="page-item disabled"><span class="page-link">Sonraki</span></li>';
     }
 
     output += '</ul></nav>';

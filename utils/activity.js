@@ -3,14 +3,7 @@
  */
 
 const { Op } = require('sequelize');
-const {
-  Activity,
-  Beneficiary,
-  User,
-  Appointment,
-  Document,
-  Message,
-} = require('../models');
+const { Activity, Beneficiary, User, Appointment, Document, Message } = require('../models');
 
 /**
  * Log an activity for a user
@@ -21,13 +14,7 @@ const {
  * @param {string} details - Additional details about the activity
  * @returns {Promise<Activity>} Created activity record
  */
-exports.logActivity = async (
-  userId,
-  type,
-  action,
-  resourceId,
-  details = '',
-) => {
+exports.logActivity = async (userId, type, action, resourceId, details = '') => {
   try {
     return await Activity.create({
       userId,
@@ -73,42 +60,45 @@ exports.getRecentActivitiesFor = async (beneficiaryId, limit = 5) => {
 
     // Farklı türdeki son aktiviteleri çek (Örnek: Son randevular ve mesajlar)
     const [recentAppointments, recentMessages] = await Promise.all([
-        Appointment.findAll({
-            where: { beneficiaryId },
-            order: [['date', 'DESC']],
-            limit,
-            include: [{ model: User, as: 'consultant', attributes: ['firstName', 'lastName']}]
-        }),
-        Message.findAll({
-            where: { beneficiaryId },
-            order: [['createdAt', 'DESC']],
-            limit,
-            include: [{ model: User, as: 'sender', attributes: ['firstName', 'lastName']}]
-        })
-        // Buraya başka aktivite türleri (Doküman, Anket vb.) eklenebilir
+      Appointment.findAll({
+        where: { beneficiaryId },
+        order: [['date', 'DESC']],
+        limit,
+        include: [{ model: User, as: 'consultant', attributes: ['firstName', 'lastName'] }],
+      }),
+      Message.findAll({
+        where: { beneficiaryId },
+        order: [['createdAt', 'DESC']],
+        limit,
+        include: [{ model: User, as: 'sender', attributes: ['firstName', 'lastName'] }],
+      }),
+      // Buraya başka aktivite türleri (Doküman, Anket vb.) eklenebilir
     ]);
 
     // Aktiviteleri birleştir ve formatla
     const activities = [];
-    recentAppointments.forEach(a => activities.push({
+    recentAppointments.forEach((a) =>
+      activities.push({
         type: 'appointment',
         title: 'Rendez-vous',
         description: `${a.type} avec ${a.consultant.firstName}`,
         link: `/appointments#appt-${a.id}`,
         date: a.date,
-    }));
-    recentMessages.forEach(m => activities.push({
+      }),
+    );
+    recentMessages.forEach((m) =>
+      activities.push({
         type: 'message',
         title: 'Nouveau Message',
         description: `De ${m.sender.firstName}: ${m.subject || m.body.substring(0, 20)}...`,
         link: `/messages/conversation/${m.consultantId}`,
         date: m.createdAt,
-    }));
+      }),
+    );
 
     // Tarihe göre sırala ve limitle
     activities.sort((a, b) => b.date - a.date);
     return activities.slice(0, limit);
-
   } catch (error) {
     console.error('Error getting recent activities for beneficiary:', error);
     return [];
@@ -145,13 +135,7 @@ exports.getActivityStats = async (userId, options = {}) => {
     };
 
     // Count activities by type
-    const types = [
-      'appointment',
-      'document',
-      'message',
-      'questionnaire',
-      'profile',
-    ];
+    const types = ['appointment', 'document', 'message', 'questionnaire', 'profile'];
     for (const type of types) {
       stats.byType[type] = await Activity.count({
         where: { ...whereClause, type },
@@ -217,11 +201,7 @@ exports.getRecentlyActiveBeneficiaries = async (consultantId, limit = 5) => {
 
     // Sort by most recent activity and limit
     return result
-      .sort(
-        (a, b) =>
-          new Date(b.latestActivity.createdAt) -
-          new Date(a.latestActivity.createdAt),
-      )
+      .sort((a, b) => new Date(b.latestActivity.createdAt) - new Date(a.latestActivity.createdAt))
       .slice(0, limit);
   } catch (error) {
     console.error('Error getting recently active beneficiaries:', error);
@@ -251,17 +231,17 @@ exports.getRecentActivitiesForConsultant = async (consultantId, limit = 5) => {
     });
 
     // Sadece yeni faydalanıcı aktivitesini döndür
-    const activities = newBeneficiaries.map(beneficiary => ({
-        type: 'beneficiary',
-        title: 'Nouveau Bénéficiaire',
-        description: `${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
-        link: `/beneficiaries/${beneficiary.id}`,
-        date: beneficiary.createdAt,
+    const activities = newBeneficiaries.map((beneficiary) => ({
+      type: 'beneficiary',
+      title: 'Nouveau Bénéficiaire',
+      description: `${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+      link: `/beneficiaries/${beneficiary.id}`,
+      date: beneficiary.createdAt,
     }));
 
     return activities;
   } catch (error) {
-      console.error('Error getting recent consultant activities:', error);
-      return [];
+    console.error('Error getting recent consultant activities:', error);
+    return [];
   }
 };

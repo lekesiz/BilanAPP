@@ -1,11 +1,5 @@
 const { Op } = require('sequelize');
-const {
-  User,
-  Beneficiary,
-  Appointment,
-  Message,
-  Questionnaire,
-} = require('../models');
+const { User, Beneficiary, Appointment, Message, Questionnaire } = require('../models');
 const { getRecentActivitiesFor } = require('../utils/activity');
 
 // --- Helper Functions ---
@@ -29,24 +23,24 @@ async function getConsultantStats(consultantId, isAdmin = false) {
       where: { ...baseWhereAppointment, date: { [Op.gte]: new Date() } },
     }),
     Message.count({
-      where: isAdmin ?
-        { isRead: false } : // Admin sees ALL unread messages
-        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } },
+      where: isAdmin
+        ? { isRead: false } // Admin sees ALL unread messages
+        : { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } },
     }),
     Questionnaire.count({
-      where: isAdmin ?
-        { status: 'pending' } :
-        {
-          status: 'pending',
-          beneficiaryId: {
-            [Op.in]: (
-              await Beneficiary.findAll({
-                where: { consultantId },
-                attributes: ['id'],
-              })
-            ).map((b) => b.id),
+      where: isAdmin
+        ? { status: 'pending' }
+        : {
+            status: 'pending',
+            beneficiaryId: {
+              [Op.in]: (
+                await Beneficiary.findAll({
+                  where: { consultantId },
+                  attributes: ['id'],
+                })
+              ).map((b) => b.id),
+            },
           },
-        },
     }),
     Beneficiary.count({
       where: { ...baseWhereBeneficiary, consentGiven: false },
@@ -125,14 +119,14 @@ exports.redirectToDashboard = (req, res) => {
   // console.log('[DEBUG] GET /dashboard - instanceof User:', req.user?.constructor?.name);
 
   // Ensure userType is pulled directly from the object in case of get method issues
-  const userType =
-    req.user?.userType || (req.user?.get ? req.user?.get('userType') : null);
+  const userType = req.user?.userType || (req.user?.get ? req.user?.get('userType') : null);
   // console.log('[DEBUG] GET /dashboard - extracted userType:', userType);
 
   if (userType === 'consultant') {
     // console.log('[DEBUG] Redirecting to /dashboard/consultant');
     return res.redirect('/dashboard/consultant');
-  } if (userType === 'beneficiary') {
+  }
+  if (userType === 'beneficiary') {
     // console.log('[DEBUG] Redirecting to /dashboard/beneficiary');
     return res.redirect('/dashboard/beneficiary');
   }
@@ -202,18 +196,18 @@ exports.showConsultantDashboard = async (req, res) => {
       }),
       Questionnaire.findAll({
         where: {
-          ...(isAdmin ?
-            {} :
-            {
-              beneficiaryId: {
-                [Op.in]: (
-                  await Beneficiary.findAll({
-                    where: { consultantId },
-                    attributes: ['id'],
-                  })
-                ).map((b) => b.id),
-              },
-            }),
+          ...(isAdmin
+            ? {}
+            : {
+                beneficiaryId: {
+                  [Op.in]: (
+                    await Beneficiary.findAll({
+                      where: { consultantId },
+                      attributes: ['id'],
+                    })
+                  ).map((b) => b.id),
+                },
+              }),
           status: 'completed',
           updatedAt: {
             [Op.gte]: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
@@ -241,18 +235,18 @@ exports.showConsultantDashboard = async (req, res) => {
       }),
       Questionnaire.findAll({
         where: {
-          ...(isAdmin ?
-            {} :
-            {
-              beneficiaryId: {
-                [Op.in]: (
-                  await Beneficiary.findAll({
-                    where: { consultantId },
-                    attributes: ['id'],
-                  })
-                ).map((b) => b.id),
-              },
-            }),
+          ...(isAdmin
+            ? {}
+            : {
+                beneficiaryId: {
+                  [Op.in]: (
+                    await Beneficiary.findAll({
+                      where: { consultantId },
+                      attributes: ['id'],
+                    })
+                  ).map((b) => b.id),
+                },
+              }),
           status: 'pending',
           dueDate: { [Op.ne]: null, [Op.lt]: today },
         },
@@ -269,26 +263,17 @@ exports.showConsultantDashboard = async (req, res) => {
     ]);
 
     // Process raw data
-    const upcomingAppointments = appointmentsRaw.map((a) =>
-      a.get({ plain: true }),
-    );
+    const upcomingAppointments = appointmentsRaw.map((a) => a.get({ plain: true }));
     // console.log(`[DEBUG] Upcoming appointments found: ${upcomingAppointments.length}`);
     // console.log('[DEBUG] Appointment details:', JSON.stringify(upcomingAppointments, null, 2));
 
-    const followUpBeneficiaries = followUpBeneficiariesRaw.map((b) =>
-      b.get({ plain: true }),
-    );
-    const recentlyCompletedQuestionnaires =
-      recentlyCompletedQuestionnairesRaw.map((q) => q.get({ plain: true }));
-    const beneficiariesForAlerts = beneficiariesForAlertsRaw.map((b) =>
-      b.get({ plain: true }),
-    );
-    const missingConsents = beneficiariesForAlerts.filter(
-      (b) => !b.consentGiven,
-    );
-    const overdueQuestionnaires = overdueQuestionnairesRaw.map((q) =>
+    const followUpBeneficiaries = followUpBeneficiariesRaw.map((b) => b.get({ plain: true }));
+    const recentlyCompletedQuestionnaires = recentlyCompletedQuestionnairesRaw.map((q) =>
       q.get({ plain: true }),
     );
+    const beneficiariesForAlerts = beneficiariesForAlertsRaw.map((b) => b.get({ plain: true }));
+    const missingConsents = beneficiariesForAlerts.filter((b) => !b.consentGiven);
+    const overdueQuestionnaires = overdueQuestionnairesRaw.map((q) => q.get({ plain: true }));
 
     // Add preliminary/investigation/conclusion phase counts
     stats.preliminaryCount = await Beneficiary.count({
@@ -324,10 +309,7 @@ exports.showConsultantDashboard = async (req, res) => {
     });
   } catch (error) {
     // console.error('Dashboard error:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement du tableau de bord',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement du tableau de bord');
     res.redirect('/');
   }
 };
@@ -351,41 +333,33 @@ exports.showBeneficiaryDashboard = async (req, res) => {
       return res.redirect('/'); // Or maybe login?
     }
 
-    const [upcomingAppointments, pendingQuestionnaires, recentActivities] =
-      await Promise.all([
-        Appointment.findAll({
-          where: {
-            beneficiaryId: beneficiary.id,
-            date: { [Op.gte]: new Date() },
-          },
-          order: [['date', 'ASC']],
-          limit: 3,
-        }),
-        Questionnaire.findAll({
-          where: { beneficiaryId: beneficiary.id, status: 'pending' },
-          limit: 5,
-        }),
-        getRecentActivitiesFor(beneficiary.id),
-      ]);
+    const [upcomingAppointments, pendingQuestionnaires, recentActivities] = await Promise.all([
+      Appointment.findAll({
+        where: {
+          beneficiaryId: beneficiary.id,
+          date: { [Op.gte]: new Date() },
+        },
+        order: [['date', 'ASC']],
+        limit: 3,
+      }),
+      Questionnaire.findAll({
+        where: { beneficiaryId: beneficiary.id, status: 'pending' },
+        limit: 5,
+      }),
+      getRecentActivitiesFor(beneficiary.id),
+    ]);
 
     res.render('dashboard/beneficiary', {
       title: 'Mon Bilan de Compétences',
       user: req.user,
       beneficiary: beneficiary.get({ plain: true }),
-      upcomingAppointments: upcomingAppointments.map((a) =>
-        a.get({ plain: true }),
-      ),
-      pendingQuestionnaires: pendingQuestionnaires.map((q) =>
-        q.get({ plain: true }),
-      ),
+      upcomingAppointments: upcomingAppointments.map((a) => a.get({ plain: true })),
+      pendingQuestionnaires: pendingQuestionnaires.map((q) => q.get({ plain: true })),
       recentActivities,
     });
   } catch (error) {
     // console.error('Beneficiary dashboard error:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement du tableau de bord',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement du tableau de bord');
     res.redirect('/');
   }
 };

@@ -41,9 +41,7 @@ async function initializeProduction() {
       console.log('Consultant par défaut créé avec succès !');
       console.log('Email: admin@bilancompetences.com');
       console.log('Mot de passe: admin123');
-      console.log(
-        'IMPORTANT: Veuillez changer ce mot de passe après la première connexion.',
-      );
+      console.log('IMPORTANT: Veuillez changer ce mot de passe après la première connexion.');
     } else {
       console.log('Des consultants existent déjà dans la base de données.');
     }

@@ -36,10 +36,7 @@ Forfait.init(
         // Veritabanına yazarken JSON'a çevir (eğer JSON saklarsak)
         // this.setDataValue('features', JSON.stringify(value || []));
         // Şimdilik TEXT olarak bırakalım
-        this.setDataValue(
-          'features',
-          Array.isArray(value) ? value.join('\n') : value,
-        );
+        this.setDataValue('features', Array.isArray(value) ? value.join('\n') : value);
       },
     },
     // Yeni: Maksimum Yararlanıcı Sayısı

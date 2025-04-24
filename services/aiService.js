@@ -39,7 +39,8 @@ function formatDate(dateString) {
 
 // Anket cevaplarını özetleyen yardımcı fonksiyon (geliştirildi)
 function summarizeAnswers(questionnaires) {
-  if (!questionnaires || questionnaires.length === 0) return 'Aucun questionnaire pertinent trouvé.';
+  if (!questionnaires || questionnaires.length === 0)
+    return 'Aucun questionnaire pertinent trouvé.';
 
   const summaries = [];
   questionnaires.forEach((q) => {
@@ -73,12 +74,10 @@ function summarizeAnswers(questionnaires) {
 function extractRecommendations(synthesisText) {
   if (!synthesisText) return '[Consulter la synthèse]';
   // Çok basit bir arama, gerçek senaryoda daha iyi bir NLP gerekebilir
-  const match = synthesisText.match(
-    /## 7\. Conclusion et Préconisations([\s\S]*)/,
-  );
-  return match && match[1] ?
-    `${match[1].trim().substring(0, 300)}...` :
-    '[Voir préconisations dans la synthèse]';
+  const match = synthesisText.match(/## 7\. Conclusion et Préconisations([\s\S]*)/);
+  return match && match[1]
+    ? `${match[1].trim().substring(0, 300)}...`
+    : '[Voir préconisations dans la synthèse]';
 }
 
 // --- Career Exploration Helpers ---
@@ -97,13 +96,8 @@ function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
     paths.push({
       title: 'Software Developer',
       match: '92%',
-      description:
-        'Design, develop and maintain software applications and systems',
-      commonTransitions: [
-        'Technical Lead',
-        'Software Architect',
-        'DevOps Engineer',
-      ],
+      description: 'Design, develop and maintain software applications and systems',
+      commonTransitions: ['Technical Lead', 'Software Architect', 'DevOps Engineer'],
       outlook: 'Strong growth projected through 2030',
     });
   }
@@ -118,11 +112,7 @@ function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
       match: '88%',
       description:
         'Plan, execute, and oversee projects to ensure they are completed on time and within budget',
-      commonTransitions: [
-        'Program Manager',
-        'Operations Director',
-        'Business Analyst',
-      ],
+      commonTransitions: ['Program Manager', 'Operations Director', 'Business Analyst'],
       outlook: 'Stable demand across industries',
     });
   }
@@ -135,32 +125,18 @@ function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
     paths.push({
       title: 'UX/UI Designer',
       match: '90%',
-      description:
-        'Create intuitive, engaging user experiences for digital products',
-      commonTransitions: [
-        'Product Designer',
-        'Creative Director',
-        'Design Strategist',
-      ],
+      description: 'Create intuitive, engaging user experiences for digital products',
+      commonTransitions: ['Product Designer', 'Creative Director', 'Design Strategist'],
       outlook: 'Growing demand in tech and digital sectors',
     });
   }
 
-  if (
-    skills.includes('data') ||
-    skills.includes('analysis') ||
-    skills.includes('statistics')
-  ) {
+  if (skills.includes('data') || skills.includes('analysis') || skills.includes('statistics')) {
     paths.push({
       title: 'Data Analyst',
       match: '87%',
-      description:
-        'Interpret data to improve business decisions and performance',
-      commonTransitions: [
-        'Data Scientist',
-        'Business Intelligence Analyst',
-        'Research Analyst',
-      ],
+      description: 'Interpret data to improve business decisions and performance',
+      commonTransitions: ['Data Scientist', 'Business Intelligence Analyst', 'Research Analyst'],
       outlook: 'High demand across all industries',
     });
   }
@@ -170,26 +146,16 @@ function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
     paths.push({
       title: 'Business Analyst',
       match: '82%',
-      description:
-        'Analyze business needs and develop solutions to drive business improvement',
-      commonTransitions: [
-        'Project Manager',
-        'Product Manager',
-        'Systems Analyst',
-      ],
+      description: 'Analyze business needs and develop solutions to drive business improvement',
+      commonTransitions: ['Project Manager', 'Product Manager', 'Systems Analyst'],
       outlook: 'Steady growth expected',
     });
 
     paths.push({
       title: 'Marketing Specialist',
       match: '78%',
-      description:
-        'Develop and implement marketing strategies to promote products or services',
-      commonTransitions: [
-        'Marketing Manager',
-        'Brand Manager',
-        'Digital Marketing Specialist',
-      ],
+      description: 'Develop and implement marketing strategies to promote products or services',
+      commonTransitions: ['Marketing Manager', 'Brand Manager', 'Digital Marketing Specialist'],
       outlook: 'Evolving with digital transformation',
     });
   }
@@ -206,17 +172,14 @@ function extractStrengths(skills /*, experience*/) {
   if (skills.includes('leadership')) strengths.push('Leadership Potential');
   if (skills.includes('problem solving')) strengths.push('Problem-Solving Aptitude');
   if (skills.includes('teamwork')) strengths.push('Collaborative Team Player');
-  if (skills.includes('coding') || skills.includes('programming')) strengths.push('Technical Proficiency');
+  if (skills.includes('coding') || skills.includes('programming'))
+    strengths.push('Technical Proficiency');
   if (skills.includes('creativity')) strengths.push('Creative Thinking');
   if (skills.includes('analysis')) strengths.push('Analytical Mindset');
 
   // Ensure at least some strengths are returned
   if (strengths.length < 3) {
-    const defaultStrengths = [
-      'Adaptability',
-      'Learning Agility',
-      'Professional Demeanor',
-    ];
+    const defaultStrengths = ['Adaptability', 'Learning Agility', 'Professional Demeanor'];
     for (const strength of defaultStrengths) {
       if (strengths.length < 3) strengths.push(strength);
     }
@@ -244,8 +207,7 @@ function generateRecommendations(careerPaths /*, data*/) {
     type: 'training',
     title: 'Recommended Training',
     items: [
-      `Professional certification in ${
-        careerPaths[0]?.title || 'your field of interest'}`,
+      `Professional certification in ${careerPaths[0]?.title || 'your field of interest'}`,
       'Soft skills development workshop',
       'Technical skills enhancement course',
     ],
@@ -256,8 +218,7 @@ function generateRecommendations(careerPaths /*, data*/) {
     type: 'networking',
     title: 'Networking Opportunities',
     items: [
-      `Industry conferences related to ${
-        careerPaths[0]?.title || 'your field'}`,
+      `Industry conferences related to ${careerPaths[0]?.title || 'your field'}`,
       'Professional associations membership',
       'LinkedIn groups and connections in target industry',
     ],
@@ -286,14 +247,7 @@ function extractCurrentCompetencies(skills /*, experience*/) {
 
   // Technical competencies
   const technicalSkills = skills.filter((skill) =>
-    [
-      'programming',
-      'coding',
-      'development',
-      'data',
-      'analysis',
-      'design',
-    ].includes(skill),
+    ['programming', 'coding', 'development', 'data', 'analysis', 'design'].includes(skill),
   );
 
   if (technicalSkills.length > 0) {
@@ -309,13 +263,7 @@ function extractCurrentCompetencies(skills /*, experience*/) {
 
   // Soft competencies
   const softSkills = skills.filter((skill) =>
-    [
-      'communication',
-      'teamwork',
-      'leadership',
-      'problem solving',
-      'creativity',
-    ].includes(skill),
+    ['communication', 'teamwork', 'leadership', 'problem solving', 'creativity'].includes(skill),
   );
 
   if (softSkills.length > 0) {
@@ -404,8 +352,7 @@ function getTargetCompetencies(targetRole) {
       {
         name: 'SQL',
         level: 'Advanced',
-        description:
-          'Writing complex queries to extract insights from databases',
+        description: 'Writing complex queries to extract insights from databases',
       },
     ],
     'UX/UI Designer': [
@@ -465,7 +412,8 @@ function identifyCompetencyGaps(data) {
         description: 'Experience with Scrum or Kanban frameworks',
       },
     ];
-  } if (data.targetRole === 'Project Manager') {
+  }
+  if (data.targetRole === 'Project Manager') {
     return [
       {
         name: 'Budget Management',
@@ -476,7 +424,8 @@ function identifyCompetencyGaps(data) {
         description: 'Formal certification in Agile methodologies',
       },
     ];
-  } if (data.targetRole === 'Data Analyst') {
+  }
+  if (data.targetRole === 'Data Analyst') {
     return [
       {
         name: 'Programming in R',
@@ -487,7 +436,8 @@ function identifyCompetencyGaps(data) {
         description: 'Understanding of basic machine learning principles',
       },
     ];
-  } if (data.targetRole === 'UX/UI Designer') {
+  }
+  if (data.targetRole === 'UX/UI Designer') {
     return [
       {
         name: 'User Testing Methodologies',
@@ -519,8 +469,7 @@ function createDevelopmentPlan(data) {
 
   const shortTermActions = [
     `Complete online course on ${data.targetRole || 'target field'}`,
-    `Join professional community related to ${
-      data.targetRole || 'your interests'}`,
+    `Join professional community related to ${data.targetRole || 'your interests'}`,
     'Work on personal project to demonstrate skills',
   ];
 
@@ -631,9 +580,7 @@ async function generateSynthesisDraft(beneficiaryData) {
     return completion.choices[0].message.content.trim();
   } catch (error) {
     console.error('SYNTHESIS - Error calling OpenAI API:', error);
-    throw new Error(
-      "Erreur lors de la communication avec l'API OpenAI pour la synthèse.",
-    );
+    throw new Error("Erreur lors de la communication avec l'API OpenAI pour la synthèse.");
   }
 }
 
@@ -701,8 +648,7 @@ async function generateActionPlanDraft(beneficiaryData) {
       messages: [
         {
           role: 'system',
-          content:
-            "Tu es un coach professionnel expert en plans d'action SMART.",
+          content: "Tu es un coach professionnel expert en plans d'action SMART.",
         },
         { role: 'user', content: prompt },
       ],
@@ -713,9 +659,7 @@ async function generateActionPlanDraft(beneficiaryData) {
     return completion.choices[0].message.content.trim();
   } catch (error) {
     console.error('ACTION PLAN - Error calling OpenAI API:', error);
-    throw new Error(
-      "Erreur lors de la communication avec l'API OpenAI pour le plan d'action.",
-    );
+    throw new Error("Erreur lors de la communication avec l'API OpenAI pour le plan d'action.");
   }
 }
 
@@ -796,13 +740,9 @@ async function exploreCareer(explorationData) {
     try {
       return JSON.parse(content);
     } catch (parseError) {
-      console.error(
-        'CAREER EXPLORER - Error parsing OpenAI JSON response:',
-        parseError,
-      );
+      console.error('CAREER EXPLORER - Error parsing OpenAI JSON response:', parseError);
       return {
-        message:
-          "Une erreur est survenue lors de l'analyse des résultats. Veuillez réessayer.",
+        message: "Une erreur est survenue lors de l'analyse des résultats. Veuillez réessayer.",
         suggestions: [],
       };
     }
@@ -894,19 +834,14 @@ async function generateStrategyPlan(planData) {
   let gapsData = '';
 
   if (competencyAnalysis) {
-    if (
-      competencyAnalysis.strengths &&
-      competencyAnalysis.strengths.length > 0
-    ) {
-      skillsData +=
-        `\nPoints forts identifiés: ${
-          competencyAnalysis.strengths.map((s) => s.skill).join(', ')}`;
+    if (competencyAnalysis.strengths && competencyAnalysis.strengths.length > 0) {
+      skillsData += `\nPoints forts identifiés: ${competencyAnalysis.strengths
+        .map((s) => s.skill)
+        .join(', ')}`;
     }
 
     if (competencyAnalysis.gaps && competencyAnalysis.gaps.length > 0) {
-      gapsData =
-        `Lacunes identifiées: ${
-          competencyAnalysis.gaps.map((g) => g.skill).join(', ')}`;
+      gapsData = `Lacunes identifiées: ${competencyAnalysis.gaps.map((g) => g.skill).join(', ')}`;
     }
   }
 
@@ -988,21 +923,15 @@ async function generateStrategyPlan(planData) {
     try {
       return JSON.parse(content);
     } catch (parseError) {
-      console.error(
-        'STRATEGY PLAN - Error parsing OpenAI JSON response:',
-        parseError,
-      );
+      console.error('STRATEGY PLAN - Error parsing OpenAI JSON response:', parseError);
       return {
-        error:
-          "Une erreur est survenue lors de l'analyse des résultats. Veuillez réessayer.",
+        error: "Une erreur est survenue lors de l'analyse des résultats. Veuillez réessayer.",
         rawContent: content,
       };
     }
   } catch (error) {
     console.error('STRATEGY PLAN - Error calling OpenAI API:', error);
-    throw new Error(
-      "Erreur lors de la communication avec l'API OpenAI pour le plan stratégique.",
-    );
+    throw new Error("Erreur lors de la communication avec l'API OpenAI pour le plan stratégique.");
   }
 }
 

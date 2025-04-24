@@ -15,16 +15,10 @@ router.use(ensureAuthenticated);
 router.use('/beneficiaries/:id', ensureBeneficiaryAccess);
 
 // Career Explorer form route
-router.get(
-  '/beneficiaries/:id/career-explorer',
-  careerExplorerController.showCareerExplorerForm,
-);
+router.get('/beneficiaries/:id/career-explorer', careerExplorerController.showCareerExplorerForm);
 
 // Process career exploration request
-router.post(
-  '/beneficiaries/:id/career-explorer',
-  careerExplorerController.processCareerExplorer,
-);
+router.post('/beneficiaries/:id/career-explorer', careerExplorerController.processCareerExplorer);
 
 // Show career exploration results
 router.get(

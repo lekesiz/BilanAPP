@@ -146,7 +146,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   logger.error(
     `${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`,
-    { error: err }
+    { error: err },
   );
 
   if (err.code === 'EBADCSRFTOKEN') {

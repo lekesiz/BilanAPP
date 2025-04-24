@@ -1,11 +1,7 @@
 const express = require('express');
 
 const router = express.Router();
-const {
-  ensureAuthenticated,
-  ensureConsultant,
-  ensureBeneficiary,
-} = require('../middlewares/auth');
+const { ensureAuthenticated, ensureConsultant, ensureBeneficiary } = require('../middlewares/auth');
 
 // Tableau de bord principal (redirection selon le type d'utilisateur)
 router.get('/', ensureAuthenticated, (req, res) => {
@@ -25,16 +21,11 @@ router.get('/consultant', ensureAuthenticated, ensureConsultant, (req, res) => {
 });
 
 // Tableau de bord bénéficiaire
-router.get(
-  '/beneficiary',
-  ensureAuthenticated,
-  ensureBeneficiary,
-  (req, res) => {
-    res.render('dashboard/beneficiary', {
-      title: 'Mon Bilan de Compétences',
-      user: req.user,
-    });
-  },
-);
+router.get('/beneficiary', ensureAuthenticated, ensureBeneficiary, (req, res) => {
+  res.render('dashboard/beneficiary', {
+    title: 'Mon Bilan de Compétences',
+    user: req.user,
+  });
+});
 
 module.exports = router;

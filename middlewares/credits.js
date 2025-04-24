@@ -15,10 +15,7 @@ const checkAndDeductCredits = (cost) => async (req, res, next) => {
   const creditCheckResult = await deductCredits(userId, cost);
 
   if (!creditCheckResult.success) {
-    req.flash(
-      'error_msg',
-      creditCheckResult.message || 'Erreur de crédit inconnue.',
-    );
+    req.flash('error_msg', creditCheckResult.message || 'Erreur de crédit inconnue.');
     // Redirect back? Need to know the original path or a default.
     // For now, redirecting to dashboard, but specific routes might need different handling.
     // Or maybe redirect back using req.originalUrl or req.headers.referer (less reliable)

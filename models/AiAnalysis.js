@@ -32,8 +32,7 @@ const AiAnalysis = sequelize.define(
     beneficiaryId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment:
-        'ID of the beneficiary for whom the analysis was performed (if applicable)',
+      comment: 'ID of the beneficiary for whom the analysis was performed (if applicable)',
     },
     creditCost: {
       type: DataTypes.INTEGER,

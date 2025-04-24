@@ -10,9 +10,7 @@ exports.listAppointments = async (req, res) => {
     const limit = 15;
     const offset = (page - 1) * limit;
     const whereClause = {};
-    const {
-      beneficiary, status, dateStart, dateEnd,
-    } = req.query;
+    const { beneficiary, status, dateStart, dateEnd } = req.query;
     const { userType } = req.user;
     const userId = req.user.id;
     const isAdmin = req.user.forfaitType === 'Admin';
@@ -185,7 +183,7 @@ exports.addAppointment = async (req, res) => {
       });
     } catch (renderError) {
       logger.error('Error re-rendering new appointment form:', { error: renderError });
-      req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+      req.flash('error_msg', "Erreur lors de l'affichage du formulaire.");
       return res.redirect('/appointments');
     }
   }
@@ -294,11 +292,9 @@ exports.showEditForm = async (req, res) => {
 
     const isAdmin = req.user.forfaitType === 'Admin';
     const isConsultantOwner =
-      req.user.userType === 'consultant' &&
-      appointment.consultantId === req.user.id;
+      req.user.userType === 'consultant' && appointment.consultantId === req.user.id;
     const isBeneficiaryOwner =
-      req.user.userType === 'beneficiary' &&
-      appointment.beneficiary?.userId === req.user.id;
+      req.user.userType === 'beneficiary' && appointment.beneficiary?.userId === req.user.id;
 
     if (!(isAdmin || isConsultantOwner || isBeneficiaryOwner)) {
       req.flash('error_msg', 'Accès non autorisé pour modifier ce RDV.');
@@ -350,11 +346,14 @@ exports.updateAppointment = async (req, res) => {
         req.flash('error_msg', 'Rendez-vous non trouvé.');
         return res.redirect('/appointments');
       }
-      
+
       let beneficiaries = [];
       if (req.user.userType === 'consultant' || req.user.forfaitType === 'Admin') {
-        const whereCondition = req.user.forfaitType === 'Admin' ? {} : { consultantId: req.user.id };
-        beneficiaries = (await Beneficiary.findAll({ where: whereCondition, include: 'user' })).map(b => b.get({plain: true}));
+        const whereCondition =
+          req.user.forfaitType === 'Admin' ? {} : { consultantId: req.user.id };
+        beneficiaries = (await Beneficiary.findAll({ where: whereCondition, include: 'user' })).map(
+          (b) => b.get({ plain: true }),
+        );
       }
 
       return res.render('appointments/edit', {
@@ -368,9 +367,9 @@ exports.updateAppointment = async (req, res) => {
         errors: errors.array(),
         formData: req.body,
       });
-    } catch(renderError) {
+    } catch (renderError) {
       logger.error('Error re-rendering edit appointment form:', { error: renderError });
-      req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+      req.flash('error_msg', "Erreur lors de l'affichage du formulaire.");
       return res.redirect('/appointments');
     }
   }
@@ -389,11 +388,9 @@ exports.updateAppointment = async (req, res) => {
 
     const isAdmin = req.user.forfaitType === 'Admin';
     const isConsultantOwner =
-      req.user.userType === 'consultant' &&
-      appointment.consultantId === req.user.id;
+      req.user.userType === 'consultant' && appointment.consultantId === req.user.id;
     const isBeneficiaryOwner =
-      req.user.userType === 'beneficiary' &&
-      appointment.beneficiary?.userId === req.user.id;
+      req.user.userType === 'beneficiary' && appointment.beneficiary?.userId === req.user.id;
 
     if (!(isAdmin || isConsultantOwner || isBeneficiaryOwner)) {
       req.flash('error_msg', 'Accès non autorisé pour modifier ce RDV.');
@@ -412,10 +409,7 @@ exports.updateAppointment = async (req, res) => {
         where: benefWhere,
       });
       if (!canAssignBeneficiary) {
-        req.flash(
-          'error_msg',
-          'Sélection bénéficiaire invalide ou non autorisé.',
-        );
+        req.flash('error_msg', 'Sélection bénéficiaire invalide ou non autorisé.');
         return res.redirect(`/appointments/${appointmentId}/edit`);
       }
       finalBeneficiaryId = beneficiaryId;
@@ -461,11 +455,9 @@ exports.deleteAppointment = async (req, res) => {
 
     const isAdmin = req.user.forfaitType === 'Admin';
     const isConsultantOwner =
-      req.user.userType === 'consultant' &&
-      appointment.consultantId === req.user.id;
+      req.user.userType === 'consultant' && appointment.consultantId === req.user.id;
     const isBeneficiaryOwner =
-      req.user.userType === 'beneficiary' &&
-      appointment.beneficiary?.userId === req.user.id;
+      req.user.userType === 'beneficiary' && appointment.beneficiary?.userId === req.user.id;
 
     if (!(isAdmin || isConsultantOwner || isBeneficiaryOwner)) {
       req.flash('error_msg', 'Accès non autorisé pour supprimer ce RDV.');

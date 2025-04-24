@@ -42,10 +42,7 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement des messages',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement des messages');
     res.redirect('/dashboard');
   }
 });
@@ -81,13 +78,9 @@ router.get('/beneficiary/:id', ensureAuthenticated, async (req, res) => {
     });
 
     // Marquer les messages non lus comme lus
-    const unreadMessages = messages.filter(
-      (m) => !m.isRead && m.senderType !== 'consultant',
-    );
+    const unreadMessages = messages.filter((m) => !m.isRead && m.senderType !== 'consultant');
     if (unreadMessages.length > 0) {
-      await Promise.all(
-        unreadMessages.map((message) => message.update({ isRead: true })),
-      );
+      await Promise.all(unreadMessages.map((message) => message.update({ isRead: true })));
     }
 
     res.render('messages/conversation', {
@@ -98,10 +91,7 @@ router.get('/beneficiary/:id', ensureAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement de la conversation',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement de la conversation');
     res.redirect('/messages');
   }
 });
@@ -135,13 +125,9 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
     });
 
     // Marquer les messages non lus comme lus
-    const unreadMessages = messages.filter(
-      (m) => !m.isRead && m.senderType !== 'beneficiary',
-    );
+    const unreadMessages = messages.filter((m) => !m.isRead && m.senderType !== 'beneficiary');
     if (unreadMessages.length > 0) {
-      await Promise.all(
-        unreadMessages.map((message) => message.update({ isRead: true })),
-      );
+      await Promise.all(unreadMessages.map((message) => message.update({ isRead: true })));
     }
 
     res.render('messages/conversation', {
@@ -152,10 +138,7 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement de la conversation',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement de la conversation');
     res.redirect('/dashboard');
   }
 });

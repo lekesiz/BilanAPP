@@ -11,21 +11,21 @@ const profileController = require('../controllers/profileController');
 
 // --- Validation Rules ---
 const infoValidationRules = () => [
-    body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
-    body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
+  body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
+  body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
 ];
 
 const passwordValidationRules = () => [
-    body('currentPassword').notEmpty().withMessage('Mot de passe actuel requis.'),
-    body('newPassword')
-        .isLength({ min: 6 })
-        .withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères.'),
-    body('confirmPassword').custom((value, { req }) => {
-        if (value !== req.body.newPassword) {
-            throw new Error('Les nouveaux mots de passe ne correspondent pas.');
-        }
-        return true;
-    }),
+  body('currentPassword').notEmpty().withMessage('Mot de passe actuel requis.'),
+  body('newPassword')
+    .isLength({ min: 6 })
+    .withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères.'),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.newPassword) {
+      throw new Error('Les nouveaux mots de passe ne correspondent pas.');
+    }
+    return true;
+  }),
 ];
 
 // GET /profile - Show Profile Page

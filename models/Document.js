@@ -92,9 +92,7 @@ Document.init(
             }
           });
         } else {
-          console.warn(
-            `Document ID ${document.id} destroyed, but no filePath found.`,
-          );
+          console.warn(`Document ID ${document.id} destroyed, but no filePath found.`);
         }
       },
     },

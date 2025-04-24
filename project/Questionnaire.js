@@ -14,13 +14,7 @@ Questionnaire.init(
       allowNull: true,
     },
     type: {
-      type: DataTypes.ENUM(
-        'skills',
-        'interests',
-        'personality',
-        'values',
-        'other',
-      ),
+      type: DataTypes.ENUM('skills', 'interests', 'personality', 'values', 'other'),
       allowNull: false,
       defaultValue: 'skills',
     },

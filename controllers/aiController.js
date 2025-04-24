@@ -97,9 +97,7 @@ exports.generateSynthesis = async (req, res) => {
     }
 
     // Process instructions/customization if provided
-    const customInstructions = instructions ?
-      { customInstructions: instructions } :
-      {};
+    const customInstructions = instructions ? { customInstructions: instructions } : {};
     const beneficiaryData = {
       ...beneficiary.toJSON(),
       user: beneficiary.user.toJSON(),
@@ -107,16 +105,12 @@ exports.generateSynthesis = async (req, res) => {
     };
 
     // Generate synthesis
-    const generatedText =
-      await aiService.generateSynthesisDraft(beneficiaryData);
+    const generatedText = await aiService.generateSynthesisDraft(beneficiaryData);
 
     // Update beneficiary with generated text if requested
     if (req.body.updateBeneficiary === 'true') {
       await beneficiary.update({ synthesis: generatedText });
-      req.flash(
-        'success_msg',
-        'Synthèse générée et enregistrée pour le bénéficiaire.',
-      );
+      req.flash('success_msg', 'Synthèse générée et enregistrée pour le bénéficiaire.');
     }
 
     // Log usage
@@ -175,10 +169,7 @@ exports.showActionPlanGenerator = async (req, res) => {
     });
   } catch (error) {
     console.error('Action Plan Generator UI error:', error);
-    req.flash(
-      'error_msg',
-      "Erreur lors du chargement de l'outil de plan d'action.",
-    );
+    req.flash('error_msg', "Erreur lors du chargement de l'outil de plan d'action.");
     res.redirect('/dashboard');
   }
 };
@@ -212,9 +203,7 @@ exports.generateActionPlan = async (req, res) => {
     }
 
     // Process instructions/customization if provided
-    const customInstructions = instructions ?
-      { customInstructions: instructions } :
-      {};
+    const customInstructions = instructions ? { customInstructions: instructions } : {};
     const beneficiaryData = {
       ...beneficiary.toJSON(),
       user: beneficiary.user.toJSON(),
@@ -227,10 +216,7 @@ exports.generateActionPlan = async (req, res) => {
     // Update beneficiary with generated text if requested
     if (req.body.updateBeneficiary === 'true') {
       await beneficiary.update({ actionPlan: JSON.stringify(actionPlanResult) });
-      req.flash(
-        'success_msg',
-        "Plan d'action généré et enregistré pour le bénéficiaire.",
-      );
+      req.flash('success_msg', "Plan d'action généré et enregistré pour le bénéficiaire.");
     }
 
     // Log usage
@@ -273,17 +259,12 @@ exports.showCareerExplorer = (req, res) => {
 
 // POST /ai/career-explorer - Handle career exploration request
 exports.exploreCareer = async (req, res) => {
-  const {
-    skills, interests, constraints, educationLevel,
-  } = req.body;
+  const { skills, interests, constraints, educationLevel } = req.body;
 
   try {
     // Validate input
     if (!skills && !interests) {
-      req.flash(
-        'error_msg',
-        'Veuillez spécifier des compétences ou des intérêts.',
-      );
+      req.flash('error_msg', 'Veuillez spécifier des compétences ou des intérêts.');
       return res.redirect('/ai/career-explorer');
     }
 
@@ -320,7 +301,10 @@ exports.exploreCareer = async (req, res) => {
       user: req.user,
       careerSuggestions,
       inputs: {
-        skills, interests, constraints, educationLevel,
+        skills,
+        interests,
+        constraints,
+        educationLevel,
       },
     });
   } catch (error) {
@@ -348,10 +332,7 @@ exports.analyzeCompetencies = async (req, res) => {
   try {
     // Validate input
     if (!cvText || !jobDescription) {
-      req.flash(
-        'error_msg',
-        'Veuillez fournir le texte du CV et la description du poste.',
-      );
+      req.flash('error_msg', 'Veuillez fournir le texte du CV et la description du poste.');
       return res.redirect('/ai/competency-analyzer');
     }
 
@@ -359,10 +340,7 @@ exports.analyzeCompetencies = async (req, res) => {
     // const analysisResults = await aiService.analyzeCompetencies(cvText, jobDescription);
 
     // For now, return a placeholder
-    const analysisResult = await aiService.generateCompetencyAnalysis(
-      cvText,
-      jobDescription,
-    );
+    const analysisResult = await aiService.generateCompetencyAnalysis(cvText, jobDescription);
 
     // Log usage (commented until implementation is complete)
     // await incrementAiUsage(req.user.id);
@@ -445,35 +423,28 @@ const generateCompetencyAnalysis = (cvText, jobDescription) => {
     objectives: [
       `Développer des compétences en ${gaps[0]?.skill || 'communication'}`,
       `Renforcer l'expertise en ${gaps[1]?.skill || 'gestion de projet'}`,
-      `Acquérir une certification en ${
-        gaps[2]?.skill || 'méthodologie agile'}`,
+      `Acquérir une certification en ${gaps[2]?.skill || 'méthodologie agile'}`,
     ],
     trainings: [
       `Formation en ${gaps[0]?.skill || 'communication'} (35 heures)`,
-      `Atelier pratique de ${
-        gaps[1]?.skill || 'gestion de projet'
-      } (21 heures)`,
-      `Cours en ligne sur ${
-        gaps[2]?.skill || 'méthodologie agile'
-      } (14 heures)`,
+      `Atelier pratique de ${gaps[1]?.skill || 'gestion de projet'} (21 heures)`,
+      `Cours en ligne sur ${gaps[2]?.skill || 'méthodologie agile'} (14 heures)`,
     ],
     experiences: [
-      `Participer à un projet impliquant ${
-        gaps[0]?.skill || 'communication'}`,
+      `Participer à un projet impliquant ${gaps[0]?.skill || 'communication'}`,
       `Prendre en charge un rôle de ${gaps[1]?.skill || 'gestion de projet'}`,
-      `Contribuer à une équipe utilisant ${
-        gaps[2]?.skill || 'méthodologie agile'}`,
+      `Contribuer à une équipe utilisant ${gaps[2]?.skill || 'méthodologie agile'}`,
     ],
   };
 
   return {
     matchScore,
     summary: `Le profil correspond à ${matchScore}% des exigences du poste. ${
-      matchScore >= 70 ?
-        'Le candidat possède la majorité des compétences requises.' :
-        matchScore >= 40 ?
-          'Le candidat a plusieurs compétences clés mais certaines lacunes importantes.' :
-          'Le candidat présente des écarts significatifs par rapport aux exigences du poste.'
+      matchScore >= 70
+        ? 'Le candidat possède la majorité des compétences requises.'
+        : matchScore >= 40
+          ? 'Le candidat a plusieurs compétences clés mais certaines lacunes importantes.'
+          : 'Le candidat présente des écarts significatifs par rapport aux exigences du poste.'
     }`,
     strengths,
     gaps,
@@ -525,27 +496,19 @@ exports.getCompetencyAnalyzer = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getCompetencyAnalyzer:', error);
-    req.flash(
-      'error',
-      "Une erreur est survenue lors du chargement de l'analyseur de compétences.",
-    );
+    req.flash('error', "Une erreur est survenue lors du chargement de l'analyseur de compétences.");
     res.redirect('/dashboard');
   }
 };
 
 exports.postCompetencyAnalyzer = async (req, res) => {
   try {
-    const {
-      beneficiaryId, cvText, jobDescription, saveToNotes,
-    } = req.body;
+    const { beneficiaryId, cvText, jobDescription, saveToNotes } = req.body;
     const creditCost = 5;
 
     // Validate inputs
     if (!cvText || !jobDescription) {
-      req.flash(
-        'error',
-        'Veuillez fournir à la fois le CV et la description du poste.',
-      );
+      req.flash('error', 'Veuillez fournir à la fois le CV et la description du poste.');
       return res.redirect('/ai/competency-analyzer');
     }
 
@@ -567,10 +530,7 @@ exports.postCompetencyAnalyzer = async (req, res) => {
     // Check credits
     const hasCredits = await hasEnoughCredits(req.user.id, creditCost);
     if (!hasCredits) {
-      req.flash(
-        'error',
-        `Crédits insuffisants. Cette analyse requiert ${creditCost} crédits.`,
-      );
+      req.flash('error', `Crédits insuffisants. Cette analyse requiert ${creditCost} crédits.`);
       return res.redirect('/ai/competency-analyzer');
     }
 
@@ -610,10 +570,7 @@ exports.postCompetencyAnalyzer = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in postCompetencyAnalyzer:', error);
-    req.flash(
-      'error',
-      "Une erreur est survenue lors de l'analyse des compétences.",
-    );
+    req.flash('error', "Une erreur est survenue lors de l'analyse des compétences.");
     res.redirect('/ai/competency-analyzer');
   }
 };
@@ -667,9 +624,7 @@ exports.saveCompetencyAnalysis = async (req, res) => {
 
     // Create a note with the analysis results
     // This is a placeholder - in a real app you would update the beneficiary notes
-    console.log(
-      `Saving analysis results to beneficiary #${beneficiaryId} notes`,
-    );
+    console.log(`Saving analysis results to beneficiary #${beneficiaryId} notes`);
 
     // Flash success and redirect to results page with saved flag
     req.flash('success', 'Analyse sauvegardée dans les notes du bénéficiaire.');
@@ -683,10 +638,7 @@ exports.saveCompetencyAnalysis = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in saveCompetencyAnalysis:', error);
-    req.flash(
-      'error',
-      "Une erreur est survenue lors de la sauvegarde de l'analyse.",
-    );
+    req.flash('error', "Une erreur est survenue lors de la sauvegarde de l'analyse.");
     res.redirect('/ai/competency-analyzer');
   }
 };
@@ -720,20 +672,14 @@ exports.showStrategyPlanGenerator = async (req, res) => {
     });
   } catch (error) {
     console.error('Strategy Plan Generator UI error:', error);
-    req.flash(
-      'error_msg',
-      "Erreur lors du chargement de l'outil de plan stratégique.",
-    );
+    req.flash('error_msg', "Erreur lors du chargement de l'outil de plan stratégique.");
     res.redirect('/dashboard');
   }
 };
 
 // POST /ai/strategy-plan-generator - Handle strategy plan generation request
 exports.generateStrategyPlan = async (req, res) => {
-  const {
-    beneficiaryId, instructions, skills, careerGoals, timeframe,
-  } =
-    req.body;
+  const { beneficiaryId, instructions, skills, careerGoals, timeframe } = req.body;
 
   try {
     // Validate input
@@ -769,9 +715,7 @@ exports.generateStrategyPlan = async (req, res) => {
     }
 
     // Process instructions/customization if provided
-    const customInstructions = instructions ?
-      { customInstructions: instructions } :
-      {};
+    const customInstructions = instructions ? { customInstructions: instructions } : {};
     const planData = {
       beneficiary: beneficiary.toJSON(),
       user: beneficiary.user.toJSON(),
@@ -779,9 +723,9 @@ exports.generateStrategyPlan = async (req, res) => {
       careerGoals: careerGoals || beneficiary.careerObjectives || '',
       timeframe: timeframe || '6-12 months',
       competencyAnalysis:
-        beneficiary.AiAnalyses && beneficiary.AiAnalyses.length > 0 ?
-          JSON.parse(beneficiary.AiAnalyses[0].data) :
-          null,
+        beneficiary.AiAnalyses && beneficiary.AiAnalyses.length > 0
+          ? JSON.parse(beneficiary.AiAnalyses[0].data)
+          : null,
       ...customInstructions,
     };
 
@@ -791,10 +735,7 @@ exports.generateStrategyPlan = async (req, res) => {
     // Update beneficiary with generated text if requested
     if (req.body.updateBeneficiary === 'true') {
       await beneficiary.update({ strategyPlan: JSON.stringify(strategyPlan) });
-      req.flash(
-        'success_msg',
-        'Plan stratégique généré et enregistré pour le bénéficiaire.',
-      );
+      req.flash('success_msg', 'Plan stratégique généré et enregistré pour le bénéficiaire.');
     }
 
     // Log usage

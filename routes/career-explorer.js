@@ -11,11 +11,7 @@ router.use(isAuthenticated);
 router.get('/', isConsultantOrAdmin, careerExplorerController.showExplorerForm);
 
 // Process career explorer form
-router.post(
-  '/process',
-  isConsultantOrAdmin,
-  careerExplorerController.processExplorerForm,
-);
+router.post('/process', isConsultantOrAdmin, careerExplorerController.processExplorerForm);
 
 // Save results to beneficiary
 router.post(

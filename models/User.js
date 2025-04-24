@@ -31,13 +31,7 @@ User.init(
       allowNull: false,
     },
     forfaitType: {
-      type: DataTypes.ENUM(
-        'Essentiel',
-        'Standard',
-        'Premium',
-        'Entreprise',
-        'Admin',
-      ),
+      type: DataTypes.ENUM('Essentiel', 'Standard', 'Premium', 'Entreprise', 'Admin'),
       allowNull: true,
       defaultValue: 'Standard',
     },
@@ -56,8 +50,7 @@ User.init(
     aiGenerationCountResetDate: {
       type: DataTypes.DATEONLY,
       allowNull: true,
-      comment:
-        'Date when the AI generation counter was last reset (typically 1st of month)',
+      comment: 'Date when the AI generation counter was last reset (typically 1st of month)',
     },
   },
   {

@@ -6,10 +6,7 @@
  */
 const checkAccessLevel = (requiredForfait) => (req, res, next) => {
   if (!req.user || !req.user.forfaitType) {
-    req.flash(
-      'error_msg',
-      'Accès non autorisé. Forfait utilisateur inconnu.',
-    );
+    req.flash('error_msg', 'Accès non autorisé. Forfait utilisateur inconnu.');
     return res.redirect('/dashboard');
   }
 

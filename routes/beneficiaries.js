@@ -20,8 +20,12 @@ const beneficiaryValidationRules = () => [
   body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
   body('email').isEmail().withMessage('Adresse email invalide.').normalizeEmail(),
   body('phone').optional({ checkFalsy: true }).trim().escape(), // Opsiyonel, ama varsa temizle
-  body('status').isIn(['initial', 'active', 'completed', 'on_hold']).withMessage('Statut invalide.'),
-  body('currentPhase').isIn(['preliminary', 'investigation', 'conclusion']).withMessage('Phase invalide.'),
+  body('status')
+    .isIn(['initial', 'active', 'completed', 'on_hold'])
+    .withMessage('Statut invalide.'),
+  body('currentPhase')
+    .isIn(['preliminary', 'investigation', 'conclusion'])
+    .withMessage('Phase invalide.'),
   // Diğer alanlar için de kurallar eklenebilir (escape, trim vb.)
   body('notes').optional({ checkFalsy: true }).trim().escape(),
   body('education').optional({ checkFalsy: true }).trim().escape(),
@@ -45,12 +49,7 @@ router.get(
 );
 
 // Formulaire d'ajout d'un bénéficiaire (GET /add)
-router.get(
-  '/add',
-  ensureAuthenticated,
-  ensureConsultant,
-  beneficiaryController.showAddForm,
-);
+router.get('/add', ensureAuthenticated, ensureConsultant, beneficiaryController.showAddForm);
 
 // Traitement du formulaire d'ajout (POST /add)
 router.post(
@@ -99,7 +98,9 @@ router.post(
   '/:id/update-phase',
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
-  body('currentPhase').isIn(['preliminary', 'investigation', 'conclusion']).withMessage('Phase invalide.'),
+  body('currentPhase')
+    .isIn(['preliminary', 'investigation', 'conclusion'])
+    .withMessage('Phase invalide.'),
   beneficiaryController.updatePhase,
 );
 

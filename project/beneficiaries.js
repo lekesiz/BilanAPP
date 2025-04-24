@@ -2,10 +2,7 @@ const express = require('express');
 
 const router = express.Router();
 const { Op } = require('sequelize');
-const {
-  ensureAuthenticated,
-  ensureConsultant,
-} = require('../middlewares/auth');
+const { ensureAuthenticated, ensureConsultant } = require('../middlewares/auth');
 const { Beneficiary, User, Appointment } = require('../models');
 
 // Liste des bénéficiaires
@@ -31,10 +28,7 @@ router.get('/', ensureAuthenticated, ensureConsultant, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement des bénéficiaires',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement des bénéficiaires');
     res.redirect('/dashboard');
   }
 });
@@ -50,9 +44,7 @@ router.get('/add', ensureAuthenticated, ensureConsultant, (req, res) => {
 // Traitement du formulaire d'ajout
 router.post('/add', ensureAuthenticated, ensureConsultant, async (req, res) => {
   try {
-    const {
-      firstName, lastName, email, phone, notes,
-    } = req.body;
+    const { firstName, lastName, email, phone, notes } = req.body;
 
     // Vérifier si l'email existe déjà
     const existingBeneficiary = await Beneficiary.findOne({ where: { email } });
@@ -77,10 +69,7 @@ router.post('/add', ensureAuthenticated, ensureConsultant, async (req, res) => {
     res.redirect('/beneficiaries');
   } catch (err) {
     console.error(err);
-    req.flash(
-      'error',
-      "Une erreur est survenue lors de l'ajout du bénéficiaire",
-    );
+    req.flash('error', "Une erreur est survenue lors de l'ajout du bénéficiaire");
     res.redirect('/beneficiaries/add');
   }
 });
@@ -115,95 +104,73 @@ router.get('/:id', ensureAuthenticated, ensureConsultant, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement des détails du bénéficiaire',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement des détails du bénéficiaire');
     res.redirect('/beneficiaries');
   }
 });
 
 // Formulaire de modification d'un bénéficiaire
-router.get(
-  '/:id/edit',
-  ensureAuthenticated,
-  ensureConsultant,
-  async (req, res) => {
-    try {
-      const beneficiary = await Beneficiary.findOne({
-        where: {
-          id: req.params.id,
-          consultantId: req.user.id,
-        },
-      });
+router.get('/:id/edit', ensureAuthenticated, ensureConsultant, async (req, res) => {
+  try {
+    const beneficiary = await Beneficiary.findOne({
+      where: {
+        id: req.params.id,
+        consultantId: req.user.id,
+      },
+    });
 
-      if (!beneficiary) {
-        req.flash('error', 'Bénéficiaire non trouvé');
-        return res.redirect('/beneficiaries');
-      }
-
-      res.render('beneficiaries/edit', {
-        title: `Modifier: ${beneficiary.firstName} ${beneficiary.lastName}`,
-        beneficiary,
-        user: req.user,
-      });
-    } catch (err) {
-      console.error(err);
-      req.flash(
-        'error',
-        'Une erreur est survenue lors du chargement du formulaire de modification',
-      );
-      res.redirect('/beneficiaries');
+    if (!beneficiary) {
+      req.flash('error', 'Bénéficiaire non trouvé');
+      return res.redirect('/beneficiaries');
     }
-  },
-);
+
+    res.render('beneficiaries/edit', {
+      title: `Modifier: ${beneficiary.firstName} ${beneficiary.lastName}`,
+      beneficiary,
+      user: req.user,
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Une erreur est survenue lors du chargement du formulaire de modification');
+    res.redirect('/beneficiaries');
+  }
+});
 
 // Traitement du formulaire de modification
-router.post(
-  '/:id/edit',
-  ensureAuthenticated,
-  ensureConsultant,
-  async (req, res) => {
-    try {
-      const {
-        firstName, lastName, email, phone, notes, status, currentPhase,
-      } =
-        req.body;
+router.post('/:id/edit', ensureAuthenticated, ensureConsultant, async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, notes, status, currentPhase } = req.body;
 
-      const beneficiary = await Beneficiary.findOne({
-        where: {
-          id: req.params.id,
-          consultantId: req.user.id,
-        },
-      });
+    const beneficiary = await Beneficiary.findOne({
+      where: {
+        id: req.params.id,
+        consultantId: req.user.id,
+      },
+    });
 
-      if (!beneficiary) {
-        req.flash('error', 'Bénéficiaire non trouvé');
-        return res.redirect('/beneficiaries');
-      }
-
-      // Mettre à jour le bénéficiaire
-      await beneficiary.update({
-        firstName,
-        lastName,
-        email,
-        phone,
-        notes,
-        status,
-        currentPhase,
-      });
-
-      req.flash('success', 'Bénéficiaire modifié avec succès');
-      res.redirect(`/beneficiaries/${beneficiary.id}`);
-    } catch (err) {
-      console.error(err);
-      req.flash(
-        'error',
-        'Une erreur est survenue lors de la modification du bénéficiaire',
-      );
-      res.redirect(`/beneficiaries/${req.params.id}/edit`);
+    if (!beneficiary) {
+      req.flash('error', 'Bénéficiaire non trouvé');
+      return res.redirect('/beneficiaries');
     }
-  },
-);
+
+    // Mettre à jour le bénéficiaire
+    await beneficiary.update({
+      firstName,
+      lastName,
+      email,
+      phone,
+      notes,
+      status,
+      currentPhase,
+    });
+
+    req.flash('success', 'Bénéficiaire modifié avec succès');
+    res.redirect(`/beneficiaries/${beneficiary.id}`);
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Une erreur est survenue lors de la modification du bénéficiaire');
+    res.redirect(`/beneficiaries/${req.params.id}/edit`);
+  }
+});
 
 module.exports = router;

@@ -1,5 +1,5 @@
-const { User } = require("../models");
-const { getDefaultCreditsForForfait } = require("../services/creditService");
+const { User } = require('../models');
+const { getDefaultCreditsForForfait } = require('../services/creditService');
 const { validationResult } = require('express-validator');
 const logger = require('../config/logger');
 
@@ -28,14 +28,14 @@ exports.showRegisterPage = (req, res) => {
 exports.registerUser = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.render("auth/register", {
-      title: "Inscription",
+    return res.render('auth/register', {
+      title: 'Inscription',
       errors: errors.array(),
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       email: req.body.email,
       userType: req.body.userType,
-      layout: "auth",
+      layout: 'auth',
     });
   }
 
@@ -44,17 +44,17 @@ exports.registerUser = async (req, res) => {
   try {
     const existingUser = await User.findOne({ where: { email: email } });
     if (existingUser) {
-      return res.render("auth/register", {
-        title: "Inscription",
-        errors: [{ msg: "Cet email est déjà enregistré." }],
+      return res.render('auth/register', {
+        title: 'Inscription',
+        errors: [{ msg: 'Cet email est déjà enregistré.' }],
         firstName,
         lastName,
         email,
         userType,
-        layout: "auth",
+        layout: 'auth',
       });
     }
-    const defaultForfait = "Standard";
+    const defaultForfait = 'Standard';
     const defaultCredits = await getDefaultCreditsForForfait(defaultForfait);
     const newUser = new User({
       firstName,
@@ -66,12 +66,12 @@ exports.registerUser = async (req, res) => {
       availableCredits: defaultCredits,
     });
     await newUser.save();
-    req.flash("success_msg", "Inscription réussie! Connectez-vous.");
-    res.redirect("/auth/login");
+    req.flash('success_msg', 'Inscription réussie! Connectez-vous.');
+    res.redirect('/auth/login');
   } catch (err) {
-    logger.error("Register error:", { error: err, email: email });
-    req.flash("error_msg", "Erreur lors de l'inscription.");
-    res.redirect("/auth/register");
+    logger.error('Register error:', { error: err, email: email });
+    req.flash('error_msg', "Erreur lors de l'inscription.");
+    res.redirect('/auth/register');
   }
 };
 

@@ -29,10 +29,7 @@ exports.listUsers = async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing users for admin:', error);
-    req.flash(
-      'error_msg',
-      'Erreur lors du chargement de la liste des utilisateurs.',
-    );
+    req.flash('error_msg', 'Erreur lors du chargement de la liste des utilisateurs.');
     res.redirect('/dashboard'); // Veya admin dashboard'u varsa oraya
   }
 };
@@ -65,15 +62,8 @@ exports.showAddUserForm = async (req, res) => {
 
 // POST Yeni Kullanıcı Ekleme
 exports.addUser = async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    password,
-    userType,
-    forfaitType,
-    availableCredits,
-  } = req.body;
+  const { firstName, lastName, email, password, userType, forfaitType, availableCredits } =
+    req.body;
   const errors = [];
 
   // Doğrulamalar
@@ -200,10 +190,7 @@ exports.showEditUserForm = async (req, res) => {
     });
   } catch (error) {
     console.error('Admin User Edit GET Error:', error);
-    req.flash(
-      'error_msg',
-      'Erreur lors du chargement du formulaire utilisateur.',
-    );
+    req.flash('error_msg', 'Erreur lors du chargement du formulaire utilisateur.');
     res.redirect('/admin/users');
   }
 };
@@ -211,14 +198,7 @@ exports.showEditUserForm = async (req, res) => {
 // POST Kullanıcı Güncelleme
 exports.updateUser = async (req, res) => {
   const userIdToEdit = req.params.id;
-  const {
-    firstName,
-    lastName,
-    userType,
-    forfaitType,
-    newPassword,
-    confirmPassword,
-  } = req.body;
+  const { firstName, lastName, userType, forfaitType, newPassword, confirmPassword } = req.body;
   const errors = [];
 
   // Doğrulamalar
@@ -291,7 +271,8 @@ exports.updateUser = async (req, res) => {
     req.flash(
       'success_msg',
       `Utilisateur mis à jour avec succès.${
-        newPassword ? ' Le mot de passe a également été changé.' : ''}`,
+        newPassword ? ' Le mot de passe a également été changé.' : ''
+      }`,
     );
     res.redirect('/admin/users');
   } catch (error) {
@@ -335,10 +316,7 @@ exports.adjustCredits = async (req, res) => {
   const creditAmount = parseInt(amount, 10);
 
   if (Number.isNaN(creditAmount)) {
-    req.flash(
-      'error_msg',
-      'Veuillez entrer un montant de crédit valide (nombre).',
-    );
+    req.flash('error_msg', 'Veuillez entrer un montant de crédit valide (nombre).');
     return res.redirect('/admin/users');
   }
   if (!reason || reason.trim() === '') {
@@ -424,10 +402,7 @@ exports.deleteUser = async (req, res) => {
     const userFullName = `${userToDelete.firstName} ${userToDelete.lastName}`;
     await userToDelete.destroy();
 
-    req.flash(
-      'success_msg',
-      `Utilisateur ${userFullName} supprimé avec succès.`,
-    );
+    req.flash('success_msg', `Utilisateur ${userFullName} supprimé avec succès.`);
     res.redirect('/admin/users');
   } catch (error) {
     console.error('Admin User Delete POST Error:', error);
@@ -485,44 +460,28 @@ exports.showEditForfaitForm = async (req, res) => {
 // POST Paket Güncelleme
 exports.updateForfait = async (req, res) => {
   const forfaitName = req.params.name;
-  const {
-    description,
-    defaultCredits,
-    features,
-    maxBeneficiaries,
-    maxAiGenerationsMonthly,
-  } = req.body;
+  const { description, defaultCredits, features, maxBeneficiaries, maxAiGenerationsMonthly } =
+    req.body;
 
   const credits = parseInt(defaultCredits, 10);
   const maxBen =
-    maxBeneficiaries === '' || maxBeneficiaries === null ?
-      null :
-      parseInt(maxBeneficiaries, 10);
+    maxBeneficiaries === '' || maxBeneficiaries === null ? null : parseInt(maxBeneficiaries, 10);
   const maxAi =
-    maxAiGenerationsMonthly === '' || maxAiGenerationsMonthly === null ?
-      null :
-      parseInt(maxAiGenerationsMonthly, 10);
+    maxAiGenerationsMonthly === '' || maxAiGenerationsMonthly === null
+      ? null
+      : parseInt(maxAiGenerationsMonthly, 10);
 
   // Doğrulamalar
   if (Number.isNaN(credits) || credits < 0) {
-    req.flash(
-      'error_msg',
-      'Le nombre de crédits par défaut doit être un nombre positif.',
-    );
+    req.flash('error_msg', 'Le nombre de crédits par défaut doit être un nombre positif.');
     return res.redirect(`/admin/forfaits/${forfaitName}/edit`);
   }
   if (maxBen !== null && (Number.isNaN(maxBen) || maxBen < 0)) {
-    req.flash(
-      'error_msg',
-      'La limite de bénéficiaires doit être un nombre positif ou vide.',
-    );
+    req.flash('error_msg', 'La limite de bénéficiaires doit être un nombre positif ou vide.');
     return res.redirect(`/admin/forfaits/${forfaitName}/edit`);
   }
   if (maxAi !== null && (Number.isNaN(maxAi) || maxAi < 0)) {
-    req.flash(
-      'error_msg',
-      'La limite de générations IA doit être un nombre positif ou vide.',
-    );
+    req.flash('error_msg', 'La limite de générations IA doit être un nombre positif ou vide.');
     return res.redirect(`/admin/forfaits/${forfaitName}/edit`);
   }
 
@@ -546,10 +505,7 @@ exports.updateForfait = async (req, res) => {
       maxAiGenerationsMonthly: maxAi,
     });
 
-    req.flash(
-      'success_msg',
-      `Forfait '${forfaitName}' mis à jour avec succès.`,
-    );
+    req.flash('success_msg', `Forfait '${forfaitName}' mis à jour avec succès.`);
     res.redirect('/admin/forfaits');
   } catch (error) {
     console.error('Admin Forfait Update POST Error:', error);
@@ -582,10 +538,7 @@ exports.updateUserForfait = async (req, res) => {
     }
     // Kendini düzenlemeyi engelle
     if (userIdToUpdate === adminUserId) {
-      req.flash(
-        'error_msg',
-        'Vous ne pouvez pas modifier votre propre forfait.',
-      );
+      req.flash('error_msg', 'Vous ne pouvez pas modifier votre propre forfait.');
       return res.redirect('/admin/users');
     }
 
@@ -625,10 +578,7 @@ exports.updateUserForfait = async (req, res) => {
     res.redirect('/admin/users');
   } catch (error) {
     console.error('Admin User Forfait Update POST Error:', error);
-    req.flash(
-      'error_msg',
-      'Erreur lors de la mise à jour du forfait utilisateur.',
-    );
+    req.flash('error_msg', 'Erreur lors de la mise à jour du forfait utilisateur.');
     res.redirect('/admin/users');
   }
 };

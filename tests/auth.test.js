@@ -11,27 +11,27 @@ beforeAll(async () => {
     console.log('[TEST SETUP] Syncing database...');
     await sequelize.sync({ force: true });
     console.log('[TEST SETUP] Database synced.');
-    
+
     console.log('[TEST SETUP] Creating default forfaits...');
     await createDefaultForfaits(); // Varsayılan forfait'ları oluştur
     console.log('[TEST SETUP] Default forfaits created.');
 
     console.log('[TEST SETUP] Creating test user...');
     await User.create({
-        email: 'test@example.com',
-        password: 'password123', // Hook hashleyecek
-        firstName: 'Test',
-        lastName: 'User',
-        userType: 'consultant',
-        forfaitType: 'Standard',
+      email: 'test@example.com',
+      password: 'password123', // Hook hashleyecek
+      firstName: 'Test',
+      lastName: 'User',
+      userType: 'consultant',
+      forfaitType: 'Standard',
     });
     console.log('[TEST SETUP] Test user created.');
 
     agent = request.agent(app);
     console.log('[TEST SETUP] Agent created.');
   } catch (error) {
-      console.error('[TEST SETUP] Error during beforeAll:', error); // Hata loglandı
-      throw error; // Hatanın testi fail etmesini sağla
+    console.error('[TEST SETUP] Error during beforeAll:', error); // Hata loglandı
+    throw error; // Hatanın testi fail etmesini sağla
   }
 });
 
@@ -52,13 +52,11 @@ describe('Auth Routes', () => {
     const loginPageRes = await agent.get('/auth/login');
     const csrfToken = loginPageRes.text.match(/<input type="hidden" name="_csrf" value="(.*)">/)[1];
 
-    const res = await agent
-      .post('/auth/login')
-      .send({ 
-          email: 'test@example.com', 
-          password: 'wrongpassword', 
-          _csrf: csrfToken 
-        });
+    const res = await agent.post('/auth/login').send({
+      email: 'test@example.com',
+      password: 'wrongpassword',
+      _csrf: csrfToken,
+    });
     // Başarısız login /auth/login'e geri yönlendirmeli
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/auth/login');
@@ -69,24 +67,22 @@ describe('Auth Routes', () => {
     const loginPageRes = await agent.get('/auth/login');
     const csrfToken = loginPageRes.text.match(/<input type="hidden" name="_csrf" value="(.*)">/)[1];
 
-    const res = await agent
-      .post('/auth/login')
-      .send({
-        email: 'test@example.com',
-        password: 'password123',
-        _csrf: csrfToken
-      });
+    const res = await agent.post('/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+      _csrf: csrfToken,
+    });
     // Başarılı login /dashboard'a yönlendirmeli
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/dashboard');
   });
 
   it('GET /dashboard - Should require authentication after login', async () => {
-      // Agent session cookie'sini sakladığı için bu istek başarılı olmalı
-      const res = await agent.get('/dashboard');
-      // /dashboard -> /dashboard/consultant yönlendirmesi olmalı
-      expect(res.statusCode).toEqual(302);
-      expect(res.headers.location).toEqual('/dashboard/consultant');
+    // Agent session cookie'sini sakladığı için bu istek başarılı olmalı
+    const res = await agent.get('/dashboard');
+    // /dashboard -> /dashboard/consultant yönlendirmesi olmalı
+    expect(res.statusCode).toEqual(302);
+    expect(res.headers.location).toEqual('/dashboard/consultant');
   });
 
   it('GET /auth/logout - Should logout successfully', async () => {
@@ -103,5 +99,4 @@ describe('Auth Routes', () => {
   });
 
   // TODO: Add tests for /register route
-
-}); 
+});

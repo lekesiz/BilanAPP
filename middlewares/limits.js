@@ -38,17 +38,16 @@ async function checkAiLimit(userId) {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    const resetDate = user.aiGenerationCountResetDate ?
-      new Date(user.aiGenerationCountResetDate) :
-      null;
+    const resetDate = user.aiGenerationCountResetDate
+      ? new Date(user.aiGenerationCountResetDate)
+      : null;
     let usageCount = user.aiGenerationsThisMonth;
 
     // Sayacı sıfırlama kontrolü
     if (
       !resetDate ||
       resetDate.getFullYear() < currentYear ||
-      (resetDate.getFullYear() === currentYear &&
-        resetDate.getMonth() < currentMonth)
+      (resetDate.getFullYear() === currentYear && resetDate.getMonth() < currentMonth)
     ) {
       console.log(`Resetting AI count for user ${userId}`);
       usageCount = 0;
@@ -60,10 +59,7 @@ async function checkAiLimit(userId) {
         });
         console.log(`AI count reset SUCCESS for user ${userId}`);
       } catch (updateError) {
-        console.error(
-          `Error updating user AI count for reset (user ${userId}):`,
-          updateError,
-        );
+        console.error(`Error updating user AI count for reset (user ${userId}):`, updateError);
         // Sayacı sıfırlayamasak bile limit kontrolüne devam edelim mi?
         // Şimdilik edelim, ama hata mesajı verebiliriz.
         // Belki de burada false dönmek daha güvenli olur?

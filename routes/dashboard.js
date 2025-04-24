@@ -2,17 +2,8 @@ const express = require('express');
 
 const router = express.Router();
 const { Op } = require('sequelize');
-const {
-  ensureAuthenticated,
-  ensureBeneficiary,
-} = require('../middlewares/auth');
-const {
-  User,
-  Beneficiary,
-  Appointment,
-  Message,
-  Questionnaire,
-} = require('../models');
+const { ensureAuthenticated, ensureBeneficiary } = require('../middlewares/auth');
+const { User, Beneficiary, Appointment, Message, Questionnaire } = require('../models');
 
 // --- Helper Functions (Moved Before Usage) ---
 
@@ -44,25 +35,25 @@ async function getConsultantStats(consultantId, isAdmin = false) {
       },
     }),
     Message.count({
-      where: isAdmin ?
-        { isRead: false } : // Admin sees ALL unread messages
-        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
+      where: isAdmin
+        ? { isRead: false } // Admin sees ALL unread messages
+        : { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
     }),
     Questionnaire.count({
       // Admin sees all pending. Consultant sees questionnaires FOR their beneficiaries.
-      where: isAdmin ?
-        { status: 'pending' } :
-        {
-          status: 'pending',
-          beneficiaryId: {
-            [Op.in]: (
-              await Beneficiary.findAll({
-                where: { consultantId },
-                attributes: ['id'],
-              })
-            ).map((b) => b.id),
+      where: isAdmin
+        ? { status: 'pending' }
+        : {
+            status: 'pending',
+            beneficiaryId: {
+              [Op.in]: (
+                await Beneficiary.findAll({
+                  where: { consultantId },
+                  attributes: ['id'],
+                })
+              ).map((b) => b.id),
+            },
           },
-        },
     }),
     Beneficiary.count({
       where: { ...baseWhereBeneficiary, consentGiven: false },
@@ -92,9 +83,7 @@ async function getRecentActivities(consultantId) {
   const [recentBeneficiaries, recentAppointments] = await Promise.all([
     Beneficiary.findAll({
       where: { consultantId },
-      include: [
-        { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
-      ],
+      include: [{ model: User, as: 'user', attributes: ['firstName', 'lastName'] }],
       order: [['createdAt', 'DESC']],
       limit: 3,
     }),
@@ -104,9 +93,7 @@ async function getRecentActivities(consultantId) {
         {
           model: Beneficiary,
           as: 'beneficiary',
-          include: [
-            { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
-          ],
+          include: [{ model: User, as: 'user', attributes: ['firstName', 'lastName'] }],
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -153,10 +140,7 @@ router.get('/', ensureAuthenticated, (req, res) => {
   } else {
     // Kullanıcı tipi tanımsız veya hatalıysa?
     // console.error('[ERROR] Unknown userType in GET /dashboard:', req.user?.userType);
-    req.flash(
-      'error_msg',
-      "Type d'utilisateur inconnu pour accéder au tableau de bord.",
-    );
+    req.flash('error_msg', "Type d'utilisateur inconnu pour accéder au tableau de bord.");
     res.redirect('/auth/login');
   }
 });
@@ -223,18 +207,18 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
       // Son Tamamlanan Anketler (Admin tümünü görür)
       Questionnaire.findAll({
         where: {
-          ...(isAdmin ?
-            {} :
-            {
-              beneficiaryId: {
-                [Op.in]: (
-                  await Beneficiary.findAll({
-                    where: { consultantId },
-                    attributes: ['id'],
-                  })
-                ).map((b) => b.id),
-              },
-            }),
+          ...(isAdmin
+            ? {}
+            : {
+                beneficiaryId: {
+                  [Op.in]: (
+                    await Beneficiary.findAll({
+                      where: { consultantId },
+                      attributes: ['id'],
+                    })
+                  ).map((b) => b.id),
+                },
+              }),
           status: 'completed',
           updatedAt: {
             [Op.gte]: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
@@ -264,18 +248,18 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
       // Teslim tarihi geçmiş anketler (Admin tümünü görür)
       Questionnaire.findAll({
         where: {
-          ...(isAdmin ?
-            {} :
-            {
-              beneficiaryId: {
-                [Op.in]: (
-                  await Beneficiary.findAll({
-                    where: { consultantId },
-                    attributes: ['id'],
-                  })
-                ).map((b) => b.id),
-              },
-            }),
+          ...(isAdmin
+            ? {}
+            : {
+                beneficiaryId: {
+                  [Op.in]: (
+                    await Beneficiary.findAll({
+                      where: { consultantId },
+                      attributes: ['id'],
+                    })
+                  ).map((b) => b.id),
+                },
+              }),
           status: 'pending',
           dueDate: { [Op.ne]: null, [Op.lt]: today },
         },
@@ -292,23 +276,14 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
     ]);
 
     // Process raw data
-    const upcomingAppointments = appointmentsRaw.map((a) =>
-      a.get({ plain: true }),
-    );
-    const followUpBeneficiaries = followUpBeneficiariesRaw.map((b) =>
-      b.get({ plain: true }),
-    );
-    const recentlyCompletedQuestionnaires =
-      recentlyCompletedQuestionnairesRaw.map((q) => q.get({ plain: true }));
-    const beneficiariesForAlerts = beneficiariesForAlertsRaw.map((b) =>
-      b.get({ plain: true }),
-    );
-    const missingConsents = beneficiariesForAlerts.filter(
-      (b) => !b.consentGiven,
-    );
-    const overdueQuestionnaires = overdueQuestionnairesRaw.map((q) =>
+    const upcomingAppointments = appointmentsRaw.map((a) => a.get({ plain: true }));
+    const followUpBeneficiaries = followUpBeneficiariesRaw.map((b) => b.get({ plain: true }));
+    const recentlyCompletedQuestionnaires = recentlyCompletedQuestionnairesRaw.map((q) =>
       q.get({ plain: true }),
     );
+    const beneficiariesForAlerts = beneficiariesForAlertsRaw.map((b) => b.get({ plain: true }));
+    const missingConsents = beneficiariesForAlerts.filter((b) => !b.consentGiven);
+    const overdueQuestionnaires = overdueQuestionnairesRaw.map((q) => q.get({ plain: true }));
 
     res.render('dashboard/consultant', {
       title: isAdmin ? 'Tableau de bord Admin' : 'Tableau de bord Consultant', // Update title for Admin
@@ -324,68 +299,57 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error('Dashboard error:', error);
-    req.flash(
-      'error',
-      'Une erreur est survenue lors du chargement du tableau de bord',
-    );
+    req.flash('error', 'Une erreur est survenue lors du chargement du tableau de bord');
     res.redirect('/');
   }
 });
 
 // Yararlanıcı dashboard'u
-router.get(
-  '/beneficiary',
-  ensureAuthenticated,
-  ensureBeneficiary,
-  async (req, res) => {
-    try {
-      const beneficiary = await Beneficiary.findOne({
-        where: { userId: req.user.id },
-        include: [
-          {
-            model: User,
-            as: 'consultant',
-            attributes: ['firstName', 'lastName', 'email'],
-          },
-        ],
-      });
-
-      const upcomingAppointments = await Appointment.findAll({
-        where: {
-          beneficiaryId: beneficiary.id,
-          date: {
-            [Op.gte]: new Date(),
-          },
+router.get('/beneficiary', ensureAuthenticated, ensureBeneficiary, async (req, res) => {
+  try {
+    const beneficiary = await Beneficiary.findOne({
+      where: { userId: req.user.id },
+      include: [
+        {
+          model: User,
+          as: 'consultant',
+          attributes: ['firstName', 'lastName', 'email'],
         },
-        order: [['date', 'ASC']],
-        limit: 3,
-      });
+      ],
+    });
 
-      const pendingQuestionnaires = await Questionnaire.findAll({
-        where: {
-          beneficiaryId: beneficiary.id,
-          status: 'pending',
+    const upcomingAppointments = await Appointment.findAll({
+      where: {
+        beneficiaryId: beneficiary.id,
+        date: {
+          [Op.gte]: new Date(),
         },
-        limit: 5,
-      });
+      },
+      order: [['date', 'ASC']],
+      limit: 3,
+    });
 
-      res.render('dashboard/beneficiary', {
-        title: 'Mon Bilan de Compétences',
-        user: req.user,
-        beneficiary,
-        upcomingAppointments,
-        pendingQuestionnaires,
-      });
-    } catch (error) {
-      console.error('Beneficiary dashboard error:', error);
-      req.flash(
-        'error',
-        'Une erreur est survenue lors du chargement du tableau de bord',
-      );
-      res.redirect('/');
-    }
-  },
-);
+    const pendingQuestionnaires = await Questionnaire.findAll({
+      where: {
+        beneficiaryId: beneficiary.id,
+        status: 'pending',
+      },
+      limit: 5,
+    });
+
+    res.render('dashboard/beneficiary', {
+      title: 'Mon Bilan de Compétences',
+      user: req.user,
+      beneficiary,
+      upcomingAppointments,
+      pendingQuestionnaires,
+    });
+  } catch (error) {
+    console.error('Beneficiary dashboard error:', error);
+    req.flash('error', 'Une erreur est survenue lors du chargement du tableau de bord');
+    res.redirect('/');
+  }
+});
 
 // --- Helper Functions (Definitions Moved Above) ---
 /*

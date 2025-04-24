@@ -22,40 +22,61 @@ const ASSIGN_COST = 10;
 const questionnaireValidationRules = () => [
   body('title').trim().notEmpty().withMessage('Le titre est requis.').escape(),
   body('description').trim().notEmpty().withMessage('La description est requise.').escape(),
-  body('category').optional({ checkFalsy: true }).isIn([
+  body('category')
+    .optional({ checkFalsy: true })
+    .isIn([
       'Intérêts Professionnels',
       'Motivation',
       'Personnalité',
       'Compétences Techniques',
       'Compétences Transversales',
       'Valeurs',
-      'Autre'
-    ]).withMessage('Catégorie invalide.'),
+      'Autre',
+    ])
+    .withMessage('Catégorie invalide.'),
   // Questions dizisi için daha karmaşık doğrulama gerekebilir (şimdilik temel)
   body('questions').optional().isArray().withMessage('Format des questions invalide.'),
-  body('questions.*.text').optional().trim().notEmpty().withMessage('Le texte de la question ne peut pas être vide.').escape(),
-  body('questions.*.type').optional().isIn(['text', 'textarea', 'radio', 'checkbox', 'scale']).withMessage('Type de question invalide.'),
+  body('questions.*.text')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Le texte de la question ne peut pas être vide.')
+    .escape(),
+  body('questions.*.type')
+    .optional()
+    .isIn(['text', 'textarea', 'radio', 'checkbox', 'scale'])
+    .withMessage('Type de question invalide.'),
   body('questions.*.options').optional().trim().escape(), // Gerekirse custom validator ile type'a göre kontrol
 ];
 
 // Anket Atama için Kurallar
 const assignValidationRules = () => [
-    body('beneficiaryId').notEmpty().withMessage('Bénéficiaire requis.').isInt().withMessage('ID Bénéficiaire invalide.'),
-    body('dueDate').optional({ checkFalsy: true }).isISO8601().toDate().withMessage('Date limite invalide.'),
+  body('beneficiaryId')
+    .notEmpty()
+    .withMessage('Bénéficiaire requis.')
+    .isInt()
+    .withMessage('ID Bénéficiaire invalide.'),
+  body('dueDate')
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .toDate()
+    .withMessage('Date limite invalide.'),
 ];
 
 // Cevap Gönderme için Kurallar (Daha karmaşık, şimdilik basit)
 const answerValidationRules = () => [
-    body('answers').exists().withMessage('Aucune réponse fournie.') // Temel kontrol
-    // Burada her sorunun tipine göre daha detaylı doğrulama yapılabilir.
+  body('answers').exists().withMessage('Aucune réponse fournie.'), // Temel kontrol
+  // Burada her sorunun tipine göre daha detaylı doğrulama yapılabilir.
 ];
 
 // Soru Ekleme/Düzenleme için Kurallar
 const questionValidationRules = () => [
-    body('text').trim().notEmpty().withMessage('Le texte de la question est requis.').escape(),
-    body('type').isIn(['text', 'textarea', 'radio', 'checkbox', 'scale']).withMessage('Type de question invalide.'),
-    body('options').optional({ checkFalsy: true }).trim().escape(),
-    body('order').optional({ checkFalsy: true }).isInt({ min: 0 }).withMessage('Ordre invalide.')
+  body('text').trim().notEmpty().withMessage('Le texte de la question est requis.').escape(),
+  body('type')
+    .isIn(['text', 'textarea', 'radio', 'checkbox', 'scale'])
+    .withMessage('Type de question invalide.'),
+  body('options').optional({ checkFalsy: true }).trim().escape(),
+  body('order').optional({ checkFalsy: true }).isInt({ min: 0 }).withMessage('Ordre invalide.'),
 ];
 
 // --- Questionnaire Routes ---

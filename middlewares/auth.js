@@ -12,10 +12,7 @@ module.exports = {
   // Vérifier si l'utilisateur est un consultant
   ensureConsultant: (req, res, next) => {
     if (!req.isAuthenticated()) {
-      req.flash(
-        'error_msg',
-        'Veuillez vous connecter pour accéder à cette page',
-      );
+      req.flash('error_msg', 'Veuillez vous connecter pour accéder à cette page');
       return res.redirect('/auth/login');
     }
     console.log(
@@ -25,14 +22,8 @@ module.exports = {
       req.user.get ? req.user.get({ plain: true }) : req.user,
     );
 
-    if (
-      req.user.userType !== 'consultant' &&
-      req.user.forfaitType !== 'Admin'
-    ) {
-      req.flash(
-        'error_msg',
-        'Accès non autorisé. Cette page est réservée aux consultants.',
-      );
+    if (req.user.userType !== 'consultant' && req.user.forfaitType !== 'Admin') {
+      req.flash('error_msg', 'Accès non autorisé. Cette page est réservée aux consultants.');
       return res.redirect('/dashboard');
     }
     return next();
@@ -50,11 +41,7 @@ module.exports = {
 
   // Vérifier si l'utilisateur est un consultant OU un bénéficiaire
   ensureConsultantOrBeneficiary: (req, res, next) => {
-    if (
-      req.user &&
-      (req.user.userType === 'consultant' ||
-        req.user.userType === 'beneficiary')
-    ) {
+    if (req.user && (req.user.userType === 'consultant' || req.user.userType === 'beneficiary')) {
       return next();
     }
     req.flash('error_msg', 'Accès non autorisé');

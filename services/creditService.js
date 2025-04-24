@@ -67,9 +67,9 @@ async function logCreditChange(
     // Admin ID'sini açıklamaya ekleyebiliriz
     let finalDescription = description;
     if (adminUserId) {
-      finalDescription = description ?
-        `${description} (par Admin ID: ${adminUserId})` :
-        `Ajustement par Admin ID: ${adminUserId}`;
+      finalDescription = description
+        ? `${description} (par Admin ID: ${adminUserId})`
+        : `Ajustement par Admin ID: ${adminUserId}`;
     }
 
     await CreditLog.create({
@@ -81,9 +81,7 @@ async function logCreditChange(
       relatedResourceType,
       adminUserId,
     });
-    console.log(
-      `Credit change logged for user ${userId}: ${amount} credits for ${action}`,
-    );
+    console.log(`Credit change logged for user ${userId}: ${amount} credits for ${action}`);
   } catch (error) {
     console.error('Error logging credit change:', error);
   }
