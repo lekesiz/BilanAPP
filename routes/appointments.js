@@ -34,7 +34,6 @@ const appointmentValidationRules = () => [
 ];
 
 const addAppointmentValidationRules = () => [
-    body('beneficiaryId').if((value, { req }) => req.user.userType !== 'beneficiary').notEmpty().withMessage('Bénéficiaire requis.').isInt().withMessage('ID Bénéficiaire invalide.'),
     ...appointmentValidationRules()
 ];
 
@@ -54,18 +53,19 @@ router.get(
   appointmentController.listAppointments,
 );
 
-// GET /new - Show New Appointment Form
+// GET /add - Show New Appointment Form
 router.get(
-  '/new',
+  '/add',
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
   appointmentController.showNewForm,
 );
 
-// POST /new - Add New Appointment
+// POST /add - Add New Appointment
 router.post(
-  '/new',
+  '/add',
   ensureAuthenticated,
+  body('beneficiaryId').notEmpty().withMessage('Bénéficiaire requis.').isInt().withMessage('ID Bénéficiaire invalide.'),
   addAppointmentValidationRules(),
   appointmentController.addAppointment,
 );

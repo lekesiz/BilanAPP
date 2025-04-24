@@ -40,9 +40,8 @@ beforeAll(async () => {
         if (loginRes.statusCode !== 302 || loginRes.headers.location !== '/dashboard') {
             throw new Error('Test consultant login failed');
         }
-        // Login sonrası yeni bir CSRF token'ı alıp saklayalım (sonraki istekler için)
-        // /dashboard/consultant yerine /beneficiaries/add sayfasından almayı dene
-        csrfToken = await getCsrfToken(agent, '/beneficiaries/add'); 
+        // Login sonrası yeni bir CSRF token'ı alıp saklayalım
+        csrfToken = await getCsrfToken(agent, '/profile/settings'); // /beneficiaries/add -> /profile/settings
 
     } catch (error) {
         console.error('[BENEFICIARY TEST SETUP] Error during beforeAll:', error);
@@ -90,12 +89,12 @@ describe('Beneficiary Routes', () => {
         csrfToken = await getCsrfToken(agent, '/beneficiaries/add');
         const res = await agent
             .post('/beneficiaries/add')
-            .send({ _csrf: csrfToken }); // Send empty body
+            .send({ _csrf: csrfToken }); 
         
-        expect(res.statusCode).toEqual(200); // Should re-render the form
+        expect(res.statusCode).toEqual(200);
         expect(res.text).toContain('Le prénom est requis.');
         expect(res.text).toContain('Le nom est requis.');
-        // expect(res.text).toContain('Adresse email invalide.'); // Geçici olarak kaldırıldı
+        // expect(res.text).toContain('Adresse email invalide.'); // Kaldırıldı
     });
 
     it('POST /beneficiaries/add - Should add a new beneficiary successfully', async () => {
@@ -124,8 +123,8 @@ describe('Beneficiary Routes', () => {
         expect(beneficiary).not.toBeNull();
         expect(beneficiary.consultantId).toEqual(consultantUser.id);
         createdBeneficiaryId = beneficiary.id; // Save for later tests
-        // Testin sonunda token'ı yenileyelim
-        csrfToken = await getCsrfToken(agent, '/beneficiaries/add'); // /beneficiaries -> /beneficiaries/add 
+        // Testin sonunda token'ı yenile
+        csrfToken = await getCsrfToken(agent, '/profile/settings'); // /appointments/new -> /profile/settings
     });
 
     it('GET /beneficiaries/:id - Should show details of the created beneficiary', async () => {
@@ -148,7 +147,7 @@ describe('Beneficiary Routes', () => {
 
     it('POST /beneficiaries/:id/edit - Should update the beneficiary', async () => {
         expect(createdBeneficiaryId).toBeDefined();
-        csrfToken = await getCsrfToken(agent, `/beneficiaries/${createdBeneficiaryId}/edit`); // /beneficiaries/:id yerine edit sayfasından al
+        csrfToken = await getCsrfToken(agent, `/beneficiaries/${createdBeneficiaryId}/edit`);
         const updatedData = {
             firstName: 'Updated',
             lastName: 'Beneficiary',
@@ -183,14 +182,15 @@ describe('Beneficiary Routes', () => {
         const updatedBeneficiary = await Beneficiary.findByPk(createdBeneficiaryId, { include: 'user' });
         expect(updatedBeneficiary.user.firstName).toEqual('Updated');
         expect(updatedBeneficiary.status).toEqual('completed');
-        csrfToken = await getCsrfToken(agent, `/beneficiaries/${createdBeneficiaryId}/edit`); // /beneficiaries/:id -> /beneficiaries/:id/edit
+        csrfToken = await getCsrfToken(agent, '/profile/settings'); // /appointments/new -> /profile/settings
     });
 
     it('POST /beneficiaries/:id/delete - Should delete the beneficiary', async () => {
         expect(createdBeneficiaryId).toBeDefined();
+        csrfToken = await getCsrfToken(agent, `/beneficiaries/${createdBeneficiaryId}/edit`); // Token'ı edit sayfasından al
         const res = await agent
             .post(`/beneficiaries/${createdBeneficiaryId}/delete`)
-            .send({ _csrf: csrfToken }); // Saklanan token'ı kullan
+            .send({ _csrf: csrfToken }); 
 
         expect(res.statusCode).toEqual(302);
         expect(res.headers.location).toEqual('/beneficiaries');

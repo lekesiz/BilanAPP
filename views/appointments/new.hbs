@@ -3,6 +3,7 @@
     <h1 class="mb-4">Planifier un nouveau rendez-vous</h1>
 
     <form action="/appointments/new" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card">
             <div class="card-body">
                 {{#if isConsultant}}
