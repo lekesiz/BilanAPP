@@ -26,7 +26,7 @@ const checkAccessLevel = (requiredForfait) => (req, res, next) => {
   const requiredLevel = forfaitLevels[requiredForfait] || 0;
 
   if (userLevel >= requiredLevel) {
-    next(); // Erişim izni verildi
+    return next();
   } else {
     req.flash(
       'error_msg',
@@ -35,6 +35,7 @@ const checkAccessLevel = (requiredForfait) => (req, res, next) => {
     // Kullanıcıyı geldiği sayfaya veya dashboard'a yönlendir
     const redirectUrl = req.headers.referer || '/dashboard';
     res.redirect(redirectUrl);
+    return;
   }
 };
 

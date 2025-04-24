@@ -23,6 +23,8 @@ const {
 const { logCreditChange } = require('../services/creditService'); // CreditLog burada oluşturuluyor
 require('dotenv').config();
 
+let adminUser; // Global scope'a taşı
+
 // --- Helper Functions ---
 
 // Rastgele cevap oluşturucu
@@ -75,7 +77,6 @@ const createDemoCreditLogs = async () => {
   console.log('Demo kredi logları oluşturuluyor...');
   const creditLogPromises = [];
   const allUsers = await User.findAll();
-  const adminUser = allUsers.find(u => u.forfaitType === 'Admin'); // Admin'i bul
   const demoCreditActions = [
       { code: 'AI_GENERATE_SYNTHESIS', note: 'AI Sentez' },
       { code: 'DOCUMENT_UPLOAD', note: 'Belge Yükleme' },
@@ -183,7 +184,7 @@ async function createDefaultForfaits() {
 }
 
 // Demo veri oluşturma fonksiyonu
-async function createDemoData() {
+async function createDemoDataInternal() {
   try {
     console.log('Demo verileri oluşturuluyor...');
 
@@ -212,8 +213,8 @@ async function createDemoData() {
     console.log('İkinci danışman oluşturuldu:', consultant2.email);
     const consultant2Id = consultant2.id;
 
-    // --- ADMIN Kullanıcısı Oluştur ---
-    const adminUser = await User.create({
+    // --- ADMIN Kullanıcısı Oluştur --- (Global değişkene ata)
+    adminUser = await User.create({
       email: 'admin@test.com',
       password: 'admin123',
       firstName: 'Admin',
@@ -223,7 +224,6 @@ async function createDemoData() {
       credits: 999,
     });
     console.log('Admin kullanıcısı oluşturuldu:', adminUser.email);
-    // const adminId = adminUser.id; // Kullanılmadığı için kaldırıldı
 
     // --- Faydalanıcılar ve Kullanıcı Hesapları Oluştur ---
     const beneficiariesData = [];
@@ -575,7 +575,7 @@ Informations complémentaires:
       for (let j = 0; j < questionnaireCount; j++) {
         const templateIndex = (i + j) % questionnaireTemplates.length;
         const template = questionnaireTemplates[templateIndex];
-        const status = questionnaireStatuses[i % questionnaireStatuses.length];
+        const status = statuses[i % statuses.length];
         const dueDate = new Date(
           Date.now() + ((i % 14) + 1) * 24 * 60 * 60 * 1000,
         );
@@ -878,6 +878,13 @@ Informations complémentaires:
       'Faydalanıcı Girişleri: beneficiary1@test.com / beneficiary1 ...',
     );
     console.log('-----------------------------------------');
+
+    // Tamamlanmış anketlerin durumunu güncelle (questionnaireStatuses kullanımı kaldırıldı)
+    await Questionnaire.update({ status: 'completed' }, { 
+        where: { 
+            id: { [Op.in]: questionnaires.filter(q => q.category === 'skills' || q.category === 'interests').map(q => q.id) }, 
+        }
+    });
   } catch (error) {
     console.error('Demo veri oluşturulurken hata:', error);
     throw error;

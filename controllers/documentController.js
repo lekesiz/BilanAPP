@@ -425,9 +425,9 @@ exports.updateDocument = async (req, res) => {
     let finalBeneficiaryId = document.beneficiaryId;
     if (isAdmin || isConsultant) {
       const newBenefId =
-        beneficiaryId && beneficiaryId !== ''
-          ? parseInt(beneficiaryId, 10)
-          : null;
+        beneficiaryId && beneficiaryId !== '' ?
+          parseInt(beneficiaryId, 10) :
+          null;
       if (newBenefId !== finalBeneficiaryId) {
         // Only check if assignment changes
         if (newBenefId) {

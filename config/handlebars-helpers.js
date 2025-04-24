@@ -128,7 +128,7 @@ module.exports = {
   // Sayı aralığı oluştur (range helper)
   range(min, max, options) {
     let result = '';
-    for (let i = min; i <= max; i++) {
+    for (let i = min; i <= max; i += 1) {
       result += options.fn(i);
     }
     return result;
@@ -363,7 +363,7 @@ module.exports = {
     const argsToCheck = isBlockHelper ? arguments.length - 1 : arguments.length;
 
     // Check each argument
-    for (let i = 0; i < argsToCheck; i++) {
+    for (let i = 0; i < argsToCheck; i += 1) {
       if (arguments[i]) {
         // Herhangi biri truthy ise true döndür
         return isBlockHelper ? options.fn(this) : true;
@@ -391,7 +391,7 @@ module.exports = {
     const argsToCheck = isBlockHelper ? arguments.length - 1 : arguments.length;
 
     // Check each argument
-    for (let i = 0; i < argsToCheck; i++) {
+    for (let i = 0; i < argsToCheck; i += 1) {
       if (!arguments[i]) {
         // Herhangi biri falsy ise false döndür
         return isBlockHelper ?
@@ -670,7 +670,9 @@ module.exports = {
       n = 0;
     }
     n = parseInt(n, 10);
-    for (let i = 0; i < n; ++i) accum += block.fn(i);
+    for (let i = 0; i < n; i += 1) {
+      accum += block.fn(i);
+    }
     return accum;
   },
 

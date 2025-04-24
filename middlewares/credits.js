@@ -29,7 +29,7 @@ const checkAndDeductCredits = (cost) => async (req, res, next) => {
 
   // Add cost info to request for potential success message customization
   req.creditCost = cost;
-  next(); // Credits OK, proceed to the next middleware/route handler
+  return next(); // Credits OK, proceed to the next middleware/route handler
 };
 
 module.exports = {

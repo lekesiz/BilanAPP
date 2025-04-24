@@ -65,63 +65,50 @@ exports.getRecentActivities = async (userId, limit = 10) => {
 
 /**
  * Get recent activities for a beneficiary with detailed resource information
- * This is used for the dashboard to show recent interactions
- * @param {number} beneficiaryId - Beneficiary ID
- * @param {number} limit - Maximum number of activities to return
- * @returns {Promise<Array>} Recent activity records with associated resource details
  */
 exports.getRecentActivitiesFor = async (beneficiaryId, limit = 5) => {
   try {
-    // First, get the user ID associated with this beneficiary
     const beneficiary = await Beneficiary.findByPk(beneficiaryId);
-    if (!beneficiary) {
-      return [];
-    }
+    if (!beneficiary) return [];
 
-    // Get all activities for this user
-    const activities = await Activity.findAll({
-      where: {
-        userId: beneficiary.userId,
-      },
-      order: [['createdAt', 'DESC']],
-      limit,
-    });
+    // Farklı türdeki son aktiviteleri çek (Örnek: Son randevular ve mesajlar)
+    const [recentAppointments, recentMessages] = await Promise.all([
+        Appointment.findAll({
+            where: { beneficiaryId },
+            order: [['date', 'DESC']],
+            limit,
+            include: [{ model: User, as: 'consultant', attributes: ['firstName', 'lastName']}]
+        }),
+        Message.findAll({
+            where: { beneficiaryId },
+            order: [['createdAt', 'DESC']],
+            limit,
+            include: [{ model: User, as: 'sender', attributes: ['firstName', 'lastName']}]
+        })
+        // Buraya başka aktivite türleri (Doküman, Anket vb.) eklenebilir
+    ]);
 
-    // Enhance activities with details about the resources
-    const enhancedActivities = await Promise.all(
-      activities.map(async (activity) => {
-        const plainActivity = activity.get({ plain: true });
+    // Aktiviteleri birleştir ve formatla
+    const activities = [];
+    recentAppointments.forEach(a => activities.push({
+        type: 'appointment',
+        title: 'Rendez-vous',
+        description: `${a.type} avec ${a.consultant.firstName}`,
+        link: `/appointments#appt-${a.id}`,
+        date: a.date,
+    }));
+    recentMessages.forEach(m => activities.push({
+        type: 'message',
+        title: 'Nouveau Message',
+        description: `De ${m.sender.firstName}: ${m.subject || m.body.substring(0, 20)}...`,
+        link: `/messages/conversation/${m.consultantId}`,
+        date: m.createdAt,
+    }));
 
-        // Add resource details based on type
-        switch (plainActivity.type) {
-          case 'appointment':
-            const appointment = await Appointment.findByPk(
-              plainActivity.resourceId,
-            );
-            if (appointment) {
-              plainActivity.resourceDetails = appointment.get({ plain: true });
-            }
-            break;
-          case 'document':
-            const document = await Document.findByPk(plainActivity.resourceId);
-            if (document) {
-              plainActivity.resourceDetails = document.get({ plain: true });
-            }
-            break;
-          case 'message':
-            const message = await Message.findByPk(plainActivity.resourceId);
-            if (message) {
-              plainActivity.resourceDetails = message.get({ plain: true });
-            }
-            break;
-          // Add more types as needed
-        }
+    // Tarihe göre sırala ve limitle
+    activities.sort((a, b) => b.date - a.date);
+    return activities.slice(0, limit);
 
-        return plainActivity;
-      }),
-    );
-
-    return enhancedActivities;
   } catch (error) {
     console.error('Error getting recent activities for beneficiary:', error);
     return [];
@@ -244,32 +231,37 @@ exports.getRecentlyActiveBeneficiaries = async (consultantId, limit = 5) => {
 
 /**
  * Fetches recent activities specifically for a consultant (new beneficiaries, new messages).
- * @param {number} consultantId The ID of the consultant.
- * @param {number} [limit=5] The maximum number of activities to return.
- * @returns {Promise<Array>} An array of recent activity objects.
  */
 exports.getRecentActivitiesForConsultant = async (consultantId, limit = 5) => {
   if (!consultantId) return [];
 
-  // const beneficiaryIds = (await Beneficiary.findAll({ where: { consultantId }, attributes: ['id'] })).map(b => b.id); // Kullanılmıyor
+  try {
+    // Fetch recent new beneficiaries
+    const newBeneficiaries = await Beneficiary.findAll({
+      where: { consultantId },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
+      order: [['createdAt', 'DESC']], // En yeniye göre sırala
+      limit: limit, // Limiti uygula
+    });
 
-  // Fetch recent new beneficiaries
-  const newBeneficiaries = await Beneficiary.findAll({
-    where: { consultantId },
-    include: [
-      {
-        model: User,
-        as: 'user',
-        attributes: ['id', 'firstName', 'lastName', 'email'],
-      },
-    ],
-  });
+    // Sadece yeni faydalanıcı aktivitesini döndür
+    const activities = newBeneficiaries.map(beneficiary => ({
+        type: 'beneficiary',
+        title: 'Nouveau Bénéficiaire',
+        description: `${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+        link: `/beneficiaries/${beneficiary.id}`,
+        date: beneficiary.createdAt,
+    }));
 
-  const activities = [...documentActivities, ...messageActivities, ...appointmentActivities, ...questionnaireActivities];
-
-  // Sort by date descending
-  activities.sort((a, b) => b.date - a.date);
-
-  // Limit the number of activities
-  return activities.slice(0, limit);
+    return activities;
+  } catch (error) {
+      console.error('Error getting recent consultant activities:', error);
+      return [];
+  }
 };

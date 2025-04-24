@@ -226,37 +226,12 @@ function extractStrengths(skills /*, experience*/) {
 }
 
 function suggestSkillsForDevelopment(/* preferences */) {
-  // Sample development areas based on career interests
   const developmentAreas = [];
-
-  if (
-    preferences.includes('leadership') ||
-    preferences.includes('management')
-  ) {
-    developmentAreas.push('Strategic Planning');
-    developmentAreas.push('Team Management');
-  }
-
-  if (preferences.includes('technology') || preferences.includes('technical')) {
-    developmentAreas.push('Cloud Computing');
-    developmentAreas.push('Data Analysis');
-  }
-
-  if (
-    preferences.includes('creativity') ||
-    preferences.includes('innovation')
-  ) {
-    developmentAreas.push('Design Thinking');
-    developmentAreas.push('Creative Problem Solving');
-  }
-
-  // Add some default development areas
   if (developmentAreas.length < 2) {
     developmentAreas.push('Digital Literacy');
     developmentAreas.push('Project Management');
     developmentAreas.push('Effective Communication');
   }
-
   return developmentAreas;
 }
 

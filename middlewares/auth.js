@@ -6,6 +6,7 @@ module.exports = {
     }
     req.flash('error_msg', 'Veuillez vous connecter pour accéder à cette page');
     res.redirect('/auth/login');
+    return;
   },
 
   // Vérifier si l'utilisateur est un consultant
@@ -44,6 +45,7 @@ module.exports = {
     }
     req.flash('error_msg', 'Accès non autorisé (Bénéficiaire requis)');
     res.redirect('/dashboard');
+    return;
   },
 
   // Vérifier si l'utilisateur est un consultant OU un bénéficiaire
@@ -57,6 +59,7 @@ module.exports = {
     }
     req.flash('error_msg', 'Accès non autorisé');
     res.redirect('/dashboard');
+    return;
   },
 
   // Vérifier si l'utilisateur est un Admin (basé sur forfaitType)
@@ -67,5 +70,6 @@ module.exports = {
     req.flash('error_msg', 'Accès non autorisé (Admin requis)');
     // Admin olmayanları nereye yönlendirelim? Dashboard?
     res.redirect('/dashboard');
+    return;
   },
 };

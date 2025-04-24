@@ -7,6 +7,7 @@ const {
   User,
 } = require('../models');
 const { logCreditChange } = require('../services/creditService');
+const sequelize = require('../config/database');
 
 // Constants (Consider moving to a config file)
 const ASSIGN_COST = 10;
@@ -539,7 +540,7 @@ exports.submitAnswers = async (req, res) => {
       });
       const answerPromises = questionnaire.questions.map((question, i) => {
         let answerValue = receivedAnswersArray[i];
-        if (Array.isArray(answerValue)) answerValue = answerValue.join(', '); // Handle potential checkbox array
+        if (Array.isArray(answerValue)) answerValue = answerValue.join(', ');
         return Answer.create(
           {
             questionnaireId,

@@ -130,7 +130,7 @@ exports.listConversations = async (req, res) => {
 
 // GET /messages/new - Show new message form
 exports.showNewMessageForm = async (req, res) => {
-  const preselectedRecipient = req.query.recipient;
+  let preselectedRecipient = req.query.recipient;
   try {
     // console.log('[DEBUG] /messages/new - user:', req.user.id, 'userType:', req.user.userType, 'forfaitType:', req.user.forfaitType);
     // console.log('[DEBUG] /messages/new - preselectedRecipient:', preselectedRecipient);

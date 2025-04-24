@@ -28,7 +28,8 @@
     // Çözümlenemeyen import hatalarını azaltmak için (bazen hatalı olabilir)
     "import/no-unresolved": ["error", { "commonjs": true, "caseSensitive": false }],
     // JS dosyalarında uzantı zorunluluğunu kaldır (isteğe bağlı)
-    "import/extensions": ["error", "ignorePackages", { "js": "never" }]
+    "import/extensions": ["error", "ignorePackages", { "js": "never" }],
+    "no-plusplus": "off" // ++ ve -- kullanımına izin ver
   },
   "settings": {
     "import/resolver": {
