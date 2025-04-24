@@ -1,3 +1,5 @@
+/* eslint-disable no-undef, func-names, no-alert */
+
 // Fonction pour initialiser les tooltips Bootstrap
 function initTooltips() {
   const tooltipTriggerList = [].slice.call(
@@ -16,7 +18,7 @@ function initPopovers() {
 
 // Fonction pour confirmer les suppressions
 function confirmDelete(event, message) {
-  if (!confirm(message || 'Êtes-vous sûr de vouloir supprimer cet élément ?')) {
+  if (!window.confirm(message || 'Êtes-vous sûr de vouloir supprimer cet élément ?')) {
     event.preventDefault();
     return false;
   }
@@ -44,3 +46,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }, 5000);
 });
+
+/* eslint-enable no-undef, func-names, no-alert */

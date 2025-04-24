@@ -136,7 +136,6 @@ exports.showNewMessageForm = async (req, res) => {
     // console.log('[DEBUG] /messages/new - preselectedRecipient:', preselectedRecipient);
 
     let recipients = [];
-    let beneficiaryProfile = null;
     let recipientType = '';
     const isAdmin = req.user.forfaitType === 'Admin';
     const isConsultant = req.user.userType === 'consultant';
@@ -169,7 +168,7 @@ exports.showNewMessageForm = async (req, res) => {
 
         // If a specific recipient is requested, fetch their details for potential context
         if (preselectedRecipient) {
-          beneficiaryProfile = rawRecipients
+          const beneficiaryProfile = rawRecipients
             .find((u) => u.id == preselectedRecipient)
             ?.get({ plain: true });
           // console.log('[DEBUG] /messages/new - Loaded beneficiary profile:', beneficiaryProfile?.id || 'Not found');
@@ -375,6 +374,21 @@ exports.showConversation = async (req, res) => {
 
     // TODO: Mark messages as read
     // await Message.update({ isRead: true }, { where: { consultantId, beneficiaryId, senderId: { [Op.ne]: userId }, isRead: false } });
+
+    const whereCondition = { consultantId, beneficiaryId };
+
+    // Mark messages as read
+    await Message.update(
+      { isRead: true },
+      {
+        where: {
+          consultantId,
+          beneficiaryId,
+          senderId: { [Op.ne]: userId }, // Okunmamış ve gönderen ben değilsem
+          isRead: false,
+        },
+      },
+    );
 
     res.render('messages/conversation', {
       title: `Conversation avec ${participantUser.firstName} ${participantUser.lastName}`,

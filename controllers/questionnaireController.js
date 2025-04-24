@@ -16,7 +16,7 @@ const ASSIGN_COST = 10;
 // GET /questionnaires - List Questionnaires
 exports.listQuestionnaires = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page, 10) || 1;
     const limit = 15;
     const offset = (page - 1) * limit;
     const whereClause = {};
@@ -155,7 +155,7 @@ exports.listQuestionnaires = async (req, res) => {
       questionnaires,
       beneficiaries: beneficiariesForFilter,
       categories,
-      user: req.user,
+      user: req.user ? req.user.get({ plain: true }) : null,
       isConsultant: userType === 'consultant',
       isAdmin,
       pagination: {
@@ -342,13 +342,36 @@ exports.showDetails = async (req, res) => {
       );
     }
 
+    // Soruları ve cevapları (varsa) getir
+    const questions = await Question.findAll({ where: { questionnaireId: req.params.id } });
+    const answers = await Answer.findAll({ where: { questionnaireId: req.params.id } });
+    const answerMap = answers.reduce((acc, ans) => {
+      acc[ans.questionId] = ans.answer; 
+      return acc;
+    }, {});
+
+    // Soruları view'a göndermeden önce options'ları parse et
+    const questionsWithOptionsParsed = questions.map((q) => {
+        const plainQuestion = q.get({ plain: true });
+        if (plainQuestion.type === 'radio' || plainQuestion.type === 'checkbox') {
+            try {
+                plainQuestion.parsedOptions = JSON.parse(plainQuestion.options || '[]');
+            } catch (e) {
+                console.error(`Error parsing options for question ${plainQuestion.id}:`, e);
+                plainQuestion.parsedOptions = []; // Hata durumunda boş dizi
+            }
+        }
+        return plainQuestion;
+    });
+
     res.render('questionnaires/details', {
       title: `Questionnaire: ${questionnaire.title}`,
       questionnaire: questionnaire.get({ plain: true }),
-      availableBeneficiaries,
+      questions: questionsWithOptionsParsed, // Parse edilmiş options ile gönder
+      answers: answerMap,
+      availableBeneficiaries: availableBeneficiaries.map(b => b.get({ plain: true })),
       user: req.user,
-      isAdmin,
-      isConsultant,
+      isConsultant: req.user.userType === 'consultant',
     });
   } catch (err) {
     console.error('Questionnaire details error:', err);

@@ -1,6 +1,7 @@
-const bcryptjs = require('bcryptjs');
+// const { Op } = require('sequelize'); // Kullanılmadığı için kaldırıldı
+// const bcryptjs = require('bcryptjs'); // Kullanılmadığı için kaldırıldı
 const { User, Forfait } = require('../models');
-const { logCreditChange } = require('../services/creditService');
+const { logCreditChange, getDefaultCreditsForForfait } = require('../services/creditService');
 
 // Kullanıcıları listeleme
 exports.listUsers = async (req, res) => {
@@ -88,7 +89,7 @@ exports.addUser = async (req, res) => {
     });
   }
   const credits = parseInt(availableCredits, 10) || 0;
-  if (isNaN(credits) || credits < 0) {
+  if (Number.isNaN(credits) || credits < 0) {
     errors.push({ msg: 'Le nombre de crédits doit être un nombre positif.' });
   }
 
@@ -333,7 +334,7 @@ exports.adjustCredits = async (req, res) => {
 
   const creditAmount = parseInt(amount, 10);
 
-  if (isNaN(creditAmount)) {
+  if (Number.isNaN(creditAmount)) {
     req.flash(
       'error_msg',
       'Veuillez entrer un montant de crédit valide (nombre).',
@@ -344,7 +345,7 @@ exports.adjustCredits = async (req, res) => {
     req.flash('error_msg', "Veuillez fournir une raison pour l'ajustement.");
     return res.redirect('/admin/users');
   }
-  if (userIdToAdjust == adminUserId) {
+  if (userIdToAdjust === adminUserId) {
     // String ve number karşılaştırması
     req.flash('error_msg', 'Vous ne pouvez pas ajuster vos propres crédits.');
     return res.redirect('/admin/users');
@@ -404,7 +405,7 @@ exports.deleteUser = async (req, res) => {
   const currentUserId = req.user.id;
 
   // Kendini silmeyi engelle
-  if (userIdToDelete == currentUserId) {
+  if (userIdToDelete === currentUserId) {
     // == kullanıldı çünkü biri string, diğeri number olabilir
     req.flash('error_msg', 'Vous ne pouvez pas supprimer votre propre compte.');
     return res.redirect('/admin/users');
@@ -436,9 +437,9 @@ exports.deleteUser = async (req, res) => {
 };
 
 // --- AI Doküman Oluşturma Simülasyonu ---
-const GENERATE_SYNTHESIS_COST = 20;
-const GENERATE_ACTIONPLAN_COST = 15;
-const MIN_FORFAIT_AI = 'Premium'; // AI için minimum paket
+// const GENERATE_SYNTHESIS_COST = 20; // Kullanılmadığı için kaldırıldı
+// const GENERATE_ACTIONPLAN_COST = 15; // Kullanılmadığı için kaldırıldı
+// const MIN_FORFAIT_AI = 'Premium'; // Kullanılmadığı için kaldırıldı
 
 // --- Forfait Yönetimi ---
 
@@ -503,21 +504,21 @@ exports.updateForfait = async (req, res) => {
       parseInt(maxAiGenerationsMonthly, 10);
 
   // Doğrulamalar
-  if (isNaN(credits) || credits < 0) {
+  if (Number.isNaN(credits) || credits < 0) {
     req.flash(
       'error_msg',
       'Le nombre de crédits par défaut doit être un nombre positif.',
     );
     return res.redirect(`/admin/forfaits/${forfaitName}/edit`);
   }
-  if (maxBen !== null && (isNaN(maxBen) || maxBen < 0)) {
+  if (maxBen !== null && (Number.isNaN(maxBen) || maxBen < 0)) {
     req.flash(
       'error_msg',
       'La limite de bénéficiaires doit être un nombre positif ou vide.',
     );
     return res.redirect(`/admin/forfaits/${forfaitName}/edit`);
   }
-  if (maxAi !== null && (isNaN(maxAi) || maxAi < 0)) {
+  if (maxAi !== null && (Number.isNaN(maxAi) || maxAi < 0)) {
     req.flash(
       'error_msg',
       'La limite de générations IA doit être un nombre positif ou vide.',
@@ -580,7 +581,7 @@ exports.updateUserForfait = async (req, res) => {
       return res.redirect('/admin/users');
     }
     // Kendini düzenlemeyi engelle
-    if (userIdToUpdate == adminUserId) {
+    if (userIdToUpdate === adminUserId) {
       req.flash(
         'error_msg',
         'Vous ne pouvez pas modifier votre propre forfait.',

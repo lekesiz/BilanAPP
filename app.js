@@ -5,9 +5,8 @@ const logger = require('morgan');
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
-const { engine, create } = require('express-handlebars');
+const { create } = require('express-handlebars');
 const dotenv = require('dotenv');
-const fs = require('fs');
 const helpers = require('./config/handlebars-helpers');
 const csrf = require('csurf');
 
@@ -86,22 +85,22 @@ app.use(
   }),
 );
 
-// CSRF Koruması - Rotalardan ÖNCE global olarak uygula
-const csrfProtection = csrf({ cookie: true });
-app.use(csrfProtection);
-
-// CSRF Token'ını locals'a ekle (view'larda kullanmak için) - Her zaman eklemeyi dene
-app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken(); // Bu fonksiyon artık tüm isteklerde mevcut olmalı
-  next();
-});
+// Configuration de Flash (CSRF'den ÖNCE)
+app.use(flash());
 
 // Configuration de Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configuration de Flash (CSRF'den ÖNCE)
-app.use(flash());
+// CSRF Koruması - Form parser, session, flash, passport'tan SONRA
+const csrfProtection = csrf({ cookie: true });
+app.use(csrfProtection);
+
+// CSRF Token'ını locals'a ekle (view'larda kullanmak için)
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
 
 // Her istek için pageScripts dizisini başlat
 app.use((req, res, next) => {
@@ -150,7 +149,6 @@ app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
     console.error('CSRF Token Error:', err);
     console.warn('Invalid CSRF token detected. Redirecting user back.');
-    // Kullanıcıyı geldiği sayfaya veya güvenli bir sayfaya yönlendir
     return res.redirect(req.headers.referer || '/');
   }
 
@@ -161,7 +159,7 @@ app.use((err, req, res, next) => {
 
   // Diğer hatalar için flash mesajı kullanmayı dene (varsa)
   if (req.flash) {
-      req.flash('error_msg', res.locals.message || 'Une erreur inattendue est survenue.');
+    req.flash('error_msg', res.locals.message || 'Une erreur inattendue est survenue.');
   }
 
   // Hata detaylarını logla (geliştirme için)

@@ -56,11 +56,9 @@ module.exports = {
   ifCond(v1, operator, v2, options) {
     switch (operator) {
       case '==':
-        return v1 == v2 ? options.fn(this) : options.inverse(this);
       case '===':
         return v1 === v2 ? options.fn(this) : options.inverse(this);
       case '!=':
-        return v1 != v2 ? options.fn(this) : options.inverse(this);
       case '!==':
         return v1 !== v2 ? options.fn(this) : options.inverse(this);
       case '<':
@@ -201,7 +199,7 @@ module.exports = {
     try {
       const d = new Date(date);
       // Tarihin geçerli olup olmadığını kontrol et
-      if (isNaN(d.getTime())) return '';
+      if (Number.isNaN(d.getTime())) return '';
       // ISO string'in tarih kısmını al (YYYY-MM-DD)
       return d.toISOString().split('T')[0];
     } catch (e) {
@@ -486,7 +484,7 @@ module.exports = {
     if (!date) return '';
     const d = new Date(date);
     // Geçerli tarih kontrolü
-    if (isNaN(d.getTime())) return '';
+    if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleTimeString('fr-FR', {
       hour: '2-digit',
       minute: '2-digit',
@@ -496,22 +494,17 @@ module.exports = {
 
   // Kullanıcının paketinin belirli bir seviyede veya üzerinde olup olmadığını kontrol et
   // Sıralama: Essentiel < Standard < Premium < Entreprise < Admin
-  isForfaitOrHigher(userForfait, minForfait, options) {
-    // Defensive checks for parameters
-    if (userForfait === undefined || userForfait === null) {
-      console.warn(
-        'isForfaitOrHigher: userForfait parameter is null or undefined',
-      );
-      return false;
+  isForfaitOrHigher(userForfait, requiredForfait, options) {
+    console.log(
+      `isForfaitOrHigher Check: User='${userForfait}', Required='${requiredForfait}'`,
+    );
+    if (!userForfait) {
+      // console.warn(
+      //   'isForfaitOrHigher: userForfait parameter is null or undefined',
+      // ); // Uyarı kaldırıldı, helper durumu zaten ele alıyor
+      return options.inverse(this); // Treat null/undefined as not meeting requirement
     }
-
-    if (minForfait === undefined || minForfait === null) {
-      console.warn(
-        'isForfaitOrHigher: minForfait parameter is null or undefined',
-      );
-      return false;
-    }
-
+    const levels = ['Free', 'Standard', 'Premium', 'Admin']; // Define hierarchy
     const forfaitLevels = {
       Essentiel: 1,
       Standard: 2,
@@ -521,7 +514,7 @@ module.exports = {
     };
 
     const userLevel = forfaitLevels[userForfait] || 0;
-    const minLevel = forfaitLevels[minForfait] || 0;
+    const minLevel = forfaitLevels[requiredForfait] || 0;
 
     const result = userLevel >= minLevel;
 
@@ -672,11 +665,11 @@ module.exports = {
   // Belirtilen sayıda döngü oluştur (times helper) - Sayfalama için
   times(n, block) {
     let accum = '';
-    if (n === undefined || n === null || isNaN(parseInt(n))) {
+    if (n === undefined || n === null || Number.isNaN(parseInt(n, 10))) {
       console.warn('Handlebars Helper "times" received non-numeric value:', n);
       n = 0;
     }
-    n = parseInt(n);
+    n = parseInt(n, 10);
     for (let i = 0; i < n; ++i) accum += block.fn(i);
     return accum;
   },

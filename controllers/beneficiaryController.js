@@ -2,7 +2,7 @@
 
 // --- Gerekli Modüller ---
 const { Op } = require('sequelize');
-const bcrypt = require('bcryptjs');
+// const bcrypt = require('bcryptjs'); // Kullanılmadığı için kaldırıldı
 const crypto = require('crypto');
 const {
   Beneficiary,
@@ -66,7 +66,7 @@ async function updateBeneficiaryField(req, res, fieldName) {
 // GET /beneficiaries - Liste des bénéficiaires
 exports.listBeneficiaries = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page, 10) || 1;
     const limit = 10;
     const offset = (page - 1) * limit;
     const whereClause = {};

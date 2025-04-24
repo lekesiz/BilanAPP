@@ -120,7 +120,7 @@
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                                                 <form action="/admin/users/{{id}}/delete" method="POST">
-                                                    <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                                                    <input type="hidden" name="_csrf" value="{{../csrfToken}}">
                                                     <button type="submit" class="btn btn-danger">Supprimer</button>
                                                 </form>
                                             </div>
@@ -137,7 +137,7 @@
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
                                             <form action="/admin/users/{{id}}/adjust-credits" method="POST">
-                                                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                                                <input type="hidden" name="_csrf" value="{{../csrfToken}}">
                                                 <div class="modal-body">
                                                     <p>Utilisateur: <strong>{{firstName}} {{lastName}}</strong></p>
                                                     <p>Crédits actuels: <strong>{{availableCredits}}</strong></p>
@@ -174,7 +174,7 @@
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
                                             <form action="/admin/users/{{id}}/update-forfait" method="POST">
-                                                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                                                <input type="hidden" name="_csrf" value="{{../csrfToken}}">
                                                 <div class="modal-body">
                                                     <p>Utilisateur: <strong>{{firstName}} {{lastName}}</strong></p>
                                                     <p>Forfait actuel: <strong>{{forfaitType}}</strong></p>

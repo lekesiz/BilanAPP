@@ -1,5 +1,5 @@
-const passport = require('passport');
-const bcrypt = require('bcryptjs');
+// const passport = require("passport"); // Controller'da doğrudan kullanılmıyor
+// const bcrypt = require("bcryptjs"); // Controller'da doğrudan kullanılmıyor
 const { User } = require('../models');
 const { getDefaultCreditsForForfait } = require('../services/creditService');
 

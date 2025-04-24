@@ -79,7 +79,7 @@ Document.init(
     sequelize,
     modelName: 'Document',
     hooks: {
-      afterDestroy: async (document, options) => {
+      afterDestroy: async (document) => {
         if (document.filePath) {
           const fullPath = path.join(__dirname, '../public', document.filePath); // Assuming filePath starts with /uploads/
           console.log(`Attempting to delete file: ${fullPath}`);

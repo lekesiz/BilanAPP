@@ -4,7 +4,6 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const {
   ensureAuthenticated,
-  ensureConsultant,
   ensureBeneficiary,
 } = require('../middlewares/auth');
 const {
@@ -14,7 +13,132 @@ const {
   Message,
   Questionnaire,
 } = require('../models');
-const dashboardController = require('../controllers/dashboardController');
+
+// --- Helper Functions (Moved Before Usage) ---
+
+// Danışman istatistiklerini hesapla
+async function getConsultantStats(consultantId, isAdmin = false) {
+  // Sorgular için temel where koşulu
+  const baseWhereBeneficiary = isAdmin ? {} : { consultantId };
+  const baseWhereAppointment = isAdmin ? {} : { consultantId };
+
+  // Promise.all ile sorguları paralelleştir
+  const [
+    beneficiaryCount,
+    activeBeneficiaryCount, // Replaced phase counts with just active count
+    upcomingAppointmentsCount,
+    unreadMessagesCount,
+    pendingQuestionnairesCount,
+    missingConsentsCount,
+  ] = await Promise.all([
+    Beneficiary.count({ where: baseWhereBeneficiary }),
+    Beneficiary.count({ where: { ...baseWhereBeneficiary, status: 'active' } }), // Count active beneficiaries
+    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'preliminary' } }), // Removed
+    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'investigation' } }), // Removed
+    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'conclusion' } }), // Removed
+    Appointment.count({
+      where: {
+        ...baseWhereAppointment,
+        status: 'scheduled',
+        date: { [Op.gte]: new Date() },
+      },
+    }),
+    Message.count({
+      where: isAdmin ?
+        { isRead: false } : // Admin sees ALL unread messages
+        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
+    }),
+    Questionnaire.count({
+      // Admin sees all pending. Consultant sees questionnaires FOR their beneficiaries.
+      where: isAdmin ?
+        { status: 'pending' } :
+        {
+          status: 'pending',
+          beneficiaryId: {
+            [Op.in]: (
+              await Beneficiary.findAll({
+                where: { consultantId },
+                attributes: ['id'],
+              })
+            ).map((b) => b.id),
+          },
+        },
+    }),
+    Beneficiary.count({
+      where: { ...baseWhereBeneficiary, consentGiven: false },
+    }),
+  ]);
+
+  return {
+    beneficiaryCount,
+    activeBeneficiaryCount, // Updated stat name
+    // preliminaryCount, // Removed
+    // investigationCount, // Removed
+    // conclusionCount, // Removed
+    upcomingAppointmentsCount,
+    unreadMessagesCount,
+    pendingQuestionnairesCount,
+    missingConsentsCount,
+  };
+}
+
+// Son aktiviteleri al (Sadece Danışman için)
+async function getRecentActivities(consultantId) {
+  // Return empty if called for Admin (handled in the route handler now)
+  // if (!consultantId) return []; // Or keep this check
+
+  const activities = [];
+  // Fetch in parallel
+  const [recentBeneficiaries, recentAppointments] = await Promise.all([
+    Beneficiary.findAll({
+      where: { consultantId },
+      include: [
+        { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 3,
+    }),
+    Appointment.findAll({
+      where: { consultantId },
+      include: [
+        {
+          model: Beneficiary,
+          as: 'beneficiary',
+          include: [
+            { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
+          ],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 3,
+    }),
+  ]);
+
+  recentBeneficiaries.forEach((beneficiary) => {
+    activities.push({
+      type: 'beneficiary', // Add type for potential filtering/icon
+      title: 'Nouveau Bénéficiaire',
+      description: `${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+      link: `/beneficiaries/${beneficiary.id}`, // Add link
+      date: beneficiary.createdAt,
+    });
+  });
+  recentAppointments.forEach((appointment) => {
+    if (!appointment.beneficiary) return; // Skip if beneficiary somehow missing
+    activities.push({
+      type: 'appointment', // Add type
+      title: 'Nouveau Rendez-vous',
+      description: `${appointment.type} avec ${appointment.beneficiary.user.firstName} ${appointment.beneficiary.user.lastName}`,
+      link: `/appointments#appt-${appointment.id}`, // Link needs refinement
+      date: appointment.createdAt,
+    });
+  });
+
+  // Sort and limit combined activities
+  return activities.sort((a, b) => b.date - a.date).slice(0, 5);
+}
+
+// --- Routes ---
 
 // Ana dashboard (kullanıcı tipine göre yönlendirme)
 router.get('/', ensureAuthenticated, (req, res) => {
@@ -263,126 +387,14 @@ router.get(
   },
 );
 
-// Danışman istatistiklerini hesapla
+// --- Helper Functions (Definitions Moved Above) ---
+/*
 async function getConsultantStats(consultantId, isAdmin = false) {
-  // Sorgular için temel where koşulu
-  const baseWhereBeneficiary = isAdmin ? {} : { consultantId };
-  const baseWhereAppointment = isAdmin ? {} : { consultantId };
-
-  // Promise.all ile sorguları paralelleştir
-  const [
-    beneficiaryCount,
-    activeBeneficiaryCount, // Replaced phase counts with just active count
-    upcomingAppointmentsCount,
-    unreadMessagesCount,
-    pendingQuestionnairesCount,
-    missingConsentsCount,
-  ] = await Promise.all([
-    Beneficiary.count({ where: baseWhereBeneficiary }),
-    Beneficiary.count({ where: { ...baseWhereBeneficiary, status: 'active' } }), // Count active beneficiaries
-    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'preliminary' } }), // Removed
-    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'investigation' } }), // Removed
-    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'conclusion' } }), // Removed
-    Appointment.count({
-      where: {
-        ...baseWhereAppointment,
-        status: 'scheduled',
-        date: { [Op.gte]: new Date() },
-      },
-    }),
-    Message.count({
-      where: isAdmin ?
-        { isRead: false } : // Admin sees ALL unread messages
-        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
-    }),
-    Questionnaire.count({
-      // Admin sees all pending. Consultant sees questionnaires FOR their beneficiaries.
-      where: isAdmin ?
-        { status: 'pending' } :
-        {
-          status: 'pending',
-          beneficiaryId: {
-            [Op.in]: (
-              await Beneficiary.findAll({
-                where: { consultantId },
-                attributes: ['id'],
-              })
-            ).map((b) => b.id),
-          },
-        },
-    }),
-    Beneficiary.count({
-      where: { ...baseWhereBeneficiary, consentGiven: false },
-    }),
-  ]);
-
-  return {
-    beneficiaryCount,
-    activeBeneficiaryCount, // Updated stat name
-    // preliminaryCount, // Removed
-    // investigationCount, // Removed
-    // conclusionCount, // Removed
-    upcomingAppointmentsCount,
-    unreadMessagesCount,
-    pendingQuestionnairesCount,
-    missingConsentsCount,
-  };
+  ...
 }
-
-// Son aktiviteleri al (Sadece Danışman için)
 async function getRecentActivities(consultantId) {
-  // Return empty if called for Admin (handled in the route handler now)
-  // if (!consultantId) return []; // Or keep this check
-
-  const activities = [];
-  // Fetch in parallel
-  const [recentBeneficiaries, recentAppointments] = await Promise.all([
-    Beneficiary.findAll({
-      where: { consultantId },
-      include: [
-        { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 3,
-    }),
-    Appointment.findAll({
-      where: { consultantId },
-      include: [
-        {
-          model: Beneficiary,
-          as: 'beneficiary',
-          include: [
-            { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
-          ],
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: 3,
-    }),
-  ]);
-
-  recentBeneficiaries.forEach((beneficiary) => {
-    activities.push({
-      type: 'beneficiary', // Add type for potential filtering/icon
-      title: 'Nouveau Bénéficiaire',
-      description: `${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
-      link: `/beneficiaries/${beneficiary.id}`, // Add link
-      date: beneficiary.createdAt,
-    });
-  });
-  recentAppointments.forEach((appointment) => {
-    if (!appointment.beneficiary) return; // Skip if beneficiary somehow missing
-    activities.push({
-      type: 'appointment', // Add type
-      title: 'Nouveau Rendez-vous',
-      description: `${appointment.type} avec ${appointment.beneficiary.user.firstName} ${appointment.beneficiary.user.lastName}`,
-      link: `/appointments#appt-${appointment.id}`, // Link needs refinement
-      date: appointment.createdAt,
-    });
-  });
-
-  // Sort and limit combined activities
-  return activities.sort((a, b) => b.date - a.date).slice(0, 5);
+  ...
 }
+*/
 
 module.exports = router;

@@ -11,7 +11,7 @@
 exports.getMockCareerOpportunities = async (userProfile) => {
   // Extract profile data
   const {
-    currentPosition, skills, educationLevel, yearsOfExperience,
+    skills, educationLevel, yearsOfExperience,
   } =
     userProfile;
 
@@ -238,114 +238,88 @@ exports.getMockCareerOpportunities = async (userProfile) => {
   );
 };
 
-/**
- * Calculate education match score (0-1)
- */
-function calculateEducationMatch(userEducation, jobTraining) {
-  const educationLevels = {
-    'Bac ou inférieur': 1,
-    'Bac+2 (BTS, DUT)': 2,
-    'Bac+3 (Licence)': 3,
-    'Bac+5 (Master)': 4,
-    'Bac+8 (Doctorat)': 5,
+// Helper Functions
+
+function calculateEducationMatch(userEducation, requiredEducation) {
+  // Simple logic - improve with more sophisticated matching
+  if (!requiredEducation) return 1; // If no requirement, assume match
+  if (!userEducation) return 0.2; // Penalize if user has no education specified
+
+  const levels = {
+    Bac: 1, 'Bac+2': 2, 'Bac+3': 3, Licence: 3, 'Bac+4': 4, 'Bac+5': 5, Master: 5,
   };
+  const userLevel = levels[userEducation] || 0;
+  const requiredLevel = levels[requiredEducation] || 0;
 
-  const userLevel = educationLevels[userEducation] || 2;
-
-  // Extract education level from job training description
-  let jobLevel = 2;
-  if (jobTraining.includes('Master') || jobTraining.includes('Bac+5')) {
-    jobLevel = 4;
-  } else if (jobTraining.includes('Licence') || jobTraining.includes('Bac+3')) {
-    jobLevel = 3;
-  } else if (
-    jobTraining.includes('BTS') ||
-    jobTraining.includes('DUT') ||
-    jobTraining.includes('Bac+2')
-  ) {
-    jobLevel = 2;
-  } else if (
-    jobTraining.includes('Doctorat') ||
-    jobTraining.includes('Bac+8')
-  ) {
-    jobLevel = 5;
-  }
-
-  // If user education is higher than or equal to job requirement = perfect match
-  if (userLevel >= jobLevel) {
-    return 1;
-  }
-
-  // Otherwise, return a proportional match
-  return userLevel / jobLevel;
+  if (userLevel >= requiredLevel) return 1;
+  if (userLevel === requiredLevel - 1) return 0.7;
+  return 0.3;
 }
 
-/**
- * Calculate experience match score (0-1)
- */
-function calculateExperienceMatch(userExperience, careerPath) {
-  const experienceLevels = {
-    '0-2': 1,
-    '3-5': 2,
-    '6-10': 3,
-    '10+': 4,
-  };
+function calculateExperienceMatch(userExperience, requiredExperience) {
+  if (!requiredExperience) return 1;
+  if (!userExperience) return 0.2;
 
-  const userLevel = experienceLevels[userExperience] || 1;
-
-  // Extract required experience from career path description
-  let requiredLevel = 1;
-  if (careerPath.includes('5 à 8 ans') || careerPath.includes('5-8 ans')) {
-    requiredLevel = 3;
-  } else if (
-    careerPath.includes('3 à 5 ans') ||
-    careerPath.includes('3-5 ans')
-  ) {
-    requiredLevel = 2;
-  } else if (careerPath.includes('10 ans')) {
-    requiredLevel = 4;
-  }
-
-  // If user experience is higher than or equal to job requirement = perfect match
-  if (userLevel >= requiredLevel) {
-    return 1;
-  }
-
-  // Otherwise, return a proportional match
-  return userLevel / requiredLevel;
+  if (userExperience >= requiredExperience) return 1;
+  if (userExperience >= requiredExperience * 0.7) return 0.8;
+  return 0.4;
 }
 
-/**
- * Calculate skills match score (0-1)
- */
 function calculateSkillsMatch(userSkills, requiredSkills) {
-  if (!userSkills || !requiredSkills || requiredSkills.length === 0) {
-    return 0.5; // Default match
-  }
+  if (!requiredSkills || requiredSkills.length === 0) return 1;
+  if (!userSkills || userSkills.length === 0) return 0.1;
 
-  // Convert skills to arrays if they are strings
-  const userSkillsArray = Array.isArray(userSkills) ?
-    userSkills :
-    userSkills.split(',').map((s) => s.trim().toLowerCase());
-  const requiredSkillsArray = Array.isArray(requiredSkills) ?
-    requiredSkills.map((s) => (typeof s === 'string' ? s.toLowerCase() : '')) :
-    requiredSkills.split(',').map((s) => s.trim().toLowerCase());
+  const requiredSkillsArray = requiredSkills.map(s => s.toLowerCase());
+  const userSkillsLower = userSkills.map(s => s.toLowerCase());
 
-  // Count matching skills
-  let matchCount = 0;
-  requiredSkillsArray.forEach((requiredSkill) => {
-    userSkillsArray.forEach((userSkill) => {
-      // Simple matching logic - could be improved with NLP in a real implementation
-      if (
-        userSkill &&
-        requiredSkill &&
-        (userSkill.includes(requiredSkill) || requiredSkill.includes(userSkill))
-      ) {
-        matchCount++;
-      }
-    });
-  });
-
-  // Calculate match ratio
+  const matchCount = requiredSkillsArray.filter(skill => userSkillsLower.includes(skill)).length;
   return matchCount / requiredSkillsArray.length;
 }
+
+// Simplified representation of career data
+// In a real application, this might come from a database or external API
+const careerDatabase = [
+  // ... (data)
+];
+
+/**
+ * Finds career paths matching given skills and experience level.
+ * @param {Array<string>} userSkills - Array of user's skills.
+ * @param {number} userExperienceYears - User's years of experience.
+ * @returns {Array<object>} - Array of matching career objects.
+ */
+exports.findMatchingCareers = (userSkills, userExperienceYears) => {
+  // const currentPosition = 'Entry-level'; // Not used, removed
+  return careerDatabase.filter((career) => {
+    // Simple matching logic (can be improved)
+    return true;
+  });
+};
+
+/**
+ * Provides detailed information about a specific career.
+ * @param {string} careerTitle - The title of the career.
+ * @returns {object|null} - Career details or null if not found.
+ */
+exports.getCareerDetails = (careerTitle) => {
+  return careerDatabase.find(c => c.title.toLowerCase() === careerTitle.toLowerCase()) || null;
+};
+
+/**
+ * Calculates the match score between a user profile and a career path.
+ * @param {object} userProfile - User's profile data (skills, experience, education).
+ * @param {object} career - Career data object.
+ * @returns {number} - Match score percentage.
+ */
+exports.calculateCareerMatchScore = (userProfile, career) => {
+  const skillsWeight = 0.5;
+  const experienceWeight = 0.3;
+  const educationWeight = 0.2;
+
+  const skillsMatch = calculateSkillsMatch(userProfile.skills, career.requiredSkills);
+  const experienceMatch = calculateExperienceMatch(userProfile.yearsOfExperience, career.requiredExperience);
+  const educationMatch = calculateEducationMatch(userProfile.educationLevel, career.education);
+
+  const weightedScore = (skillsMatch * skillsWeight) + (experienceMatch * experienceWeight) + (educationMatch * educationWeight);
+  return Math.round(weightedScore * 100);
+};

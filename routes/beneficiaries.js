@@ -8,7 +8,7 @@ const {
 } = require('../middlewares/auth');
 const { checkAndDeductCredits } = require('../middlewares/credits');
 const { checkAccessLevel } = require('../middlewares/permissions');
-const { checkAiLimit, incrementAiUsage } = require('../middlewares/limits');
+const { checkAiLimit } = require('../middlewares/credits');
 
 // Require the new controller
 const beneficiaryController = require('../controllers/beneficiaryController');

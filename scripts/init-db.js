@@ -5,7 +5,7 @@
  */
 
 // Doğru yolları kullan
-const bcrypt = require('bcryptjs'); // bcryptjs kullan
+// const bcrypt = require('bcryptjs'); // Kullanılmadığı için kaldırıldı
 const { Op } = require('sequelize');
 const sequelize = require('../config/database'); // config ana dizinde olduğu için ../
 const {
@@ -20,6 +20,115 @@ const {
   AiAnalysis,
   CreditLog,
 } = require('../models'); // models ana dizinde olduğu için ../
+const { logCreditChange } = require('../services/creditService'); // CreditLog burada oluşturuluyor
+require('dotenv').config();
+
+// --- Helper Functions ---
+
+// Rastgele cevap oluşturucu
+const generateDummyAnswer = (questionType, options) => {
+  switch (questionType) {
+    case 'text':
+      return `Réponse textuelle courte exemple ${Math.random().toString(36).substring(7)}.`;
+    case 'textarea':
+      return `Ceci est une réponse textuelle longue pour la question. Elle contient plus de détails et d'informations que la réponse courte. Lorem ipsum dolor sit amet, consectetur adipiscing elit. ${Math.random()}`;
+    case 'radio':
+      return options[Math.floor(Math.random() * options.length)];
+    case 'checkbox':
+      // Rastgele 1 veya 2 seçenek seç
+      const shuffled = options.sort(() => 0.5 - Math.random());
+      const count = Math.random() < 0.6 ? 1 : 2;
+      return shuffled.slice(0, count).join(', ');
+    case 'scale':
+      return (Math.floor(Math.random() * 5) + 1).toString();
+    default:
+      return 'Réponse par défaut';
+  }
+};
+
+// Demo mesaj oluşturucu
+const createDemoMessages = async (consultantId, beneficiaryId, count = 3) => {
+  const consultant = await User.findByPk(consultantId);
+  const beneficiaryUser = await User.findOne({ where: { '$beneficiaryProfile.id$': beneficiaryId }, include: 'beneficiaryProfile' });
+
+  if (!consultant || !beneficiaryUser) return;
+
+  const messagePromises = [];
+  for (let i = 0; i < count; i++) {
+    const fromConsultant = i % 2 === 0;
+    messagePromises.push(
+      Message.create({
+        senderId: fromConsultant ? consultant.id : beneficiaryUser.id,
+        consultantId: consultant.id,
+        beneficiaryId: beneficiaryId,
+        subject: `Message de test ${i + 1}`,
+        body: `Contenu du message de test ${i + 1} envoyé par ${fromConsultant ? 'consultant' : 'bénéficiaire'}.`,
+        isRead: Math.random() < 0.5, 
+      })
+    );
+  }
+  await Promise.all(messagePromises);
+};
+
+// Demo kredi log oluşturucu
+const createDemoCreditLogs = async () => {
+  console.log('Demo kredi logları oluşturuluyor...');
+  const creditLogPromises = [];
+  const allUsers = await User.findAll();
+  const adminUser = allUsers.find(u => u.forfaitType === 'Admin'); // Admin'i bul
+  const demoCreditActions = [
+      { code: 'AI_GENERATE_SYNTHESIS', note: 'AI Sentez' },
+      { code: 'DOCUMENT_UPLOAD', note: 'Belge Yükleme' },
+      { code: 'QUESTIONNAIRE_ASSIGN', note: 'Anket Atama' },
+      { code: 'ADMIN_ADJUSTMENT', note: 'Admin Ayarlama' },
+      { code: 'AI_GENERATE_ACTIONPLAN', note: 'AI Plan' }
+  ];
+  
+  allUsers.forEach((user, index) => {
+      if (user.userType !== 'beneficiary') { 
+          const actionIndex = index % demoCreditActions.length; 
+          const action = demoCreditActions[actionIndex]; 
+          const amount = action.code === 'ADMIN_ADJUSTMENT' ? 50 : -(10 + index * 2);
+          creditLogPromises.push(
+               logCreditChange(
+                  user.id,
+                  amount,
+                  action.code, 
+                  action.note, 
+                  action.code === 'ADMIN_ADJUSTMENT' ? adminUser?.id : null, 
+                  null,
+                  null
+              )
+          );
+      }
+  });
+  await Promise.all(creditLogPromises);
+  console.log('Demo kredi logları oluşturuldu.');
+};
+
+// --- Ana Fonksiyon ---
+const initDatabase = async (force = false, createDemoData = true) => {
+  try {
+    console.log('Starting database initialization...');
+
+    // Skip database creation for SQLite - it's handled by the connection
+    // The CREATE DATABASE statement is not valid in SQLite
+
+    // Sync models with database - force true will drop tables if they exist
+    await sequelize.sync({ force: true });
+
+    // Create all demo data through the main function
+    await createDefaultForfaits();
+    await createDemoData();
+
+    console.log('Database initialized successfully!');
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+  }
+};
+
+// Başlatma fonksiyonunu çalıştır
+initDatabase();
 
 // Varsayılan Forfait'leri oluşturma fonksiyonu
 async function createDefaultForfaits() {
@@ -114,7 +223,7 @@ async function createDemoData() {
       credits: 999,
     });
     console.log('Admin kullanıcısı oluşturuldu:', adminUser.email);
-    const adminId = adminUser.id;
+    // const adminId = adminUser.id; // Kullanılmadığı için kaldırıldı
 
     // --- Faydalanıcılar ve Kullanıcı Hesapları Oluştur ---
     const beneficiariesData = [];
@@ -337,20 +446,13 @@ Informations complémentaires:
     console.log('Demo randevular oluşturuldu.');
 
     // --- Demo Mesajlar Oluştur ---
-    await createDemoMessages();
+    await createDemoMessages(consultantId, beneficiariesData[0].id);
 
     // --- Demo Anketler ve Sorular Oluştur ---
     console.log('Demo anketler ve sorular oluşturuluyor...');
 
-    const questionnaireTypes = [
-      'interests',
-      'skills',
-      'personality',
-      'values',
-      'goals',
-    ];
-    const questionnaireStatuses = ['pending', 'completed', 'in_progress'];
-
+    const questionnairePromises = [];
+    const questionTypes = ['interests', 'skills', 'personality', 'values'];
     const questionnaireTemplates = [
       {
         title: "Questionnaire d'Intérêts Professionnels",
@@ -781,194 +883,3 @@ Informations complémentaires:
     throw error;
   }
 }
-
-// Anket cevapları için rastgele veri oluşturma yardımcı fonksiyonu
-function generateDummyAnswer(type, options) {
-  try {
-    switch (type) {
-      case 'text':
-        const textResponses = [
-          "J'apprécie particulièrement le secteur des nouvelles technologies.",
-          "Mon expérience en gestion de projet s'étend sur 5 ans dans différents contextes.",
-          'Je préfère un environnement de travail collaboratif et innovant.',
-          "Mes principales motivations sont l'autonomie et la reconnaissance de mon travail.",
-          'Je souhaiterais évoluer vers un poste à responsabilités dans les 2 ans.',
-        ];
-        return textResponses[Math.floor(Math.random() * textResponses.length)];
-
-      case 'single_choice':
-        if (!options) return null;
-        const choiceOptions = JSON.parse(options);
-        return choiceOptions[Math.floor(Math.random() * choiceOptions.length)];
-
-      case 'multi_choice':
-        if (!options) return null;
-        const multiOptions = JSON.parse(options);
-        const numSelections =
-          1 + Math.floor(Math.random() * (multiOptions.length - 1));
-        const shuffled = [...multiOptions].sort(() => 0.5 - Math.random());
-        return JSON.stringify(shuffled.slice(0, numSelections));
-
-      case 'scale':
-        return (1 + Math.floor(Math.random() * 5)).toString();
-
-      case 'ranking':
-        if (!options) return null;
-        const rankOptions = JSON.parse(options);
-        const shuffledRank = [...rankOptions].sort(() => 0.5 - Math.random());
-        return JSON.stringify(shuffledRank);
-
-      default:
-        return null;
-    }
-  } catch (error) {
-    console.error('Rastgele cevap oluşturulurken hata:', error);
-    return null;
-  }
-}
-
-async function createDemoMessages() {
-  console.log('Creating demo messages...');
-
-  // Get users
-  const consultantUser = await User.findOne({
-    where: { email: 'consultant@test.com' },
-  });
-  const consultantUser2 = await User.findOne({
-    where: { email: 'consultant2@test.com' },
-  });
-  const beneficiaryUsers = await User.findAll({
-    where: { userType: 'beneficiary' },
-  });
-
-  if (!consultantUser || !consultantUser2 || beneficiaryUsers.length === 0) {
-    console.log('Required users not found. Skipping message creation.');
-    return;
-  }
-
-  // Find beneficiary data
-  const beneficiary3 = await Beneficiary.findOne({
-    where: { userId: beneficiaryUsers[2].id },
-  });
-
-  // Simplified message creation
-  try {
-    // Just create a single test message
-    await Message.create({
-      senderId: consultantUser.id,
-      receiverId: beneficiaryUsers[2].id,
-      consultantId: beneficiary3.consultantId,
-      beneficiaryId: beneficiary3.id,
-      subject: 'Bienvenue dans votre parcours de bilan',
-      body: 'Bienvenue dans votre parcours de bilan de compétences.',
-      isRead: true,
-    });
-
-    console.log('Test message created successfully.');
-  } catch (error) {
-    console.error('Error creating messages:', error.message);
-  }
-
-  console.log('Demo messages created successfully!');
-}
-
-// --- Kredi Logları Oluştur ---
-async function createDemoCreditLogs() {
-  console.log('Demo kredi logları oluşturuluyor...');
-
-  const creditActionTypes = [
-    'INITIAL_CREDIT',
-    'AI_USAGE',
-    'ADMIN_ADJUSTMENT',
-    'DOCUMENT_DOWNLOAD',
-    'FORFAIT_UPGRADE',
-  ];
-  const creditNotes = [
-    'Crédits initiaux du forfait Premium',
-    "Utilisation de l'outil AI Analyse de Compétences",
-    'Ajustement administratif',
-    'Téléchargement du document CV',
-    'Mise à niveau de forfait de Standard à Premium',
-  ];
-
-  // Get consultants and admin
-  const consultantUser = await User.findOne({
-    where: { email: 'consultant@test.com' },
-  });
-  const consultantUser2 = await User.findOne({
-    where: { email: 'consultant2@test.com' },
-  });
-  const adminUser = await User.findOne({ where: { email: 'admin@test.com' } });
-
-  if (!consultantUser || !consultantUser2 || !adminUser) {
-    console.log('Required users not found. Skipping credit log creation.');
-    return;
-  }
-
-  // Get a beneficiary for reference
-  const beneficiary = await Beneficiary.findOne();
-
-  if (!beneficiary) {
-    console.log('No beneficiaries found. Skipping credit log creation.');
-    return;
-  }
-
-  // Create a couple test logs for the consultant
-  try {
-    await CreditLog.create({
-      consultantId: consultantUser.id,
-      userId: consultantUser.id,
-      action: 'INITIAL_CREDIT',
-      actionType: 'INITIAL_CREDIT',
-      amount: 50,
-      balance: 50,
-      date: new Date(),
-      notes: 'Initial credits for Standard package',
-      beneficiaryId: null,
-      adminUserId: null,
-    });
-
-    await CreditLog.create({
-      consultantId: consultantUser.id,
-      userId: consultantUser.id,
-      action: 'AI_USAGE',
-      actionType: 'AI_USAGE',
-      amount: -5,
-      balance: 45,
-      date: new Date(),
-      notes: 'Used AI tool for competency analysis',
-      beneficiaryId: beneficiary.id,
-      adminUserId: null,
-    });
-
-    console.log('Test credit logs created successfully.');
-  } catch (error) {
-    console.error('Error creating credit logs:', error.message);
-  }
-
-  console.log('Demo credit logs created successfully!');
-}
-
-// Fix the initDb function to handle SQLite properly
-async function initDb() {
-  try {
-    console.log('Starting database initialization...');
-
-    // Skip database creation for SQLite - it's handled by the connection
-    // The CREATE DATABASE statement is not valid in SQLite
-
-    // Sync models with database - force true will drop tables if they exist
-    await sequelize.sync({ force: true });
-
-    // Create all demo data through the main function
-    await createDefaultForfaits();
-    await createDemoData();
-
-    console.log('Database initialized successfully!');
-  } catch (error) {
-    console.error('Database initialization failed:', error);
-  }
-}
-
-// Başlatma fonksiyonunu çalıştır
-initDb();

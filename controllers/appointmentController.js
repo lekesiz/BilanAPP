@@ -4,12 +4,12 @@ const { Appointment, Beneficiary, User } = require('../models');
 // GET /appointments - List Appointments
 exports.listAppointments = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page, 10) || 1;
     const limit = 15;
     const offset = (page - 1) * limit;
     const whereClause = {};
     const {
-      beneficiary, status, date_start, date_end,
+      beneficiary, status, dateStart, dateEnd,
     } = req.query;
     const { userType } = req.user;
     const userId = req.user.id;
@@ -31,10 +31,10 @@ exports.listAppointments = async (req, res) => {
     }
 
     if (status) whereClause.status = status;
-    if (date_start || date_end) {
+    if (dateStart || dateEnd) {
       whereClause.date = {};
-      if (date_start) whereClause.date[Op.gte] = new Date(date_start);
-      if (date_end) whereClause.date[Op.lte] = new Date(date_end);
+      if (dateStart) whereClause.date[Op.gte] = new Date(dateStart);
+      if (dateEnd) whereClause.date[Op.lte] = new Date(dateEnd);
     }
 
     const queryOptions = {
@@ -103,8 +103,8 @@ exports.listAppointments = async (req, res) => {
       filters: {
         beneficiary: beneficiary || '',
         status: status || '',
-        date_start: date_start || '',
-        date_end: date_end || '',
+        date_start: dateStart || '',
+        date_end: dateEnd || '',
       },
     });
   } catch (err) {
@@ -324,7 +324,7 @@ exports.updateAppointment = async (req, res) => {
     if (
       (isAdmin || req.user.userType === 'consultant') &&
       beneficiaryId &&
-      beneficiaryId != appointment.beneficiaryId
+      beneficiaryId !== appointment.beneficiaryId
     ) {
       const benefWhere = { id: beneficiaryId };
       if (!isAdmin) benefWhere.consultantId = req.user.id;
@@ -342,7 +342,7 @@ exports.updateAppointment = async (req, res) => {
     } else if (
       req.user.userType === 'beneficiary' &&
       beneficiaryId &&
-      beneficiaryId != appointment.beneficiaryId
+      beneficiaryId !== appointment.beneficiaryId
     ) {
       req.flash('error_msg', 'Impossible de changer le bénéficiaire assigné.');
       return res.redirect(`/appointments/${appointmentId}/edit`);

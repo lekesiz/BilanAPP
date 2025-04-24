@@ -133,7 +133,7 @@ exports.listDocuments = async (req, res) => {
     }
 
     queryOptions.where = whereClause;
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page, 10) || 1;
     const limit = 15;
     const offset = (page - 1) * limit;
     queryOptions.limit = limit;
@@ -425,9 +425,9 @@ exports.updateDocument = async (req, res) => {
     let finalBeneficiaryId = document.beneficiaryId;
     if (isAdmin || isConsultant) {
       const newBenefId =
-        beneficiaryId && beneficiaryId !== '' ?
-          parseInt(beneficiaryId, 10) :
-          null;
+        beneficiaryId && beneficiaryId !== ''
+          ? parseInt(beneficiaryId, 10)
+          : null;
       if (newBenefId !== finalBeneficiaryId) {
         // Only check if assignment changes
         if (newBenefId) {
@@ -450,7 +450,7 @@ exports.updateDocument = async (req, res) => {
           finalBeneficiaryId = null;
         }
       }
-    } else if (beneficiaryId && beneficiaryId != finalBeneficiaryId) {
+    } else if (beneficiaryId && beneficiaryId !== finalBeneficiaryId) {
       req.flash('error_msg', 'Modification assignation non autorisée.');
       return res.redirect(`/documents/${documentId}/edit`);
     }

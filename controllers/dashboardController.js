@@ -5,7 +5,6 @@ const {
   Appointment,
   Message,
   Questionnaire,
-  Document,
 } = require('../models');
 const { getRecentActivitiesFor } = require('../utils/activity');
 
@@ -65,6 +64,7 @@ async function getConsultantStats(consultantId, isAdmin = false) {
 }
 
 // Get recent activities (Consultant only)
+/*
 async function getRecentActivities(consultantId) {
   const activities = [];
   const [recentBeneficiaries, recentAppointments] = await Promise.all([
@@ -114,6 +114,7 @@ async function getRecentActivities(consultantId) {
 
   return activities.sort((a, b) => b.date - a.date).slice(0, 5);
 }
+*/
 
 // --- Route Handlers ---
 

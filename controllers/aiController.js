@@ -1,5 +1,4 @@
-const { Op } = require('sequelize');
-const axios = require('axios');
+// const { fn, col } = require('sequelize'); // Kullanılmadığı için kaldırıldı
 const {
   Beneficiary,
   User,
@@ -12,8 +11,7 @@ const {
 const aiService = require('../services/aiService');
 const { incrementAiUsage } = require('../middlewares/limits');
 const { logCreditChange } = require('../services/creditService');
-const { ensureAuthenticated, isConsultant } = require('../middlewares/auth');
-const { CREDIT_COSTS } = require('../config/constants');
+// const { checkAiLimit, checkAndDeductCredits } = require('../middlewares/credits'); // Kullanılmadığı için kaldırıldı
 
 // ------ SYNTHESIS GENERATOR ------
 
@@ -52,7 +50,6 @@ exports.showSynthesisGenerator = async (req, res) => {
 // POST /ai/synthesis-generator - Handle synthesis generation request
 exports.generateSynthesis = async (req, res) => {
   const { beneficiaryId, instructions } = req.body;
-  const COST = 20; // Cost in credits
 
   try {
     // Validate input
@@ -126,7 +123,7 @@ exports.generateSynthesis = async (req, res) => {
     await incrementAiUsage(req.user.id);
     await logCreditChange(
       req.user.id,
-      -COST,
+      -20,
       'AI_GENERATE_SYNTHESIS',
       `Génération synthèse IA pour ${beneficiary.user.firstName}`,
       null,
@@ -189,7 +186,6 @@ exports.showActionPlanGenerator = async (req, res) => {
 // POST /ai/action-plan-generator - Handle action plan generation request
 exports.generateActionPlan = async (req, res) => {
   const { beneficiaryId, instructions } = req.body;
-  const COST = 15; // Cost in credits
 
   try {
     // Validate input
@@ -226,12 +222,11 @@ exports.generateActionPlan = async (req, res) => {
     };
 
     // Generate action plan
-    const generatedText =
-      await aiService.generateActionPlanDraft(beneficiaryData);
+    const actionPlanResult = await aiService.generateActionPlan(beneficiaryData);
 
     // Update beneficiary with generated text if requested
     if (req.body.updateBeneficiary === 'true') {
-      await beneficiary.update({ actionPlan: generatedText });
+      await beneficiary.update({ actionPlan: JSON.stringify(actionPlanResult) });
       req.flash(
         'success_msg',
         "Plan d'action généré et enregistré pour le bénéficiaire.",
@@ -242,7 +237,7 @@ exports.generateActionPlan = async (req, res) => {
     await incrementAiUsage(req.user.id);
     await logCreditChange(
       req.user.id,
-      -COST,
+      -15,
       'AI_GENERATE_ACTIONPLAN',
       `Génération plan d'action IA pour ${beneficiary.user.firstName}`,
       null,
@@ -255,7 +250,7 @@ exports.generateActionPlan = async (req, res) => {
       title: "Plan d'Action Généré",
       user: req.user,
       beneficiary: beneficiary.get({ plain: true }),
-      generatedText,
+      actionPlan: JSON.stringify(actionPlanResult),
       wasSaved: req.body.updateBeneficiary === 'true',
     });
   } catch (error) {
@@ -281,7 +276,6 @@ exports.exploreCareer = async (req, res) => {
   const {
     skills, interests, constraints, educationLevel,
   } = req.body;
-  const COST = 10; // Cost in credits
 
   try {
     // Validate input
@@ -350,7 +344,6 @@ exports.showCompetencyAnalyzer = (req, res) => {
 // POST /ai/competency-analyzer - Handle competency analysis request
 exports.analyzeCompetencies = async (req, res) => {
   const { cvText, jobDescription } = req.body;
-  const COST = 10; // Cost in credits
 
   try {
     // Validate input
@@ -366,17 +359,10 @@ exports.analyzeCompetencies = async (req, res) => {
     // const analysisResults = await aiService.analyzeCompetencies(cvText, jobDescription);
 
     // For now, return a placeholder
-    const analysisResults = {
-      message:
-        "L'analyseur de compétences est en cours de développement. Cette fonctionnalité sera disponible prochainement.",
-      matchScore: 65,
-      matchingSkills: ['Communication', 'Gestion de projet'],
-      missingSkills: ['JavaScript', 'Node.js'],
-      recommendations: [
-        'Suivre une formation en développement web',
-        'Mettre en avant vos compétences en communication',
-      ],
-    };
+    const analysisResult = await aiService.generateCompetencyAnalysis(
+      cvText,
+      jobDescription,
+    );
 
     // Log usage (commented until implementation is complete)
     // await incrementAiUsage(req.user.id);
@@ -386,7 +372,7 @@ exports.analyzeCompetencies = async (req, res) => {
     res.render('ai/competency-analyzer-result', {
       title: 'Résultats Analyse de Compétences',
       user: req.user,
-      analysisResults,
+      analysisResult,
       inputs: {
         cvText: `${cvText.substring(0, 100)}...`,
         jobDescription: `${jobDescription.substring(0, 100)}...`,
@@ -424,24 +410,6 @@ const deductCredits = async (userId, creditAmount, description) => {
   console.log(`Débité ${creditAmount} crédits pour: ${description}`);
 
   return user.Credit.balance;
-};
-
-// Simulated AI analysis using a mock function
-// In production, this would call an actual LLM API
-const performAiAnalysis = async (type, data) => {
-  console.log(`Performing ${type} analysis with data:`, data);
-
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  // Placeholder for actual AI analysis results
-  switch (type) {
-    case 'competency-analyzer':
-      return generateCompetencyAnalysis(data.cvText, data.jobDescription);
-    // Add other analysis types here
-    default:
-      throw new Error("Type d'analyse non supporté");
-  }
 };
 
 // Mock function to generate competency analysis results
@@ -517,6 +485,24 @@ const generateCompetencyAnalysis = (cvText, jobDescription) => {
   };
 };
 
+// Simulated AI analysis using a mock function
+// In production, this would call an actual LLM API
+const performAiAnalysis = async (type, data) => {
+  console.log(`Performing ${type} analysis with data:`, data);
+
+  // Simulate API call delay
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  // Placeholder for actual AI analysis results
+  switch (type) {
+    case 'competency-analyzer':
+      return generateCompetencyAnalysis(data.cvText, data.jobDescription);
+    // Add other analysis types here
+    default:
+      throw new Error("Type d'analyse non supporté");
+  }
+};
+
 // Controller methods
 exports.getCompetencyAnalyzer = async (req, res) => {
   try {
@@ -534,7 +520,7 @@ exports.getCompetencyAnalyzer = async (req, res) => {
 
     res.render('ai/competency-analyzer', {
       beneficiaries,
-      creditCost: CREDIT_COSTS.COMPETENCY_ANALYSIS || 5,
+      creditCost: 5,
       user: req.user,
     });
   } catch (error) {
@@ -552,7 +538,7 @@ exports.postCompetencyAnalyzer = async (req, res) => {
     const {
       beneficiaryId, cvText, jobDescription, saveToNotes,
     } = req.body;
-    const creditCost = CREDIT_COSTS.COMPETENCY_ANALYSIS || 5;
+    const creditCost = 5;
 
     // Validate inputs
     if (!cvText || !jobDescription) {
@@ -589,7 +575,7 @@ exports.postCompetencyAnalyzer = async (req, res) => {
     }
 
     // Perform analysis
-    const analysisResults = await performAiAnalysis('competency-analyzer', {
+    const analysisResult = await performAiAnalysis('competency-analyzer', {
       cvText,
       jobDescription,
     });
@@ -608,7 +594,7 @@ exports.postCompetencyAnalyzer = async (req, res) => {
         type: 'competency-analyzer',
         beneficiaryId,
         consultantId: req.user.id,
-        data: JSON.stringify(analysisResults),
+        data: JSON.stringify(analysisResult),
         createdAt: new Date(),
       });
       analysisId = analysis.id;
@@ -616,7 +602,7 @@ exports.postCompetencyAnalyzer = async (req, res) => {
 
     // Render results page
     return res.render('ai/competency-analyzer-result', {
-      ...analysisResults,
+      ...analysisResult,
       beneficiaryId: beneficiaryId || null,
       analysisId,
       canSave: saveToNotes !== 'true' && beneficiaryId,
@@ -745,10 +731,9 @@ exports.showStrategyPlanGenerator = async (req, res) => {
 // POST /ai/strategy-plan-generator - Handle strategy plan generation request
 exports.generateStrategyPlan = async (req, res) => {
   const {
-    beneficiaryId, instructions, skills, career_goals, timeframe,
+    beneficiaryId, instructions, skills, careerGoals, timeframe,
   } =
     req.body;
-  const COST = 15; // Cost in credits
 
   try {
     // Validate input
@@ -791,7 +776,7 @@ exports.generateStrategyPlan = async (req, res) => {
       beneficiary: beneficiary.toJSON(),
       user: beneficiary.user.toJSON(),
       skills: skills || beneficiary.identifiedSkills || '',
-      career_goals: career_goals || beneficiary.careerObjectives || '',
+      careerGoals: careerGoals || beneficiary.careerObjectives || '',
       timeframe: timeframe || '6-12 months',
       competencyAnalysis:
         beneficiary.AiAnalyses && beneficiary.AiAnalyses.length > 0 ?
@@ -816,7 +801,7 @@ exports.generateStrategyPlan = async (req, res) => {
     await incrementAiUsage(req.user.id);
     await logCreditChange(
       req.user.id,
-      -COST,
+      -15,
       'AI_GENERATE_STRATEGYPLAN',
       `Génération plan stratégique IA pour ${beneficiary.user.firstName}`,
       null,

@@ -59,7 +59,7 @@
                             </div>
                             {{#if options}}
                                 <ul class="list-unstyled ps-3 mt-2">
-                                    {{#each (parseJSON options)}}
+                                    {{#each parsedOptions}}
                                         <li><small>- {{this}}</small></li>
                                     {{/each}}
                                 </ul>

@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+// const { Op } = require('sequelize'); // Kullanılmadığı için kaldırıldı
 const { User, Forfait } = require('../models');
 
 /**

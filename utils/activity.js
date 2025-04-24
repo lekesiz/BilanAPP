@@ -241,3 +241,35 @@ exports.getRecentlyActiveBeneficiaries = async (consultantId, limit = 5) => {
     return [];
   }
 };
+
+/**
+ * Fetches recent activities specifically for a consultant (new beneficiaries, new messages).
+ * @param {number} consultantId The ID of the consultant.
+ * @param {number} [limit=5] The maximum number of activities to return.
+ * @returns {Promise<Array>} An array of recent activity objects.
+ */
+exports.getRecentActivitiesForConsultant = async (consultantId, limit = 5) => {
+  if (!consultantId) return [];
+
+  // const beneficiaryIds = (await Beneficiary.findAll({ where: { consultantId }, attributes: ['id'] })).map(b => b.id); // Kullanılmıyor
+
+  // Fetch recent new beneficiaries
+  const newBeneficiaries = await Beneficiary.findAll({
+    where: { consultantId },
+    include: [
+      {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'firstName', 'lastName', 'email'],
+      },
+    ],
+  });
+
+  const activities = [...documentActivities, ...messageActivities, ...appointmentActivities, ...questionnaireActivities];
+
+  // Sort by date descending
+  activities.sort((a, b) => b.date - a.date);
+
+  // Limit the number of activities
+  return activities.slice(0, limit);
+};

@@ -1,7 +1,7 @@
 const OpenAI = require('openai');
-const axios = require('axios');
-const { Beneficiary } = require('../models'); // Gerekirse ek modeller
-const config = require('../config/constants');
+// const axios = require('axios'); // Kullanılmadığı için kaldırıldı
+// const { Beneficiary } = require('../models'); // Kullanılmadığı için kaldırıldı
+// const config = require('../config/constants'); // Kullanılmadığı için kaldırıldı
 
 // ÖNEMLİ NOT: Bu kodun çalışması için:
 // 1. `npm install openai` komutunu çalıştırın.
@@ -30,185 +30,10 @@ function formatDate(dateString) {
   if (!dateString) return '';
   try {
     const d = new Date(dateString);
-    if (isNaN(d.getTime())) return '';
+    if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleDateString('fr-FR');
   } catch (e) {
     return '';
-  }
-}
-
-/**
- * Verilen bilgilere göre Bilan de Compétences sentez taslağı oluşturur.
- * @param {object} beneficiaryData Yararlanıcı verileri.
- * @returns {Promise<string>} Oluşturulan sentez taslağı metni.
- */
-async function generateSynthesisDraft(beneficiaryData) {
-  if (!openai) return Promise.reject('OpenAI client non initialisé. Vérifiez la clé API.');
-
-  const prompt = `
-        **Tâche:** Rédiger une ébauche de **Synthèse de Bilan de Compétences** pour le bénéficiaire ci-dessous, en suivant la structure réglementaire (Code du Travail R6313-7) et les exigences Qualiopi.
-        Le document doit être objectif, précis, confidentiel et utiliser un langage clair et accessible.
-        Utiliser le **markdown** pour la structure (titres ##, listes -, gras **).
-        Laisser des sections **[Analyse/Conclusion Consultant à ajouter]** pour l'intervention humaine.
-
-        **Bénéficiaire:** ${beneficiaryData.user?.firstName || ''} ${beneficiaryData.user?.lastName || ''}
-
-        **Informations Fournies (à intégrer et synthétiser):**
-        - Parcours (Formation/Expérience): ${beneficiaryData.education || 'Non renseigné'} / ${beneficiaryData.experience || 'Non renseigné'}
-        - Compétences clés identifiées: ${beneficiaryData.identifiedSkills || 'À détailler lors des entretiens'}
-        - Projet(s) Professionnel(s) envisagé(s): ${beneficiaryData.careerObjectives || 'À explorer'}
-        - Contexte/Demande Initiale: ${beneficiaryData.notes || 'Standard'}
-        - Synthèse des Questionnaires: ${summarizeAnswers(beneficiaryData.assignedQuestionnaires)}
-
-        **Structure Exigée:**
-
-        ## 1. Circonstances Actuelles et Demande Initiale
-        - Contexte professionnel et personnel du bénéficiaire au début du bilan.
-        - Objectifs initiaux exprimés par le bénéficiaire.
-        - Modalités de déroulement convenues (dates: ${formatDate(beneficiaryData.bilanStartDate)} au ${formatDate(beneficiaryData.bilanEndDate)}, lieu(x), convention signée le ${formatDate(beneficiaryData.agreementDate)}).
-        
-        ## 2. Parcours Professionnel et Formation
-        - Synthèse chronologique et analytique des expériences professionnelles marquantes.
-        - Principaux diplômes et formations.
-        - [Analyse consultant sur la dynamique du parcours à ajouter]
-
-        ## 3. Compétences et Aptitudes Professionnelles et Personnelles
-        - Identification et description des compétences techniques (savoir-faire) et transversales (savoir-être).
-        - Aptitudes clés (autonomie, adaptation, etc.).
-        - Éléments issus de l'auto-évaluation et des questionnaires (si disponibles).
-        - [Validation et approfondissement par le consultant]
-
-        ## 4. Intérêts Professionnels, Motivations et Valeurs
-        - Synthèse des intérêts professionnels majeurs.
-        - Analyse des principales sources de motivation au travail.
-        - Valeurs professionnelles importantes.
-        - [Synthèse des résultats des tests/questionnaires spécifiques à ajouter]
-
-        ## 5. Identification du/des Projet(s) Professionnel(s)
-        - Description détaillée du projet principal (et éventuellement alternatif) : ${beneficiaryData.careerObjectives || '[Projet principal à définir]'}
-        - Analyse de la cohérence du projet avec le profil (compétences, intérêts, valeurs).
-        - Évaluation de la faisabilité (opportunités marché, contraintes personnelles).
-        - [Analyse approfondie et validation du projet par le consultant]
-
-        ## 6. Principaux Atouts et Points de Vigilance
-        - Récapitulatif des points forts du bénéficiaire en lien avec le projet.
-        - Identification des freins potentiels et des points de vigilance.
-        - Besoins en développement de compétences.
-
-        ## 7. Conclusions Détaillées et Préconisations
-        - Réponse argumentée à la demande initiale.
-        - Facteurs susceptibles de favoriser la réalisation du projet.
-        - Préconisations d'actions concrètes (formations, VAE, démarches réseau...). 
-        - [Conclusion finale du consultant à ajouter]
-
-        **Instruction Initiale:** Commence le document par: "[SYNTHÈSE DU BILAN DE COMPÉTENCES - ${new Date().toLocaleDateString('fr-FR')} - ÉBAUCHE IA À VALIDER]"
-    `;
-
-  try {
-    console.log('SYNTHESIS - Sending request to OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'Tu es un expert en bilans de compétences et rédacteur de synthèses conformes Qualiopi.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.5,
-      max_tokens: 1500,
-    });
-
-    console.log('SYNTHESIS - Received response from OpenAI.');
-    return completion.choices[0].message.content.trim();
-  } catch (error) {
-    console.error('SYNTHESIS - Error calling OpenAI API:', error);
-    throw new Error(
-      "Erreur lors de la communication avec l'API OpenAI pour la synthèse.",
-    );
-  }
-}
-
-/**
- * Verilen bilgilere göre Aksiyon Planı taslağı oluşturur.
- * @param {object} beneficiaryData Yararlanıcı verileri.
- * @returns {Promise<string>} Oluşturulan aksiyon planı taslağı metni.
- */
-async function generateActionPlanDraft(beneficiaryData) {
-  if (!openai) return Promise.reject('OpenAI client non initialisé. Vérifiez la clé API.');
-
-  const prompt = `
-        **Tâche:** Rédiger une ébauche de **Plan d'Action** post-bilan de compétences, structuré et orienté **SMART**.
-        Ce plan doit être concret et aider le bénéficiaire à passer à l'action.
-
-        **Informations Disponibles:**
-        - Bénéficiaire: ${beneficiaryData.user?.firstName || ''} ${beneficiaryData.user?.lastName || ''}
-        - Projet(s) Retenu(s): ${beneficiaryData.careerObjectives || '[Projet principal à confirmer]'}
-        - Préconisations issues de la Synthèse: ${beneficiaryData.synthesis ? extractRecommendations(beneficiaryData.synthesis) : 'Consulter la synthèse'}
-        - Compétences à développer / Points de vigilance: (Se référer à la synthèse)
-
-        **Structure Demandée (utiliser markdown gras ## et listes):**
-
-        ## 1. Rappel du Projet Professionnel Principal
-        - [Reformulation claire et concise de l'objectif professionnel validé]
-
-        ## 2. Actions Prioritaires (Court Terme: 0-6 mois)
-        *(Pour chaque action, définir Objectif SMART, Moyens, Échéance Précise, Indicateur de succès)*
-        - **Action 1:** [Ex: Se renseigner sur la formation X]
-            - *Objectif:* Obtenir le programme détaillé et les modalités de financement.
-            - *Moyens:* Site web de l'organisme, contact téléphonique.
-            - *Échéance:* JJ/MM/AAAA
-            - *Indicateur:* Programme et devis reçus.
-        - **Action 2:** [Ex: Contacter 3 professionnels du secteur Y]
-            - *Objectif:* Mieux comprendre la réalité du métier et développer son réseau.
-            - *Moyens:* LinkedIn, réseau personnel, annuaires.
-            - *Échéance:* JJ/MM/AAAA
-            - *Indicateur:* 3 entretiens informatifs réalisés.
-        - **Action 3:** [Ex: Mettre à jour le CV]
-            - *Objectif:* Adapter le CV au projet professionnel visé.
-            - *Moyens:* Atelier CV, relecture par le consultant.
-            - *Échéance:* JJ/MM/AAAA
-            - *Indicateur:* CV finalisé et validé.
-        - *[Générer 1-2 autres actions pertinentes basées sur les préconisations si possible]*
-
-        ## 3. Actions Secondaires (Moyen Terme: 6-12 mois)
-        - [Action 4]
-        - [Action 5]
-
-        ## 4. Ressources et Appuis
-        - [Identifier contacts clés, organismes, aides financières...]
-
-        ## 5. Modalités de Suivi
-        - Point d'étape prévu avec le consultant le: [Date/Fréquence]
-        - Entretien de suivi obligatoire à 6 mois le: ${formatDate(beneficiaryData.followUpDate)}
-
-        **Instruction Initiale:** Commence par: "[PLAN D'ACTION POST-BILAN - ${new Date().toLocaleDateString('fr-FR')} - ÉBAUCHE IA À VALIDER ET PERSONNALISER]"
-        Utilise un ton encourageant et motivant.
-    `;
-
-  try {
-    console.log('ACTION PLAN - Sending request to OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content:
-            "Tu es un coach professionnel expert en plans d'action SMART.",
-        },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
-    console.log('ACTION PLAN - Received response from OpenAI.');
-    return completion.choices[0].message.content.trim();
-  } catch (error) {
-    console.error('ACTION PLAN - Error calling OpenAI API:', error);
-    throw new Error(
-      "Erreur lors de la communication avec l'API OpenAI pour le plan d'action.",
-    );
   }
 }
 
@@ -244,7 +69,7 @@ function summarizeAnswers(questionnaires) {
   return summaries.join('\n\n');
 }
 
-// TODO: Sentezden önerileri çıkaran basit bir fonksiyon
+// Sentezden önerileri çıkaran basit bir fonksiyon
 function extractRecommendations(synthesisText) {
   if (!synthesisText) return '[Consulter la synthèse]';
   // Çok basit bir arama, gerçek senaryoda daha iyi bir NLP gerekebilir
@@ -256,168 +81,8 @@ function extractRecommendations(synthesisText) {
     '[Voir préconisations dans la synthèse]';
 }
 
-/**
- * Explores career possibilities based on user's skills, interests, and constraints.
- * @param {object} explorationData User's skills, interests, and other parameters.
- * @returns {Promise<object>} Object containing career suggestions.
- */
-async function exploreCareer(explorationData) {
-  if (!openai) return Promise.reject('OpenAI client non initialisé. Vérifiez la clé API.');
-
-  const {
-    skills = '',
-    interests = '',
-    constraints = '',
-    educationLevel = '',
-    experience = '',
-  } = explorationData;
-
-  const prompt = `
-        **Tâche:** En tant qu'expert en orientation professionnelle, analyse les informations du bénéficiaire ci-dessous et propose des pistes de carrière adaptées. Utilise une approche objective basée sur l'adéquation entre le profil et les métiers suggérés.
-
-        **Informations sur le bénéficiaire:**
-        - Compétences: ${skills}
-        - Intérêts professionnels: ${interests}
-        - Contraintes éventuelles: ${constraints}
-        - Niveau d'éducation: ${educationLevel}
-        - Expérience: ${experience}
-
-        **Instructions:**
-        1. Identifie 3 à 5 pistes de carrière pertinentes basées sur les informations fournies.
-        2. Pour chaque piste, indique:
-           - Le titre du métier/poste
-           - Une brève description
-           - Le taux de correspondance (en pourcentage)
-           - Formation/éducation requise
-           - Compétences clés nécessaires (avec indication de celles déjà possédées)
-           - Recommandations spécifiques pour accéder à ce poste
-
-        Format ta réponse en JSON structuré selon ce modèle:
-        \`\`\`json
-        {
-            "suggestions": [
-                {
-                    "title": "Titre du métier",
-                    "description": "Description concise du poste et de ses responsabilités",
-                    "matchScore": 85,
-                    "educationRequired": "Formation nécessaire",
-                    "keySkills": ["Compétence 1", "Compétence 2", "Compétence 3"],
-                    "recommendations": ["Recommandation 1", "Recommandation 2"]
-                }
-            ]
-        }
-        \`\`\`
-    `;
-
-  try {
-    console.log('CAREER EXPLORER - Sending request to OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        {
-          role: 'system',
-          content:
-            "Tu es un conseiller en orientation professionnelle expert, spécialisé dans l'analyse de profils et la recommandation de carrières adaptées.",
-        },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 1500,
-      response_format: { type: 'json_object' },
-    });
-
-    console.log('CAREER EXPLORER - Received response from OpenAI.');
-
-    // Parse the JSON response
-    const content = completion.choices[0].message.content.trim();
-    try {
-      return JSON.parse(content);
-    } catch (parseError) {
-      console.error(
-        'CAREER EXPLORER - Error parsing OpenAI JSON response:',
-        parseError,
-      );
-      return {
-        message:
-          "Une erreur est survenue lors de l'analyse des résultats. Veuillez réessayer.",
-        suggestions: [],
-      };
-    }
-  } catch (error) {
-    console.error('CAREER EXPLORER - Error calling OpenAI API:', error);
-    throw new Error(
-      "Erreur lors de la communication avec l'API OpenAI pour l'exploration de carrière.",
-    );
-  }
-}
-
-/**
- * Analyzes a beneficiary's skills and experience to generate AI-assisted career recommendations
- *
- * @param {Object} data - Data object containing skills, experience, preferences, etc.
- * @returns {Promise<Object>} - Career exploration results
- */
-exports.generateCareerExploration = async (data) => {
-  try {
-    // For demo purposes, we'll simulate an AI response
-    // In production, this would call an actual AI API endpoint
-
-    // Simulated processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Generate sample career paths based on provided skills and experience
-    const careerPaths = generateCareerPathsFromSkills(
-      data.skills,
-      data.experience,
-      data.preferences,
-    );
-
-    return {
-      careerPaths,
-      skills: {
-        strengths: extractStrengths(data.skills, data.experience),
-        areasForDevelopment: suggestSkillsForDevelopment(data.preferences),
-      },
-      recommendations: generateRecommendations(careerPaths, data),
-    };
-  } catch (error) {
-    console.error('Error in AI career exploration:', error);
-    throw new Error('Failed to generate career exploration analysis');
-  }
-};
-
-/**
- * Analyzes competencies and skill gaps for career development
- *
- * @param {Object} data - Data object containing current skills, target role, etc.
- * @returns {Promise<Object>} - Competency analysis results
- */
-exports.analyzeCompetencies = async (data) => {
-  try {
-    // For demo purposes, we'll simulate an AI response
-    // In production, this would call an actual AI API endpoint
-
-    // Simulated processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    return {
-      currentCompetencies: extractCurrentCompetencies(
-        data.skills,
-        data.experience,
-      ),
-      targetCompetencies: getTargetCompetencies(data.targetRole),
-      gaps: identifyCompetencyGaps(data),
-      developmentPlan: createDevelopmentPlan(data),
-    };
-  } catch (error) {
-    console.error('Error in AI competency analysis:', error);
-    throw new Error('Failed to analyze competencies');
-  }
-};
-
-// Helper functions for simulating AI responses
-
-function generateCareerPathsFromSkills(skills, experience, preferences) {
+// --- Career Exploration Helpers ---
+function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
   // This would be a sophisticated AI algorithm in production
   // For demo, we'll use simple logic based on common skill/career mappings
 
@@ -532,7 +197,7 @@ function generateCareerPathsFromSkills(skills, experience, preferences) {
   return paths;
 }
 
-function extractStrengths(skills, experience) {
+function extractStrengths(skills /*, experience*/) {
   // In production, this would use sophisticated analysis
   // For demo, we'll return sample strengths based on input
   const strengths = [];
@@ -560,7 +225,7 @@ function extractStrengths(skills, experience) {
   return strengths;
 }
 
-function suggestSkillsForDevelopment(preferences) {
+function suggestSkillsForDevelopment(/* preferences */) {
   // Sample development areas based on career interests
   const developmentAreas = [];
 
@@ -595,7 +260,7 @@ function suggestSkillsForDevelopment(preferences) {
   return developmentAreas;
 }
 
-function generateRecommendations(careerPaths, data) {
+function generateRecommendations(careerPaths /*, data*/) {
   // Generate recommendations based on career paths and user data
   const recommendations = [];
 
@@ -637,7 +302,8 @@ function generateRecommendations(careerPaths, data) {
   return recommendations;
 }
 
-function extractCurrentCompetencies(skills, experience) {
+// --- Competency Analysis Helpers ---
+function extractCurrentCompetencies(skills /*, experience*/) {
   // In production, this would analyze skills and experience in depth
   // For demo, we'll return a simplified competency assessment
 
@@ -904,6 +570,333 @@ function createDevelopmentPlan(data) {
 }
 
 /**
+ * Verilen bilgilere göre Bilan de Compétences sentez taslağı oluşturur.
+ * @param {object} beneficiaryData Yararlanıcı verileri.
+ * @returns {Promise<string>} Oluşturulan sentez taslağı metni.
+ */
+async function generateSynthesisDraft(beneficiaryData) {
+  if (!openai) return Promise.reject('OpenAI client non initialisé. Vérifiez la clé API.');
+
+  const prompt = `
+        **Tâche:** Rédiger une ébauche de **Synthèse de Bilan de Compétences** pour le bénéficiaire ci-dessous, en suivant la structure réglementaire (Code du Travail R6313-7) et les exigences Qualiopi.
+        Le document doit être objectif, précis, confidentiel et utiliser un langage clair et accessible.
+        Utiliser le **markdown** pour la structure (titres ##, listes -, gras **).
+        Laisser des sections **[Analyse/Conclusion Consultant à ajouter]** pour l'intervention humaine.
+
+        **Bénéficiaire:** ${beneficiaryData.user?.firstName || ''} ${beneficiaryData.user?.lastName || ''}
+
+        **Informations Fournies (à intégrer et synthétiser):**
+        - Parcours (Formation/Expérience): ${beneficiaryData.education || 'Non renseigné'} / ${beneficiaryData.experience || 'Non renseigné'}
+        - Compétences clés identifiées: ${beneficiaryData.identifiedSkills || 'À détailler lors des entretiens'}
+        - Projet(s) Professionnel(s) envisagé(s): ${beneficiaryData.careerObjectives || 'À explorer'}
+        - Contexte/Demande Initiale: ${beneficiaryData.notes || 'Standard'}
+        - Synthèse des Questionnaires: ${summarizeAnswers(beneficiaryData.assignedQuestionnaires)}
+
+        **Structure Exigée:**
+
+        ## 1. Circonstances Actuelles et Demande Initiale
+        - Contexte professionnel et personnel du bénéficiaire au début du bilan.
+        - Objectifs initiaux exprimés par le bénéficiaire.
+        - Modalités de déroulement convenues (dates: ${formatDate(beneficiaryData.bilanStartDate)} au ${formatDate(beneficiaryData.bilanEndDate)}, lieu(x), convention signée le ${formatDate(beneficiaryData.agreementDate)}).
+        
+        ## 2. Parcours Professionnel et Formation
+        - Synthèse chronologique et analytique des expériences professionnelles marquantes.
+        - Principaux diplômes et formations.
+        - [Analyse consultant sur la dynamique du parcours à ajouter]
+
+        ## 3. Compétences et Aptitudes Professionnelles et Personnelles
+        - Identification et description des compétences techniques (savoir-faire) et transversales (savoir-être).
+        - Aptitudes clés (autonomie, adaptation, etc.).
+        - Éléments issus de l'auto-évaluation et des questionnaires (si disponibles).
+        - [Validation et approfondissement par le consultant]
+
+        ## 4. Intérêts Professionnels, Motivations et Valeurs
+        - Synthèse des intérêts professionnels majeurs.
+        - Analyse des principales sources de motivation au travail.
+        - Valeurs professionnelles importantes.
+        - [Synthèse des résultats des tests/questionnaires spécifiques à ajouter]
+
+        ## 5. Identification du/des Projet(s) Professionnel(s)
+        - Description détaillée du projet principal (et éventuellement alternatif) : ${beneficiaryData.careerObjectives || '[Projet principal à définir]'}
+        - Analyse de la cohérence du projet avec le profil (compétences, intérêts, valeurs).
+        - Évaluation de la faisabilité (opportunités marché, contraintes personnelles).
+        - [Analyse approfondie et validation du projet par le consultant]
+
+        ## 6. Principaux Atouts et Points de Vigilance
+        - Récapitulatif des points forts du bénéficiaire en lien avec le projet.
+        - Identification des freins potentiels et des points de vigilance.
+        - Besoins en développement de compétences.
+
+        ## 7. Conclusions Détaillées et Préconisations
+        - Réponse argumentée à la demande initiale.
+        - Facteurs susceptibles de favoriser la réalisation du projet.
+        - Préconisations d'actions concrètes (formations, VAE, démarches réseau...). 
+        - [Conclusion finale du consultant à ajouter]
+
+        **Instruction Initiale:** Commence le document par: "[SYNTHÈSE DU BILAN DE COMPÉTENCES - ${new Date().toLocaleDateString('fr-FR')} - ÉBAUCHE IA À VALIDER]"
+    `;
+
+  try {
+    console.log('SYNTHESIS - Sending request to OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Tu es un expert en bilans de compétences et rédacteur de synthèses conformes Qualiopi.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.5,
+      max_tokens: 1500,
+    });
+
+    console.log('SYNTHESIS - Received response from OpenAI.');
+    return completion.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('SYNTHESIS - Error calling OpenAI API:', error);
+    throw new Error(
+      "Erreur lors de la communication avec l'API OpenAI pour la synthèse.",
+    );
+  }
+}
+
+/**
+ * Verilen bilgilere göre Aksiyon Planı taslağı oluşturur.
+ * @param {object} beneficiaryData Yararlanıcı verileri.
+ * @returns {Promise<string>} Oluşturulan aksiyon planı taslağı metni.
+ */
+async function generateActionPlanDraft(beneficiaryData) {
+  if (!openai) return Promise.reject('OpenAI client non initialisé. Vérifiez la clé API.');
+
+  const prompt = `
+        **Tâche:** Rédiger une ébauche de **Plan d'Action** post-bilan de compétences, structuré et orienté **SMART**.
+        Ce plan doit être concret et aider le bénéficiaire à passer à l'action.
+
+        **Informations Disponibles:**
+        - Bénéficiaire: ${beneficiaryData.user?.firstName || ''} ${beneficiaryData.user?.lastName || ''}
+        - Projet(s) Retenu(s): ${beneficiaryData.careerObjectives || '[Projet principal à confirmer]'}
+        - Préconisations issues de la Synthèse: ${beneficiaryData.synthesis ? extractRecommendations(beneficiaryData.synthesis) : 'Consulter la synthèse'}
+        - Compétences à développer / Points de vigilance: (Se référer à la synthèse)
+
+        **Structure Demandée (utiliser markdown gras ## et listes):**
+
+        ## 1. Rappel du Projet Professionnel Principal
+        - [Reformulation claire et concise de l'objectif professionnel validé]
+
+        ## 2. Actions Prioritaires (Court Terme: 0-6 mois)
+        *(Pour chaque action, définir Objectif SMART, Moyens, Échéance Précise, Indicateur de succès)*
+        - **Action 1:** [Ex: Se renseigner sur la formation X]
+            - *Objectif:* Obtenir le programme détaillé et les modalités de financement.
+            - *Moyens:* Site web de l'organisme, contact téléphonique.
+            - *Échéance:* JJ/MM/AAAA
+            - *Indicateur:* Programme et devis reçus.
+        - **Action 2:** [Ex: Contacter 3 professionnels du secteur Y]
+            - *Objectif:* Mieux comprendre la réalité du métier et développer son réseau.
+            - *Moyens:* LinkedIn, réseau personnel, annuaires.
+            - *Échéance:* JJ/MM/AAAA
+            - *Indicateur:* 3 entretiens informatifs réalisés.
+        - **Action 3:** [Ex: Mettre à jour le CV]
+            - *Objectif:* Adapter le CV au projet professionnel visé.
+            - *Moyens:* Atelier CV, relecture par le consultant.
+            - *Échéance:* JJ/MM/AAAA
+            - *Indicateur:* CV finalisé et validé.
+        - *[Générer 1-2 autres actions pertinentes basées sur les préconisations si possible]*
+
+        ## 3. Actions Secondaires (Moyen Terme: 6-12 mois)
+        - [Action 4]
+        - [Action 5]
+
+        ## 4. Ressources et Appuis
+        - [Identifier contacts clés, organismes, aides financières...]
+
+        ## 5. Modalités de Suivi
+        - Point d'étape prévu avec le consultant le: [Date/Fréquence]
+        - Entretien de suivi obligatoire à 6 mois le: ${formatDate(beneficiaryData.followUpDate)}
+
+        **Instruction Initiale:** Commence par: "[PLAN D'ACTION POST-BILAN - ${new Date().toLocaleDateString('fr-FR')} - ÉBAUCHE IA À VALIDER ET PERSONNALISER]"
+        Utilise un ton encourageant et motivant.
+    `;
+
+  try {
+    console.log('ACTION PLAN - Sending request to OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content:
+            "Tu es un coach professionnel expert en plans d'action SMART.",
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 1000,
+    });
+    console.log('ACTION PLAN - Received response from OpenAI.');
+    return completion.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('ACTION PLAN - Error calling OpenAI API:', error);
+    throw new Error(
+      "Erreur lors de la communication avec l'API OpenAI pour le plan d'action.",
+    );
+  }
+}
+
+/**
+ * Explores career possibilities based on user's skills, interests, and constraints.
+ * @param {object} explorationData User's skills, interests, and other parameters.
+ * @returns {Promise<object>} Object containing career suggestions.
+ */
+async function exploreCareer(explorationData) {
+  if (!openai) return Promise.reject('OpenAI client non initialisé. Vérifiez la clé API.');
+
+  const {
+    skills = '',
+    interests = '',
+    constraints = '',
+    educationLevel = '',
+    experience = '',
+  } = explorationData;
+
+  const prompt = `
+        **Tâche:** En tant qu'expert en orientation professionnelle, analyse les informations du bénéficiaire ci-dessous et propose des pistes de carrière adaptées. Utilise une approche objective basée sur l'adéquation entre le profil et les métiers suggérés.
+
+        **Informations sur le bénéficiaire:**
+        - Compétences: ${skills}
+        - Intérêts professionnels: ${interests}
+        - Contraintes éventuelles: ${constraints}
+        - Niveau d'éducation: ${educationLevel}
+        - Expérience: ${experience}
+
+        **Instructions:**
+        1. Identifie 3 à 5 pistes de carrière pertinentes basées sur les informations fournies.
+        2. Pour chaque piste, indique:
+           - Le titre du métier/poste
+           - Une brève description
+           - Le taux de correspondance (en pourcentage)
+           - Formation/éducation requise
+           - Compétences clés nécessaires (avec indication de celles déjà possédées)
+           - Recommandations spécifiques pour accéder à ce poste
+
+        Format ta réponse en JSON structuré selon ce modèle:
+        \`\`\`json
+        {
+            "suggestions": [
+                {
+                    "title": "Titre du métier",
+                    "description": "Description concise du poste et de ses responsabilités",
+                    "matchScore": 85,
+                    "educationRequired": "Formation nécessaire",
+                    "keySkills": ["Compétence 1", "Compétence 2", "Compétence 3"],
+                    "recommendations": ["Recommandation 1", "Recommandation 2"]
+                }
+            ]
+        }
+        \`\`\`
+    `;
+
+  try {
+    console.log('CAREER EXPLORER - Sending request to OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content:
+            "Tu es un conseiller en orientation professionnelle expert, spécialisé dans l'analyse de profils et la recommandation de carrières adaptées.",
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 1500,
+      response_format: { type: 'json_object' },
+    });
+
+    console.log('CAREER EXPLORER - Received response from OpenAI.');
+
+    // Parse the JSON response
+    const content = completion.choices[0].message.content.trim();
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      console.error(
+        'CAREER EXPLORER - Error parsing OpenAI JSON response:',
+        parseError,
+      );
+      return {
+        message:
+          "Une erreur est survenue lors de l'analyse des résultats. Veuillez réessayer.",
+        suggestions: [],
+      };
+    }
+  } catch (error) {
+    console.error('CAREER EXPLORER - Error calling OpenAI API:', error);
+    throw new Error(
+      "Erreur lors de la communication avec l'API OpenAI pour l'exploration de carrière.",
+    );
+  }
+}
+
+/**
+ * Analyzes a beneficiary's skills and experience to generate AI-assisted career recommendations
+ *
+ * @param {Object} data - Data object containing skills, experience, preferences, etc.
+ * @returns {Promise<Object>} - Career exploration results
+ */
+exports.generateCareerExploration = async (data) => {
+  try {
+    // For demo purposes, we'll simulate an AI response
+    // In production, this would call an actual AI API endpoint
+
+    // Simulated processing delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Generate sample career paths based on provided skills and experience
+    const careerPaths = generateCareerPathsFromSkills(data.skills);
+
+    return {
+      careerPaths,
+      skills: {
+        strengths: extractStrengths(data.skills),
+        areasForDevelopment: suggestSkillsForDevelopment(),
+      },
+      recommendations: generateRecommendations(careerPaths),
+    };
+  } catch (error) {
+    console.error('Error in AI career exploration:', error);
+    throw new Error('Failed to generate career exploration analysis');
+  }
+};
+
+/**
+ * Analyzes competencies and skill gaps for career development
+ *
+ * @param {Object} data - Data object containing current skills, target role, etc.
+ * @returns {Promise<Object>} - Competency analysis results
+ */
+exports.analyzeCompetencies = async (data) => {
+  try {
+    // For demo purposes, we'll simulate an AI response
+    // In production, this would call an actual AI API endpoint
+
+    // Simulated processing delay
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    return {
+      currentCompetencies: extractCurrentCompetencies(data.skills),
+      targetCompetencies: getTargetCompetencies(data.targetRole),
+      gaps: identifyCompetencyGaps(data),
+      developmentPlan: createDevelopmentPlan(data),
+    };
+  } catch (error) {
+    console.error('Error in AI competency analysis:', error);
+    throw new Error('Failed to analyze competencies');
+  }
+};
+
+/**
  * Generates a personalized career and training strategy plan based on competency analysis.
  * @param {object} planData Data including beneficiary information, skills, career goals, etc.
  * @returns {Promise<object>} Object containing the generated strategy plan.
@@ -915,7 +908,7 @@ async function generateStrategyPlan(planData) {
     beneficiary,
     user,
     skills = '',
-    career_goals = '',
+    careerGoals = '',
     timeframe = '6-12 months',
     competencyAnalysis = null,
     customInstructions = '',
@@ -949,7 +942,7 @@ async function generateStrategyPlan(planData) {
         - Nom: ${user?.firstName || ''} ${user?.lastName || ''}
         - Compétences actuelles: ${skillsData}
         ${gapsData ? `- ${gapsData}` : ''}
-        - Objectifs professionnels: ${career_goals}
+        - Objectifs professionnels: ${careerGoals}
         - Horizon temporel: ${timeframe}
         ${customInstructions ? `\n**Instructions spécifiques:** ${customInstructions}` : ''}
         
