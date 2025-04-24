@@ -1,0 +1,271 @@
+{{> layouts/header }}
+
+{{#if messages}}
+  {{> partials/messages}}
+{{/if}}
+
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{title}}</h1>
+    {{#if exploration.beneficiaryId}}
+      <div>
+        <a href="/beneficiaries/{{exploration.beneficiaryId}}" class="btn btn-sm btn-secondary shadow-sm">
+          <i class="fas fa-user fa-sm text-white-50"></i> Profil bénéficiaire
+        </a>
+        <a href="/career-explorer/beneficiary/{{exploration.beneficiaryId}}" class="btn btn-sm btn-info shadow-sm">
+          <i class="fas fa-compass fa-sm text-white-50"></i> Toutes les explorations
+        </a>
+      </div>
+    {{else}}
+      <a href="/dashboard" class="btn btn-sm btn-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Retour au tableau de bord
+      </a>
+    {{/if}}
+  </div>
+
+  {{> messages}}
+
+  <div class="row">
+    <div class="col-xl-12 col-lg-12">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Exploration de Carrière {{#if exploration.createdAt}}({{formatDate exploration.createdAt}}){{/if}}
+          </h6>
+          <div>
+            <a href="#" class="btn btn-sm btn-primary" onclick="window.print(); return false;">
+              <i class="fas fa-print fa-sm"></i> Imprimer
+            </a>
+            <a href="#" class="btn btn-sm btn-outline-primary" onclick="exportToPDF(); return false;">
+              <i class="fas fa-file-pdf fa-sm"></i> Exporter PDF
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Input Summary Section -->
+          <div class="mb-4">
+            <h5 class="text-primary">Données d'entrée</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm">
+                <tbody>
+                  <tr>
+                    <th style="width: 30%">Poste actuel</th>
+                    <td>{{exploration.input.currentRole}}</td>
+                  </tr>
+                  <tr>
+                    <th>Poste visé</th>
+                    <td>{{exploration.input.targetRole}}</td>
+                  </tr>
+                  <tr>
+                    <th>Années d'expérience</th>
+                    <td>{{exploration.input.yearsExperience}}</td>
+                  </tr>
+                  <tr>
+                    <th>Niveau d'éducation</th>
+                    <td>{{exploration.input.education}}</td>
+                  </tr>
+                  <tr>
+                    <th>Compétences</th>
+                    <td>{{exploration.input.skills}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Career Paths Section -->
+          <div class="mb-4">
+            <h5 class="text-primary">Parcours de carrière recommandés</h5>
+            <div class="row">
+              {{#each exploration.results.careerPaths}}
+                <div class="col-lg-4 col-md-6 mb-4">
+                  <div class="card h-100 border-left-primary">
+                    <div class="card-body">
+                      <h6 class="card-title font-weight-bold text-primary">{{title}}</h6>
+                      <p class="card-text small">{{description}}</p>
+                      <div class="text-xs font-weight-bold text-uppercase mb-1">Compatibilité</div>
+                      <div class="progress mb-4">
+                        <div class="progress-bar" role="progressbar" style="width: {{compatibility}}%"
+                             aria-valuenow="{{compatibility}}" aria-valuemin="0" aria-valuemax="100">
+                          {{compatibility}}%
+                        </div>
+                      </div>
+                      {{#if timeline}}
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Horizon estimé</div>
+                        <div class="small text-gray-600">{{timeline}}</div>
+                      {{/if}}
+                    </div>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+
+          <!-- Strengths and Improvements Section -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card shadow h-100">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-success">Forces détectées</h6>
+                </div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    {{#each exploration.results.strengths}}
+                      <li class="list-group-item d-flex">
+                        <i class="fas fa-check-circle text-success mr-2 mt-1"></i>
+                        <div>
+                          <div class="font-weight-bold">{{title}}</div>
+                          <div class="small text-gray-600">{{description}}</div>
+                        </div>
+                      </li>
+                    {{/each}}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card shadow h-100">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-warning">Compétences à développer</h6>
+                </div>
+                <div class="card-body">
+                  <ul class="list-group list-group-flush">
+                    {{#each exploration.results.skillsToImprove}}
+                      <li class="list-group-item d-flex">
+                        <i class="fas fa-arrow-circle-up text-warning mr-2 mt-1"></i>
+                        <div>
+                          <div class="font-weight-bold">{{title}}</div>
+                          <div class="small text-gray-600">{{description}}</div>
+                        </div>
+                      </li>
+                    {{/each}}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Training Recommendations -->
+          <div class="mb-4">
+            <h5 class="text-primary">Formations recommandées</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead class="thead-light">
+                  <tr>
+                    <th style="width: 25%">Formation</th>
+                    <th style="width: 45%">Description</th>
+                    <th style="width: 15%">Durée</th>
+                    <th style="width: 15%">Priorité</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each exploration.results.recommendedTraining}}
+                    <tr>
+                      <td class="font-weight-bold">{{title}}</td>
+                      <td>{{description}}</td>
+                      <td>{{duration}}</td>
+                      <td>
+                        {{#if (eq priority "Haute")}}
+                          <span class="badge badge-danger">{{priority}}</span>
+                        {{else if (eq priority "Moyenne")}}
+                          <span class="badge badge-warning">{{priority}}</span>
+                        {{else}}
+                          <span class="badge badge-info">{{priority}}</span>
+                        {{/if}}
+                      </td>
+                    </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Skill Analysis -->
+          {{#if exploration.results.skillsAnalysis}}
+            <div class="mb-4">
+              <h5 class="text-primary">Analyse détaillée des compétences</h5>
+              <div class="row">
+                {{#each exploration.results.skillsAnalysis}}
+                  <div class="col-lg-6 mb-3">
+                    <div class="card border-left-info h-100">
+                      <div class="card-body">
+                        <h6 class="card-title font-weight-bold">{{category}}</h6>
+                        {{#each skills}}
+                          <div class="mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                              <span>{{name}}</span>
+                              <span class="small text-gray-600">{{level}}/10</span>
+                            </div>
+                            <div class="progress progress-sm mb-2">
+                              <div class="progress-bar bg-info" role="progressbar" style="width: {{multiply level 10}}%"
+                                   aria-valuenow="{{level}}" aria-valuemin="0" aria-valuemax="10"></div>
+                            </div>
+                          </div>
+                        {{/each}}
+                      </div>
+                    </div>
+                  </div>
+                {{/each}}
+              </div>
+            </div>
+          {{/if}}
+
+          <!-- Summary & Next Steps -->
+          <div class="card bg-light border-0 mb-4">
+            <div class="card-body">
+              <h5 class="text-primary">Résumé et prochaines étapes</h5>
+              <p>{{exploration.results.summary}}</p>
+              
+              <h6 class="font-weight-bold mt-3">Actions recommandées</h6>
+              <ol>
+                {{#each exploration.results.nextSteps}}
+                  <li class="mb-2">{{this}}</li>
+                {{/each}}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function exportToPDF() {
+    alert('Fonctionnalité d\'export PDF à implémenter');
+    // Cette fonction sera implémentée ultérieurement pour générer un PDF
+  }
+</script>
+
+<style>
+  .opportunity-card {
+    transition: all 0.3s ease;
+  }
+  .opportunity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+  }
+  @media print {
+    .accordion-button::after {
+      display: none;
+    }
+    .accordion-button {
+      box-shadow: none !important;
+    }
+    .accordion-collapse {
+      display: block !important;
+    }
+    .modal {
+      position: static;
+      display: block;
+    }
+    .modal-backdrop {
+      display: none;
+    }
+    .btn, .nav, footer, header {
+      display: none !important;
+    }
+  }
+</style>
+
+{{> layouts/footer }} 

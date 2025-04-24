@@ -5,14 +5,27 @@
     <h5 class="card-title mb-0">{{appointment.title}}</h5>
     <div>
       {{#if (eq user.userType "consultant")}}
-        <a href="/appointments/{{appointment.id}}/edit" class="btn btn-sm btn-outline-secondary">
-          <i class="fas fa-edit"></i> Modifier
+        <a
+          href="/appointments/{{appointment.id}}/edit"
+          class="btn btn-sm btn-outline-secondary"
+        >
+          <i class="fas fa-edit"></i>
+          Modifier
         </a>
       {{/if}}
       {{#if (eq appointment.status "scheduled")}}
-        <form action="/appointments/{{appointment.id}}/cancel" method="POST" class="d-inline">
-          <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')">
-            <i class="fas fa-times"></i> Annuler
+        <form
+          action="/appointments/{{appointment.id}}/cancel"
+          method="POST"
+          class="d-inline"
+        >
+          <button
+            type="submit"
+            class="btn btn-sm btn-outline-danger"
+            onclick="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')"
+          >
+            <i class="fas fa-times"></i>
+            Annuler
           </button>
         </form>
       {{/if}}
@@ -21,10 +34,11 @@
   <div class="card-body">
     <div class="row">
       <div class="col-md-6">
-        <p><strong>Date et heure:</strong> {{formatDateTime appointment.date}}</p>
+        <p><strong>Date et heure:</strong>
+          {{formatDateTime appointment.date}}</p>
         <p><strong>Durée:</strong> {{appointment.duration}} minutes</p>
         <p>
-          <strong>Type:</strong> 
+          <strong>Type:</strong>
           {{#if appointment.isOnline}}
             <span class="badge bg-info">En ligne</span>
           {{else}}
@@ -44,21 +58,28 @@
           {{/if}}
         </p>
         {{#if (eq user.userType "consultant")}}
-          <p><strong>Bénéficiaire:</strong> {{appointment.beneficiary.firstName}} {{appointment.beneficiary.lastName}}</p>
+          <p><strong>Bénéficiaire:</strong>
+            {{appointment.beneficiary.firstName}}
+            {{appointment.beneficiary.lastName}}</p>
         {{else}}
-          <p><strong>Consultant:</strong> {{appointment.consultant.firstName}} {{appointment.consultant.lastName}}</p>
+          <p><strong>Consultant:</strong>
+            {{appointment.consultant.firstName}}
+            {{appointment.consultant.lastName}}</p>
         {{/if}}
         {{#if appointment.isOnline}}
           <p>
-            <strong>Lien de visioconférence:</strong> 
-            <a href="{{appointment.meetingLink}}" target="_blank">{{appointment.meetingLink}}</a>
+            <strong>Lien de visioconférence:</strong>
+            <a
+              href="{{appointment.meetingLink}}"
+              target="_blank"
+            >{{appointment.meetingLink}}</a>
           </p>
         {{else}}
           <p><strong>Lieu:</strong> {{appointment.location}}</p>
         {{/if}}
       </div>
     </div>
-    
+
     {{#if appointment.notes}}
       <div class="mt-3">
         <h6>Notes:</h6>
@@ -70,16 +91,22 @@
 
 <div class="d-flex justify-content-between mt-3">
   <a href="/appointments" class="btn btn-secondary">
-    <i class="fas fa-arrow-left"></i> Retour à la liste
+    <i class="fas fa-arrow-left"></i>
+    Retour à la liste
   </a>
-  
+
   {{#if (eq user.userType "consultant")}}
     <div>
       {{#if (eq appointment.status "scheduled")}}
-        <form action="/appointments/{{appointment.id}}/edit" method="POST" class="d-inline">
-          <input type="hidden" name="status" value="completed">
+        <form
+          action="/appointments/{{appointment.id}}/edit"
+          method="POST"
+          class="d-inline"
+        >
+          <input type="hidden" name="status" value="completed" />
           <button type="submit" class="btn btn-success">
-            <i class="fas fa-check"></i> Marquer comme terminé
+            <i class="fas fa-check"></i>
+            Marquer comme terminé
           </button>
         </form>
       {{/if}}

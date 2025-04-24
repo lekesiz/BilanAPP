@@ -1,266 +1,387 @@
 const express = require('express');
+
 const router = express.Router();
-const { ensureAuthenticated, ensureConsultant, ensureBeneficiary } = require('../middlewares/auth');
-const { User, Beneficiary, Appointment, Message, Questionnaire } = require('../models');
 const { Op } = require('sequelize');
+const {
+  ensureAuthenticated,
+  ensureConsultant,
+  ensureBeneficiary,
+} = require('../middlewares/auth');
+const {
+  User,
+  Beneficiary,
+  Appointment,
+  Message,
+  Questionnaire,
+} = require('../models');
+const dashboardController = require('../controllers/dashboardController');
 
 // Ana dashboard (kullanıcı tipine göre yönlendirme)
 router.get('/', ensureAuthenticated, (req, res) => {
-  if (req.user.userType === 'consultant') {
+  // console.log('[DEBUG] GET /dashboard - req.user:', req.user?.get({ plain: true })); // Debug log eklendi
+  const userType = req.user?.userType?.toLowerCase();
+  if (userType === 'consultant') {
+    // console.log('[DEBUG] Redirecting to /dashboard/consultant');
     res.redirect('/dashboard/consultant');
-  } else {
+  } else if (userType === 'beneficiary') {
+    // console.log('[DEBUG] Redirecting to /dashboard/beneficiary');
     res.redirect('/dashboard/beneficiary');
+  } else {
+    // Kullanıcı tipi tanımsız veya hatalıysa?
+    // console.error('[ERROR] Unknown userType in GET /dashboard:', req.user?.userType);
+    req.flash(
+      'error_msg',
+      "Type d'utilisateur inconnu pour accéder au tableau de bord.",
+    );
+    res.redirect('/auth/login');
   }
 });
 
 // Danışman dashboard'u
-router.get('/consultant', ensureAuthenticated, ensureConsultant, async (req, res) => {
+router.get('/consultant', ensureAuthenticated, async (req, res) => {
   try {
     const consultantId = req.user.id;
+    const isAdmin = req.user.forfaitType === 'Admin';
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // İstatistikleri hesapla
-    const stats = await getConsultantStats(consultantId);
-    
-    // Yaklaşan randevuları al
-    const upcomingAppointments = await Appointment.findAll({
-      where: {
-        consultantId,
-        date: {
-          [Op.gte]: new Date()
-        }
-      },
-      include: [{
-        model: Beneficiary,
-        as: 'beneficiary',
-        include: [{
-          model: User,
-          as: 'user',
-          attributes: ['firstName', 'lastName']
-        }]
-      }],
-      order: [['date', 'ASC']],
-      limit: 5
-    });
-
-    // Son aktiviteleri al
-    const recentActivities = await getRecentActivities(consultantId);
-
-    // Takip Görüşmesi Hatırlatıcıları
-    const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    const followUpBeneficiaries = await Beneficiary.findAll({
+    // Fetch data in parallel
+    const [
+      stats,
+      appointmentsRaw,
+      recentActivities, // Will be empty for Admin based on current function
+      followUpBeneficiariesRaw,
+      recentlyCompletedQuestionnairesRaw,
+      beneficiariesForAlertsRaw,
+      overdueQuestionnairesRaw,
+    ] = await Promise.all([
+      getConsultantStats(consultantId, isAdmin), // İstatistikleri hesapla
+      // Yaklaşan randevuları al (Admin tümünü görür)
+      Appointment.findAll({
         where: {
-            consultantId,
-            followUpDate: {
-                [Op.ne]: null, // Takip tarihi atanmış olanlar
-                [Op.lte]: thirtyDaysFromNow // Önümüzdeki 30 gün içinde veya daha önce
-            },
-            // Opsiyonel: Sadece bilani tamamlanmış veya aktif olanlar?
-            // status: { [Op.in]: ['active', 'completed'] } 
-        },
-        include: { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName'] },
-        order: [['followUpDate', 'ASC']] // Yaklaşanlar önce gelsin
-    });
-
-    // Son Tamamlanan Anketler (Danışmanın yararlanıcılarına ait)
-    const ownBeneficiaryIds = (await Beneficiary.findAll({
-         where: { consultantId }, 
-         attributes: ['id']
-        })).map(b => b.id);
-
-    const recentlyCompletedQuestionnaires = await Questionnaire.findAll({
-        where: {
-            beneficiaryId: { [Op.in]: ownBeneficiaryIds }, // Sadece danışmanın yararlanıcıları
-            status: 'completed',
-            // updatedAt alanı kullanılabilir, ancak Answer modeli üzerinden gitmek daha doğru olabilir.
-            // Şimdilik son 1 haftada tamamlananları alalım (updatedAt varsayımıyla)
-            updatedAt: {
-                [Op.gte]: new Date(new Date() - 7 * 24 * 60 * 60 * 1000) // Son 7 gün
-            }
+          ...(isAdmin ? {} : { consultantId }),
+          date: { [Op.gte]: new Date() },
         },
         include: [
-            { model: Beneficiary, as: 'beneficiary', include: { model: User, as: 'user' } },
-            { model: User, as: 'creator' } // İsteğe bağlı: Anketi kimin oluşturduğu
+          {
+            model: Beneficiary,
+            as: 'beneficiary',
+            include: [
+              {
+                model: User,
+                as: 'user',
+                attributes: ['firstName', 'lastName'],
+              },
+            ],
+          },
         ],
-        order: [['updatedAt', 'DESC']], // En son tamamlananlar üstte
-        limit: 5
-    });
+        order: [['date', 'ASC']],
+        limit: 5,
+      }),
+      // Son aktiviteleri al (Sadece Danışman için)
+      isAdmin ? Promise.resolve([]) : getRecentActivities(consultantId), // Return empty array for admin
+      // Takip Görüşmesi Hatırlatıcıları (Admin tümünü görür)
+      Beneficiary.findAll({
+        where: {
+          ...(isAdmin ? {} : { consultantId }),
+          followUpDate: {
+            [Op.ne]: null,
+            [Op.lte]: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+        include: {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName'],
+        },
+        order: [['followUpDate', 'ASC']],
+      }),
+      // Son Tamamlanan Anketler (Admin tümünü görür)
+      Questionnaire.findAll({
+        where: {
+          ...(isAdmin ?
+            {} :
+            {
+              beneficiaryId: {
+                [Op.in]: (
+                  await Beneficiary.findAll({
+                    where: { consultantId },
+                    attributes: ['id'],
+                  })
+                ).map((b) => b.id),
+              },
+            }),
+          status: 'completed',
+          updatedAt: {
+            [Op.gte]: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
+          },
+        },
+        include: [
+          {
+            model: Beneficiary,
+            as: 'beneficiary',
+            include: { model: User, as: 'user' },
+          },
+          { model: User, as: 'creator' },
+        ],
+        order: [['updatedAt', 'DESC']],
+        limit: 5,
+      }),
+      // Consent Alert için Beneficiary'ler (Admin tümünü görür)
+      Beneficiary.findAll({
+        where: isAdmin ? {} : { consultantId },
+        attributes: ['id', 'userId', 'consentGiven'],
+        include: {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'firstName', 'lastName'],
+        },
+      }),
+      // Teslim tarihi geçmiş anketler (Admin tümünü görür)
+      Questionnaire.findAll({
+        where: {
+          ...(isAdmin ?
+            {} :
+            {
+              beneficiaryId: {
+                [Op.in]: (
+                  await Beneficiary.findAll({
+                    where: { consultantId },
+                    attributes: ['id'],
+                  })
+                ).map((b) => b.id),
+              },
+            }),
+          status: 'pending',
+          dueDate: { [Op.ne]: null, [Op.lt]: today },
+        },
+        include: [
+          {
+            model: Beneficiary,
+            as: 'beneficiary',
+            include: { model: User, as: 'user' },
+          },
+        ],
+        order: [['dueDate', 'ASC']],
+        limit: 5,
+      }),
+    ]);
 
-    // --- Uyarılar / Gerekli Aksiyonlar --- 
-    const beneficiariesForAlerts = await Beneficiary.findAll({
-        where: { consultantId },
-        attributes: ['id', 'userId', 'consentGiven', 'agreementSigned'],
-        include: { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName'] }
-    });
-
-    const missingConsents = beneficiariesForAlerts.filter(b => !b.consentGiven);
-    const missingAgreements = beneficiariesForAlerts.filter(b => !b.agreementSigned);
-
-    // Teslim tarihi geçmiş anketler
-     const overdueQuestionnaires = await Questionnaire.findAll({
-         where: {
-             beneficiaryId: { [Op.in]: ownBeneficiaryIds },
-             status: 'pending',
-             dueDate: {
-                 [Op.ne]: null,
-                 [Op.lt]: today // Bugünden küçük (geçmiş)
-             }
-         },
-         include: [
-             { model: Beneficiary, as: 'beneficiary', include: { model: User, as: 'user' } }
-         ],
-         order: [['dueDate', 'ASC']], // En eski gecikenler önce
-         limit: 5 
-     });
+    // Process raw data
+    const upcomingAppointments = appointmentsRaw.map((a) =>
+      a.get({ plain: true }),
+    );
+    const followUpBeneficiaries = followUpBeneficiariesRaw.map((b) =>
+      b.get({ plain: true }),
+    );
+    const recentlyCompletedQuestionnaires =
+      recentlyCompletedQuestionnairesRaw.map((q) => q.get({ plain: true }));
+    const beneficiariesForAlerts = beneficiariesForAlertsRaw.map((b) =>
+      b.get({ plain: true }),
+    );
+    const missingConsents = beneficiariesForAlerts.filter(
+      (b) => !b.consentGiven,
+    );
+    const overdueQuestionnaires = overdueQuestionnairesRaw.map((q) =>
+      q.get({ plain: true }),
+    );
 
     res.render('dashboard/consultant', {
-      title: 'Tableau de bord Consultant',
+      title: isAdmin ? 'Tableau de bord Admin' : 'Tableau de bord Consultant', // Update title for Admin
       user: req.user,
       stats,
       upcomingAppointments,
-      recentActivities,
+      recentActivities, // Will be empty for Admin
       followUpBeneficiaries,
       recentlyCompletedQuestionnaires,
       missingConsents,
-      missingAgreements,
-      overdueQuestionnaires
+      overdueQuestionnaires,
+      isAdmin,
     });
   } catch (error) {
     console.error('Dashboard error:', error);
-    req.flash('error', 'Une erreur est survenue lors du chargement du tableau de bord');
+    req.flash(
+      'error',
+      'Une erreur est survenue lors du chargement du tableau de bord',
+    );
     res.redirect('/');
   }
 });
 
 // Yararlanıcı dashboard'u
-router.get('/beneficiary', ensureAuthenticated, ensureBeneficiary, async (req, res) => {
-  try {
-    const beneficiary = await Beneficiary.findOne({
-      where: { userId: req.user.id },
-      include: [{
-        model: User,
-        as: 'consultant',
-        attributes: ['firstName', 'lastName', 'email']
-      }]
-    });
+router.get(
+  '/beneficiary',
+  ensureAuthenticated,
+  ensureBeneficiary,
+  async (req, res) => {
+    try {
+      const beneficiary = await Beneficiary.findOne({
+        where: { userId: req.user.id },
+        include: [
+          {
+            model: User,
+            as: 'consultant',
+            attributes: ['firstName', 'lastName', 'email'],
+          },
+        ],
+      });
 
-    const upcomingAppointments = await Appointment.findAll({
-      where: {
-        beneficiaryId: beneficiary.id,
-        date: {
-          [Op.gte]: new Date()
-        }
-      },
-      order: [['date', 'ASC']],
-      limit: 3
-    });
+      const upcomingAppointments = await Appointment.findAll({
+        where: {
+          beneficiaryId: beneficiary.id,
+          date: {
+            [Op.gte]: new Date(),
+          },
+        },
+        order: [['date', 'ASC']],
+        limit: 3,
+      });
 
-    const pendingQuestionnaires = await Questionnaire.findAll({
-      where: {
-        beneficiaryId: beneficiary.id,
-        status: 'pending'
-      },
-      limit: 5
-    });
+      const pendingQuestionnaires = await Questionnaire.findAll({
+        where: {
+          beneficiaryId: beneficiary.id,
+          status: 'pending',
+        },
+        limit: 5,
+      });
 
-    res.render('dashboard/beneficiary', {
-      title: 'Mon Bilan de Compétences',
-      user: req.user,
-      beneficiary,
-      upcomingAppointments,
-      pendingQuestionnaires
-    });
-  } catch (error) {
-    console.error('Beneficiary dashboard error:', error);
-    req.flash('error', 'Une erreur est survenue lors du chargement du tableau de bord');
-    res.redirect('/');
-  }
-});
+      res.render('dashboard/beneficiary', {
+        title: 'Mon Bilan de Compétences',
+        user: req.user,
+        beneficiary,
+        upcomingAppointments,
+        pendingQuestionnaires,
+      });
+    } catch (error) {
+      console.error('Beneficiary dashboard error:', error);
+      req.flash(
+        'error',
+        'Une erreur est survenue lors du chargement du tableau de bord',
+      );
+      res.redirect('/');
+    }
+  },
+);
 
 // Danışman istatistiklerini hesapla
-async function getConsultantStats(consultantId) {
+async function getConsultantStats(consultantId, isAdmin = false) {
+  // Sorgular için temel where koşulu
+  const baseWhereBeneficiary = isAdmin ? {} : { consultantId };
+  const baseWhereAppointment = isAdmin ? {} : { consultantId };
+
   // Promise.all ile sorguları paralelleştir
-  const [ 
-      beneficiaryCount, preliminaryCount, investigationCount, conclusionCount,
-      upcomingAppointments, unreadMessages, pendingQuestionnaires,
-      missingConsentsCount, missingAgreementsCount // Yeni sayımlar
-    ] = await Promise.all([
-        Beneficiary.count({ where: { consultantId } }),
-        Beneficiary.count({ where: { consultantId, currentPhase: 'preliminary' } }),
-        Beneficiary.count({ where: { consultantId, currentPhase: 'investigation' } }),
-        Beneficiary.count({ where: { consultantId, currentPhase: 'conclusion' } }),
-        Appointment.count({ where: { consultantId, status: 'scheduled', date: { [Op.gte]: new Date() } } }),
-        Message.count({ where: { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } } }),
-        Questionnaire.count({ where: { createdBy: consultantId, status: 'pending' /* Daha iyi sorgu? */ } }),
-        // Yeni Sayımlar:
-        Beneficiary.count({ where: { consultantId, consentGiven: false } }), 
-        Beneficiary.count({ where: { consultantId, agreementSigned: false } })
+  const [
+    beneficiaryCount,
+    activeBeneficiaryCount, // Replaced phase counts with just active count
+    upcomingAppointmentsCount,
+    unreadMessagesCount,
+    pendingQuestionnairesCount,
+    missingConsentsCount,
+  ] = await Promise.all([
+    Beneficiary.count({ where: baseWhereBeneficiary }),
+    Beneficiary.count({ where: { ...baseWhereBeneficiary, status: 'active' } }), // Count active beneficiaries
+    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'preliminary' } }), // Removed
+    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'investigation' } }), // Removed
+    // Beneficiary.count({ where: { ...baseWhereBeneficiary, currentPhase: 'conclusion' } }), // Removed
+    Appointment.count({
+      where: {
+        ...baseWhereAppointment,
+        status: 'scheduled',
+        date: { [Op.gte]: new Date() },
+      },
+    }),
+    Message.count({
+      where: isAdmin ?
+        { isRead: false } : // Admin sees ALL unread messages
+        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
+    }),
+    Questionnaire.count({
+      // Admin sees all pending. Consultant sees questionnaires FOR their beneficiaries.
+      where: isAdmin ?
+        { status: 'pending' } :
+        {
+          status: 'pending',
+          beneficiaryId: {
+            [Op.in]: (
+              await Beneficiary.findAll({
+                where: { consultantId },
+                attributes: ['id'],
+              })
+            ).map((b) => b.id),
+          },
+        },
+    }),
+    Beneficiary.count({
+      where: { ...baseWhereBeneficiary, consentGiven: false },
+    }),
   ]);
 
   return {
-    beneficiaryCount, 
-    preliminaryCount,
-    investigationCount,
-    conclusionCount,
-    upcomingAppointments,
-    unreadMessages,
-    pendingQuestionnaires,
-    missingConsentsCount, // Yeni
-    missingAgreementsCount // Yeni
+    beneficiaryCount,
+    activeBeneficiaryCount, // Updated stat name
+    // preliminaryCount, // Removed
+    // investigationCount, // Removed
+    // conclusionCount, // Removed
+    upcomingAppointmentsCount,
+    unreadMessagesCount,
+    pendingQuestionnairesCount,
+    missingConsentsCount,
   };
 }
 
-// Son aktiviteleri al
+// Son aktiviteleri al (Sadece Danışman için)
 async function getRecentActivities(consultantId) {
+  // Return empty if called for Admin (handled in the route handler now)
+  // if (!consultantId) return []; // Or keep this check
+
   const activities = [];
+  // Fetch in parallel
+  const [recentBeneficiaries, recentAppointments] = await Promise.all([
+    Beneficiary.findAll({
+      where: { consultantId },
+      include: [
+        { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 3,
+    }),
+    Appointment.findAll({
+      where: { consultantId },
+      include: [
+        {
+          model: Beneficiary,
+          as: 'beneficiary',
+          include: [
+            { model: User, as: 'user', attributes: ['firstName', 'lastName'] },
+          ],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 3,
+    }),
+  ]);
 
-  // Son eklenen yararlanıcılar
-  const recentBeneficiaries = await Beneficiary.findAll({
-    where: { consultantId },
-    include: [{
-      model: User,
-      as: 'user',
-      attributes: ['firstName', 'lastName']
-    }],
-    order: [['createdAt', 'DESC']],
-    limit: 3
-  });
-
-  recentBeneficiaries.forEach(beneficiary => {
+  recentBeneficiaries.forEach((beneficiary) => {
     activities.push({
+      type: 'beneficiary', // Add type for potential filtering/icon
       title: 'Nouveau Bénéficiaire',
-      description: `${beneficiary.user.firstName} ${beneficiary.user.lastName} a été ajouté`,
-      date: beneficiary.createdAt
+      description: `${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+      link: `/beneficiaries/${beneficiary.id}`, // Add link
+      date: beneficiary.createdAt,
     });
   });
-
-  // Son randevular
-  const recentAppointments = await Appointment.findAll({
-    where: { consultantId },
-    include: [{
-      model: Beneficiary,
-      as: 'beneficiary',
-      include: [{
-        model: User,
-        as: 'user',
-        attributes: ['firstName', 'lastName']
-      }]
-    }],
-    order: [['createdAt', 'DESC']],
-    limit: 3
-  });
-
-  recentAppointments.forEach(appointment => {
+  recentAppointments.forEach((appointment) => {
+    if (!appointment.beneficiary) return; // Skip if beneficiary somehow missing
     activities.push({
+      type: 'appointment', // Add type
       title: 'Nouveau Rendez-vous',
-      description: `Rendez-vous planifié avec ${appointment.beneficiary.user.firstName} ${appointment.beneficiary.user.lastName}`,
-      date: appointment.createdAt
+      description: `${appointment.type} avec ${appointment.beneficiary.user.firstName} ${appointment.beneficiary.user.lastName}`,
+      link: `/appointments#appt-${appointment.id}`, // Link needs refinement
+      date: appointment.createdAt,
     });
   });
 
-  // Aktiviteleri tarihe göre sırala
+  // Sort and limit combined activities
   return activities.sort((a, b) => b.date - a.date).slice(0, 5);
 }
 

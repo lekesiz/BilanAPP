@@ -1,0 +1,81 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{title}}</h1>
+    <div>
+      <a href="/beneficiaries/{{beneficiary.id}}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Retour aux détails
+      </a>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form action="/beneficiaries/{{beneficiary.id}}/edit" method="POST">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="firstName" class="form-label">Prénom <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="firstName" name="firstName" value="{{beneficiary.firstName}}" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="lastName" class="form-label">Nom <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="lastName" name="lastName" value="{{beneficiary.lastName}}" required>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="email" name="email" value="{{beneficiary.email}}" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="phone" class="form-label">Téléphone</label>
+            <input type="tel" class="form-control" id="phone" name="phone" value="{{beneficiary.phone}}">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="status" class="form-label">Statut <span class="text-danger">*</span></label>
+            <select class="form-select" id="status" name="status" required>
+              <option value="initial" {{#if (eq beneficiary.status "initial")}}selected{{/if}}>Initial</option>
+              <option value="active" {{#if (eq beneficiary.status "active")}}selected{{/if}}>Actif</option>
+              <option value="completed" {{#if (eq beneficiary.status "completed")}}selected{{/if}}>Terminé</option>
+              <option value="cancelled" {{#if (eq beneficiary.status "cancelled")}}selected{{/if}}>Annulé</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="currentPhase" class="form-label">Phase actuelle <span class="text-danger">*</span></label>
+            <select class="form-select" id="currentPhase" name="currentPhase" required>
+              <option value="preliminary" {{#if (eq beneficiary.currentPhase "preliminary")}}selected{{/if}}>Préliminaire</option>
+              <option value="investigation" {{#if (eq beneficiary.currentPhase "investigation")}}selected{{/if}}>Investigation</option>
+              <option value="conclusion" {{#if (eq beneficiary.currentPhase "conclusion")}}selected{{/if}}>Conclusion</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="notes" class="form-label">Notes</label>
+          <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Informations complémentaires sur le bénéficiaire...">{{beneficiary.notes}}</textarea>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <a href="/beneficiaries/{{beneficiary.id}}" class="btn btn-outline-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Enregistrer les modifications
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter des helpers Handlebars si nécessaire
+    if (!Handlebars.helpers.eq) {
+      Handlebars.registerHelper('eq', function(a, b) {
+        return a === b;
+      });
+    }
+  });
+</script>

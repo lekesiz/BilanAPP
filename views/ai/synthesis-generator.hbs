@@ -1,0 +1,63 @@
+<div class="container-fluid py-4">
+  <h1 class="mb-4">Générateur de Synthèse IA</h1>
+  
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    Cet outil permet de générer une ébauche de synthèse de bilan de compétences à partir des données du bénéficiaire.
+    <br>
+    Le coût est de <strong>{{aiCredits}} crédits</strong> par génération. Le texte généré pourra être modifié avant d'être sauvegardé.
+  </div>
+  
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form action="/ai/synthesis-generator" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+        <div class="mb-3">
+          <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+          <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+            <option value="" selected disabled>Choisir un bénéficiaire...</option>
+            {{#each beneficiaries}}
+              <option value="{{id}}" {{#ifCond ../selectedBeneficiaryId '===' id}}selected{{/ifCond}}>
+                {{user.firstName}} {{user.lastName}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+        
+        <div class="mb-3">
+          <label for="instructions" class="form-label">Instructions spécifiques (facultatif)</label>
+          <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Précisez des éléments particuliers à mettre en avant, le style souhaité, ou des informations supplémentaires..."></textarea>
+        </div>
+        
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="updateBeneficiary" name="updateBeneficiary" value="true">
+          <label class="form-check-label" for="updateBeneficiary">Mettre à jour la synthèse du bénéficiaire avec le texte généré</label>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+          <a href="/dashboard" class="btn btn-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-robot me-2"></i>
+            Générer la synthèse ({{aiCredits}} crédits)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div class="mt-4">
+    <h5>Informations utilisées pour la génération</h5>
+    <p>La synthèse sera générée en utilisant les informations suivantes du bénéficiaire :</p>
+    <ul>
+      <li>Profil et données personnelles</li>
+      <li>Parcours professionnel et formation</li>
+      <li>Compétences identifiées</li>
+      <li>Intérêts et objectifs professionnels</li>
+      <li>Réponses aux questionnaires (si disponibles)</li>
+    </ul>
+    <p class="text-muted small">
+      <i class="fas fa-lightbulb me-1"></i>
+      Conseil : Pour obtenir des résultats de qualité, assurez-vous que le profil du bénéficiaire est bien renseigné.
+    </p>
+  </div>
+</div> 

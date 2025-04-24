@@ -5,6 +5,7 @@
      {{> messages}}
 
     <form action="/documents/{{document.id}}/edit" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card shadow-sm">
              <div class="card-header">
                 Informations du document

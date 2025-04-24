@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./database:/app/database
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SESSION_SECRET=bilan_competences_docker_secret
+    command: >
+      sh -c "node scripts/init-production.js &&
+             npm start"
+    restart: unless-stopped

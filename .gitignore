@@ -2,4 +2,15 @@ node_modules/
 .env
 *.sqlite
 npm-debug.log
+*.log
+logs/
+ai_dev.log
 .DS_Store
+tmp/
+build/
+dist/
+coverage/
+uploads/
+
+# Keep .gitkeep in empty directories if needed
+# example: uploads/.gitkeep

@@ -13,12 +13,14 @@ Ce guide vous explique comment installer et utiliser la plateforme de gestion de
 1. **Décompressez l'archive** dans le répertoire de votre choix
 
 2. **Installez les dépendances**
+
    ```bash
    cd bilan-app
    npm install
    ```
 
 3. **Configurez les variables d'environnement**
+
    - Copiez le fichier `.env.example` vers `.env`
    - Modifiez les valeurs selon votre environnement si nécessaire
 
@@ -33,11 +35,13 @@ Ce guide vous explique comment installer et utiliser la plateforme de gestion de
 ## Démarrage de l'application
 
 1. **En mode développement** (avec rechargement automatique)
+
    ```bash
    npm run dev
    ```
 
 2. **En mode production**
+
    ```bash
    npm start
    ```
@@ -66,6 +70,7 @@ Consultez le fichier `DOCUMENTATION.md` pour une description détaillée de tout
 Si vous préférez utiliser Docker, un Dockerfile et un fichier docker-compose.yml sont inclus.
 
 1. **Construire et démarrer les conteneurs**
+
    ```bash
    docker-compose up
    ```

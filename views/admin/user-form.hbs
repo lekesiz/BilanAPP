@@ -1,0 +1,72 @@
+{{#> layouts/main}}
+<div class="container py-4">
+    <h1 class="h3 mb-4">{{title}}</h1>
+
+    {{> messages}}
+
+    <div class="card">
+        <div class="card-body">
+            <form action="{{#if editing}}/admin/users/{{userData.id}}/edit{{else}}/admin/users/add{{/if}}" method="POST">
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="firstName" class="form-label">Prénom *</label>
+                        <input type="text" class="form-control" id="firstName" name="firstName" value="{{userData.firstName}}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="lastName" class="form-label">Nom *</label>
+                        <input type="text" class="form-control" id="lastName" name="lastName" value="{{userData.lastName}}" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{userData.email}}" {{#if editing}}readonly disabled{{/if}} required> {{!-- Düzenlerken eposta değiştirilemez --}}
+                    {{#if editing}}<small class="form-text text-muted">L'adresse email ne peut pas être modifiée.</small>{{/if}}
+                </div>
+
+                 <div class="row mb-3">
+                    <div class="col-md-6">
+                         <label for="password" class="form-label">{{#if editing}}Nouveau Mot de Passe (laisser vide pour ne pas changer){{else}}Mot de Passe *{{/if}}</label>
+                         <input type="password" class="form-control" id="password" name="newPassword" {{#unless editing}}required{{/unless}}>
+                    </div>
+                     <div class="col-md-6">
+                         <label for="confirmPassword" class="form-label">Confirmer le Mot de Passe</label>
+                         <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" {{#unless editing}}required{{/unless}}>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                     <div class="col-md-4">
+                        <label for="userType" class="form-label">Type d'utilisateur *</label>
+                        <select class="form-select" id="userType" name="userType" required>
+                             {{#each userTypeOptions}}
+                                <option value="{{this}}" {{#eq ../userData.userType this}}selected{{/eq}}>{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                         <label for="forfaitType" class="form-label">Forfait</label>
+                        <select class="form-select" id="forfaitType" name="forfaitType">
+                            <option value="" {{#unless userData.forfaitType}}selected{{/unless}}>-- Aucun Forfait --</option> 
+                            {{#each forfaitOptions}}
+                                <option value="{{this}}" {{#eq ../userData.forfaitType this}}selected{{/eq}}>{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                     <div class="col-md-4">
+                        <label for="availableCredits" class="form-label">Crédits Disponibles {{#unless editing}}*{{/unless}}</label>
+                        <input type="number" class="form-control" id="availableCredits" name="availableCredits" value="{{userData.availableCredits}}" min="0" {{#unless editing}}required{{/unless}} {{#if editing}}disabled{{/if}}>
+                         {{#if editing}}<small class="form-text text-muted">Les crédits sont gérés séparément.</small>{{/if}}
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <a href="/admin/users" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary">{{#if editing}}Mettre à jour l'utilisateur{{else}}Ajouter l'utilisateur{{/if}}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{/layouts/main}} 

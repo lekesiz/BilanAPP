@@ -1,0 +1,58 @@
+{
+  "env": {
+    "browser": false,
+    "commonjs": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": [
+    "airbnb-base"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "rules": {
+    // Şimdilik console log'lara izin ver (Temizlik etabında ele alınabilir)
+    "no-console": "off",
+    // Proje özelinde kapatılması/ayarlanması gerekebilecek diğer kurallar
+    "comma-dangle": ["error", "always-multiline"],
+    "import/no-dynamic-require": "off",
+    "global-require": "off",
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_|^err$", "caughtErrorsIgnorePattern": "^_|^err$" }], // Kullanılmayan değişkenleri uyarı olarak göster, _, err ile başlayan arg/catch yoksay
+    "no-param-reassign": "off", // Parametrelerin yeniden atanmasına izin ver (Sequelize vb. için gerekebilir)
+    "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"], // for...of döngülerine izin ver
+    "implicit-arrow-linebreak": "off",
+    "function-paren-newline": "off",
+    "operator-linebreak": ["error", "after"],
+    "no-shadow": ["error", { "allow": ["err", "error", "req", "res", "next"] }], // Yaygın callback/middleware parametrelerine izin ver
+    // Çözümlenemeyen import hatalarını azaltmak için (bazen hatalı olabilir)
+    "import/no-unresolved": ["error", { "commonjs": true, "caseSensitive": false }],
+    // JS dosyalarında uzantı zorunluluğunu kaldır (isteğe bağlı)
+    "import/extensions": ["error", "ignorePackages", { "js": "never" }]
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js"]
+      }
+    }
+  },
+  "overrides": [
+    {
+      "files": ["public/js/**/*.js", "scripts/**/*.js"], // Public JS ve scriptler için
+      "env": {
+        "browser": true, // Tarayıcı global değişkenlerine izin ver (document, bootstrap vb.)
+        "node": false // Node.js ortamını kapat
+      },
+      "rules": {
+        "no-undef": "warn" // Tanımlanmamış değişkenleri uyarı olarak göster
+      }
+    },
+    {
+        "files": ["scripts/**/*.js"], // script'ler node ortamında da çalışabilir
+        "env": {
+            "node": true
+        }
+    }
+  ]
+} 

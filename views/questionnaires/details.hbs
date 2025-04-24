@@ -79,6 +79,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <form action="/questionnaires/{{questionnaire.id}}/assign" method="POST">
+                    <input type="hidden" name="_csrf" value="{{csrfToken}}">
                     <div class="modal-header">
                         <h5 class="modal-title" id="assignModalLabel">Assigner le questionnaire</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -122,6 +123,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                     <form action="/questionnaires/{{questionnaire.id}}/delete" method="POST" style="display: inline;">
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
                         <button type="submit" class="btn btn-danger">Supprimer</button>
                     </form>
                 </div>

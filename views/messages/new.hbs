@@ -3,6 +3,7 @@
     <h1 class="mb-4">Envoyer un nouveau message</h1>
 
     <form action="/messages/new" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card">
             <div class="card-body">
                 <div class="mb-3">

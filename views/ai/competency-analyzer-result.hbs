@@ -1,0 +1,241 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Résultats Analyse de Compétences</h1>
+    <div>
+      <button class="btn btn-outline-primary me-2" onclick="copyToClipboard()">
+        <i class="fas fa-copy me-1"></i>
+        Copier
+      </button>
+      {{#if canSave}}
+        <form
+          action="/ai/competency-analyzer/save"
+          method="POST"
+          class="d-inline"
+        >
+          <input type="hidden" name="beneficiaryId" value="{{beneficiaryId}}" />
+          <input type="hidden" name="analysisId" value="{{analysisId}}" />
+          <button type="submit" class="btn btn-outline-success me-2">
+            <i class="fas fa-save me-1"></i>
+            Sauvegarder
+          </button>
+        </form>
+      {{/if}}
+      <a href="/ai/competency-analyzer" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>
+        Retour
+      </a>
+    </div>
+  </div>
+
+  {{#if saved}}
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle me-2"></i>
+      L'analyse a été sauvegardée dans les notes du bénéficiaire.
+    </div>
+  {{/if}}
+
+  {{#if message}}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      {{message}}
+    </div>
+  {{/if}}
+
+  <div id="analysisContent">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="my-2">Synthèse d'adéquation au poste</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="text-center mb-3">
+              <div class="position-relative d-inline-block">
+                <canvas id="matchScore" width="150" height="150"></canvas>
+                <div
+                  class="position-absolute top-50 start-50 translate-middle text-center"
+                >
+                  <h2 class="mb-0">{{matchScore}}%</h2>
+                  <span class="small text-muted">Match</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-8">
+            <h5>Résumé</h5>
+            <p>{{summary}}</p>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                  <span
+                    class="badge bg-success me-2"
+                    style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;"
+                  >
+                    <i class="fas fa-check"></i>
+                  </span>
+                  <span><strong>Forces:</strong>
+                    {{strengthsCount}}
+                    compétences correspondantes</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                  <span
+                    class="badge bg-danger me-2"
+                    style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;"
+                  >
+                    <i class="fas fa-times"></i>
+                  </span>
+                  <span><strong>Écarts:</strong>
+                    {{gapsCount}}
+                    compétences à développer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="my-2">Compétences correspondantes</h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              {{#each strengths}}
+                <li class="list-group-item">
+                  <div class="d-flex align-items-center">
+                    <span class="badge bg-success me-2">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    <div>
+                      <strong>{{skill}}</strong>
+                      <p class="text-muted small mb-0">{{comment}}</p>
+                    </div>
+                  </div>
+                </li>
+              {{/each}}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="my-2">Compétences à développer</h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              {{#each gaps}}
+                <li class="list-group-item">
+                  <div class="d-flex align-items-center">
+                    <span class="badge bg-danger me-2">
+                      <i class="fas fa-times"></i>
+                    </span>
+                    <div>
+                      <strong>{{skill}}</strong>
+                      <p class="text-muted small mb-0">{{comment}}</p>
+                    </div>
+                  </div>
+                </li>
+              {{/each}}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="my-2">Plan de développement recommandé</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <h6>Objectifs prioritaires</h6>
+          <ul>
+            {{#each recommendations.objectives}}
+              <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+
+        <div class="mb-4">
+          <h6>Formations recommandées</h6>
+          <ul>
+            {{#each recommendations.trainings}}
+              <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+
+        <div>
+          <h6>Expériences à acquérir</h6>
+          <ul>
+            {{#each recommendations.experiences}}
+              <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="my-2">Données utilisées pour l'analyse</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Profil du bénéficiaire</h6>
+            <p class="text-muted small">{{cvTextSummary}}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Description du poste</h6>
+            <p class="text-muted small">{{jobDescriptionSummary}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-secondary">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>Note importante :</strong>
+      Cette analyse a été générée par intelligence artificielle et doit être
+      considérée comme un point de départ. L'évaluation complète nécessite
+      l'expertise d'un consultant humain pour contextualiser les
+      recommandations.
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+    <a href="/beneficiaries/{{beneficiaryId}}" class="btn btn-outline-primary">
+      <i class="fas fa-user me-1"></i>
+      Voir le profil du bénéficiaire
+    </a>
+    <a href="/ai/competency-analyzer" class="btn btn-primary">
+      <i class="fas fa-plus me-1"></i>
+      Nouvelle analyse
+    </a>
+  </div>
+</div>
+
+<script>
+  function copyToClipboard() { const content =
+  document.getElementById('analysisContent').innerText;
+  navigator.clipboard.writeText(content) .then(() => { alert('Analyse copiée
+  dans le presse-papier'); }) .catch(err => { console.error('Erreur lors de la
+  copie: ', err); alert('Impossible de copier l\'analyse'); }); }
+  document.addEventListener('DOMContentLoaded', function() { const ctx =
+  document.getElementById('matchScore').getContext('2d'); const score =
+  {{matchScore}}; let color = '#dc3545'; // red if (score >= 70) { color =
+  '#28a745'; // green } else if (score >= 40) { color = '#ffc107'; //
+  yellow/warning } new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data:
+  [score, 100 - score], backgroundColor: [color, '#e9ecef'], borderWidth: 0 }]
+  }, options: { cutout: '75%', responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { enabled: false } } } }); });
+</script>

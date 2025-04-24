@@ -1,0 +1,32 @@
+{{#if (eq user.role 'consultant')}}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle {{#if (eq active 'reports')}}active{{/if}}" 
+       href="#" id="reportDropdown" role="button" 
+       data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-chart-line me-1"></i> Rapports
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="reportDropdown">
+        <li>
+            <a class="dropdown-item" href="/reports/monthly">
+                <i class="fas fa-calendar-alt me-2"></i>Rapports Mensuels
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="/reports/beneficiary">
+                <i class="fas fa-user-chart me-2"></i>Suivi Bénéficiaires
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="/reports/export">
+                <i class="fas fa-file-export me-2"></i>Export des Données
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a class="dropdown-item" href="/reports/custom">
+                <i class="fas fa-sliders-h me-2"></i>Rapports Personnalisés
+            </a>
+        </li>
+    </ul>
+</li>
+{{/if}} 

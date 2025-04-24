@@ -1,0 +1,80 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{title}}</h1>
+    <a href="/beneficiaries" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i>
+      Retour à la liste
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form action="/beneficiaries/add" method="POST">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="firstName" class="form-label">Prénom
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="firstName"
+              name="firstName"
+              required
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="lastName" class="form-label">Nom
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="lastName"
+              name="lastName"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="email" class="form-label">Email
+              <span class="text-danger">*</span></label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              required
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="phone" class="form-label">Téléphone</label>
+            <input type="tel" class="form-control" id="phone" name="phone" />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="notes" class="form-label">Notes</label>
+          <textarea
+            class="form-control"
+            id="notes"
+            name="notes"
+            rows="4"
+            placeholder="Informations complémentaires sur le bénéficiaire..."
+          ></textarea>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button
+            type="reset"
+            class="btn btn-outline-secondary"
+          >Réinitialiser</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i>
+            Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

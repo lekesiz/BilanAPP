@@ -1,0 +1,83 @@
+{
+  "search": {
+    "include": [
+      "**/*.js",
+      "**/*.hbs",
+      "**/*.json",
+      "**/*.css",
+      "**/*.md",
+      "**/*.yml",
+      "**/*.yaml",
+      "**/*.sql",
+      ".env.example",
+      "bin/www"
+    ],
+    "exclude": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/logs/**",
+      "**/tmp/**",
+      "**/.git/**",
+      "**/coverage/**",
+      "public/vendor/**",
+      "**/*.min.js",
+      "**/*.min.css",
+      "**/*.sqlite",
+      "**/*.sqlite-journal",
+      "**/uploads/**",
+      "**/package-lock.json",
+      "**/.DS_Store"
+    ]
+  },
+  "editor": {
+    "tabSize": 2,
+    "insertSpaces": true,
+    "formatOnSave": true,
+    "detectIndentation": true,
+    "trimTrailingWhitespace": true,
+    "insertFinalNewline": true
+  },
+  "linting": {
+    "enabled": true,
+    "eslintIntegration": true
+  },
+  "paths": {
+    "aliases": {
+      "@": ".",
+      "@controllers": "./controllers",
+      "@models": "./models",
+      "@middlewares": "./middlewares",
+      "@config": "./config",
+      "@services": "./services",
+      "@views": "./views",
+      "@public": "./public",
+      "@routes": "./routes",
+      "@utils": "./utils",
+      "@scripts": "./scripts",
+      "@bin": "./bin"
+    }
+  },
+  "fileExplorer": {
+    "exclude": [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/.DS_Store",
+      "**/logs/**",
+      "**/.env",
+      "**/uploads/**",
+      "**/tmp/**",
+      "**/*.sqlite",
+      "**/*.sqlite-journal",
+      "**/package-lock.json"
+    ]
+  },
+  "autocomplete": {
+    "includeDocumentation": true,
+    "preferBuiltinSnippets": true
+  },
+  "terminal": {
+    "defaultProfile": "bash",
+    "cwd": "${workspaceFolder}"
+  }
+} 

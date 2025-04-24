@@ -1,0 +1,58 @@
+```
++----------------------------------------------------------------------+
+|                                                                      |
+| LOGO  PLATEFORME BILAN DE COMPÉTENCES         Consultant ▼  [🔔] [✉] |
+|                                                                      |
++----------------------------------------------------------------------+
+|                                                                      |
+| [≡] MENU  |  OUTILS D'ÉVALUATION                                     |
+|           |                                                          |
+|-----------+----------------------------------------------------------+
+|           |                                                          |
+| Dashboard | QUESTIONNAIRES ET TESTS                                  |
+| Bénéfic.  |                                                          |
+| Agenda    | [TOUS] [MES FAVORIS] [RÉCENTS]                           |
+| Messages  |                                                          |
+| Documents | RECHERCHER :                                             |
+| Outils    | +--------------------------------------------------+     |
+| Rapports  | | Nom du test ou questionnaire...            [🔍]  |     |
+|           | +--------------------------------------------------+     |
+|           |                                                          |
+|           | CATÉGORIES : [Compétences ▼] [Personnalité ▼] [Intérêts ▼]
+|           |                                                          |
+|           | +----------------------------------------------------------+
+|           | | NOM DU TEST          | TYPE        | DURÉE  | ACTIONS    |
+|           | +----------------------------------------------------------+
+|           | | Auto-évaluation des  | Compétences | 30 min | [Assigner] |
+|           | | compétences          |             |        | [Voir]     |
+|           | +----------------------------------------------------------+
+|           | | Test de personnalité | Personnalité| 20 min | [Assigner] |
+|           | | MBTI                 |             |        | [Voir]     |
+|           | +----------------------------------------------------------+
+|           | | Inventaire d'intérêts| Intérêts    | 15 min | [Assigner] |
+|           | | professionnels       |             |        | [Voir]     |
+|           | +----------------------------------------------------------+
+|           | | Évaluation des       | Compétences | 25 min | [Assigner] |
+|           | | compétences transv.  |             |        | [Voir]     |
+|           | +----------------------------------------------------------+
+|           | | Test de valeurs      | Valeurs     | 10 min | [Assigner] |
+|           | | professionnelles     |             |        | [Voir]     |
+|           | +----------------------------------------------------------+
+|           |                                                          |
+|           | [+ CRÉER UN NOUVEAU TEST]                                |
+|           |                                                          |
+|           | TESTS ASSIGNÉS RÉCEMMENT                                 |
+|           | +----------------------------------------------------------+
+|           | | TEST                 | BÉNÉFICIAIRE | DATE      | STATUT  |
+|           | +----------------------------------------------------------+
+|           | | Test de personnalité | Marie Lambert| 05/04/25  | Complété|
+|           | | Auto-évaluation      | Paul Martin  | 10/04/25  | En cours|
+|           | | Inventaire d'intérêts| Thomas Petit | 14/04/25  | Assigné |
+|           | +----------------------------------------------------------+
+|           |                                                          |
++-----------+----------------------------------------------------------+
+|                                                                      |
+| © 2025 Plateforme Bilan de Compétences | Aide | Paramètres | Déconnexion |
+|                                                                      |
++----------------------------------------------------------------------+
+```

@@ -4,6 +4,7 @@
      {{> messages}}
 
     <form action="/admin/users/{{userToEdit.id}}/edit" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card shadow-sm">
              <div class="card-header">
                 Informations de {{userToEdit.firstName}} {{userToEdit.lastName}}
@@ -49,8 +50,20 @@
                     </div>
                 </div>
                 <hr>
-                {{!-- TODO: Şifre sıfırlama butonu eklenebilir --}}
-                 <p class="text-muted small">La modification du mot de passe se fait par l'utilisateur depuis ses paramètres.</p>
+                {{!-- Şifre Güncelleme Alanları --}}
+                <h6 class="text-muted mb-3">Modifier le mot de passe (optionnel)</h6>
+                <div class="row g-3">
+                     <div class="col-md-6">
+                        <label for="newPassword" class="form-label">Nouveau Mot de Passe</label>
+                        <input type="password" class="form-control" id="newPassword" name="newPassword" minlength="6">
+                        <small class="form-text text-muted">Laissez vide pour ne pas changer.</small>
+                    </div>
+                     <div class="col-md-6">
+                        <label for="confirmPassword" class="form-label">Confirmer Nouveau Mot de Passe</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+                    </div>
+                </div>
+                 <p class="text-muted small mt-3">L'utilisateur devra utiliser ce nouveau mot de passe pour se connecter.</p>
             </div>
             <div class="card-footer d-flex justify-content-between">
                  <a href="/admin/users" class="btn btn-secondary">Annuler</a>

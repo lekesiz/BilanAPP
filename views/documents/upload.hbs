@@ -4,8 +4,13 @@
 
     {{> messages}}
 
-    <form action="/documents/upload" method="POST" enctype="multipart/form-data">
-        <div class="card">
+    {{!-- Formu kart içine al --}}
+    <div class="card shadow-sm">
+         <div class="card-header">
+             <i class="fas fa-file-upload me-1"></i> Détails du Document
+         </div>
+        <form action="/documents/upload" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{csrfToken}}">
             <div class="card-body">
                  <div class="mb-3">
                     <label for="documentFile" class="form-label">Choisir un fichier *</label>
@@ -17,9 +22,9 @@
                     <div class="mb-3">
                         <label for="beneficiaryId" class="form-label">Assigner à un bénéficiaire (optionnel)</label>
                         <select class="form-select" id="beneficiaryId" name="beneficiaryId">
-                            <option value="" selected>Ne pas assigner (pour moi-même)</option>
+                            <option value="" {{#unless preselectedBeneficiary}}selected{{/unless}}>Ne pas assigner (pour moi-même)</option>
                             {{#each beneficiaries}}
-                                <option value="{{id}}" {{#ifCond ../preselectedBeneficiary '===' id}}selected{{/ifCond}}>
+                                <option value="{{id}}" {{#ifCond ../preselectedBeneficiary '==' id}}selected{{/ifCond}}>
                                     {{user.firstName}} {{user.lastName}}
                                 </option>
                             {{/each}}
@@ -35,16 +40,10 @@
                     <div class="col-md-6 mb-3">
                         <label for="category" class="form-label">Catégorie</label>
                         <select class="form-select" id="category" name="category">
-                            <option value="" selected>-- Sélectionner --</option>
-                            <option value="CV">CV</option>
-                            <option value="Lettre de Motivation">Lettre de Motivation</option>
-                            <option value="Résultats Tests">Résultats Tests</option>
-                            <option value="Synthèse">Synthèse</option>
-                            <option value="Plan d'Action">Plan d'Action</option>
-                            <option value="Convention">Convention Tripartite</option>
-                            <option value="Administratif">Administratif</option>
-                            <option value="Portfolio">Portfolio</option>
-                            <option value="Autre">Autre</option>
+                            <option value="" {{#unless preselectedCategory}}selected{{/unless}}>-- Sélectionner --</option>
+                            {{#each categories}}
+                                <option value="{{this}}" {{#ifCond ../preselectedCategory '===' this}}selected{{/ifCond}}>{{this}}</option>
+                            {{/each}}
                         </select>
                     </div>
                      <div class="col-md-6 mb-3">
@@ -71,6 +70,6 @@
                      <button type="submit" class="btn btn-primary">Télécharger le document</button>
                  </div>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>

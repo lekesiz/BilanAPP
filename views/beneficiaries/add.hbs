@@ -1,8 +1,12 @@
+{{#> layouts/main}}
+
 {{!-- Yararlanıcı Ekleme Formu --}}
 <div class="container py-4">
     <h1 class="mb-4">Ajouter un nouveau bénéficiaire</h1>
     {{> messages}}
-    <form action="/beneficiaries/add" method="POST">
+    <form action="/beneficiaries/add" method="POST" id="add-beneficiary-form" class="needs-validation" novalidate>
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
         {{!-- Kişisel Bilgiler ve Profil --}}
         <div class="card mb-4 shadow-sm">
             <div class="card-header"><h5 class="mb-0">Informations Personnelles & Profil</h5></div>
@@ -11,14 +15,17 @@
                     <div class="col-md-6">
                         <label for="firstName" class="form-label">Prénom *</label>
                         <input type="text" class="form-control" id="firstName" name="firstName" value="{{beneficiaryData.firstName}}" required>
+                        <div class="invalid-feedback">Le prénom est requis.</div>
                     </div>
                     <div class="col-md-6">
                         <label for="lastName" class="form-label">Nom *</label>
                         <input type="text" class="form-control" id="lastName" name="lastName" value="{{beneficiaryData.lastName}}" required>
+                         <div class="invalid-feedback">Le nom est requis.</div>
                     </div>
                     <div class="col-md-6">
                         <label for="email" class="form-label">Email *</label>
                         <input type="email" class="form-control" id="email" name="email" value="{{beneficiaryData.email}}" required>
+                         <div class="invalid-feedback">Un email valide est requis.</div>
                     </div>
                     <div class="col-md-6">
                         <label for="phone" class="form-label">Téléphone</label>
@@ -46,7 +53,7 @@
                         <select class="form-select" id="status" name="status">
                             {{!-- Options --}}
                              <option value="initial" {{#ifCond beneficiaryData.status '===' 'initial'}}selected{{/ifCond}}>Initial</option>
-                            <option value="active" {{#ifCond beneficiaryData.status '===' 'active'}}selected{{/ifCond}}>Actif</option>
+                            <option value="active" {{#ifCond beneficiaryData.status '===' 'active'}}selected{{else}}selected{{/ifCond}}>Actif</option>
                             <option value="completed" {{#ifCond beneficiaryData.status '===' 'completed'}}selected{{/ifCond}}>Terminé</option>
                             <option value="on_hold" {{#ifCond beneficiaryData.status '===' 'on_hold'}}selected{{/ifCond}}>En attente</option>
                         </select>
@@ -55,7 +62,7 @@
                         <label for="currentPhase" class="form-label">Phase Actuelle</label>
                         <select class="form-select" id="currentPhase" name="currentPhase">
                              {{!-- Options --}}
-                             <option value="preliminary" {{#ifCond beneficiaryData.currentPhase '===' 'preliminary'}}selected{{/ifCond}}>Phase préliminaire</option>
+                             <option value="preliminary" {{#ifCond beneficiaryData.currentPhase '===' 'preliminary'}}selected{{else}}selected{{/ifCond}}>Phase préliminaire</option>
                             <option value="investigation" {{#ifCond beneficiaryData.currentPhase '===' 'investigation'}}selected{{/ifCond}}>Phase d'investigation</option>
                             <option value="conclusion" {{#ifCond beneficiaryData.currentPhase '===' 'conclusion'}}selected{{/ifCond}}>Phase de conclusion</option>
                         </select>
@@ -101,9 +108,32 @@
              </div>
         </div>
 
-        <div class="d-flex justify-content-end mb-4">
-            <a href="/beneficiaries" class="btn btn-secondary me-2">Annuler</a>
-            <button type="submit" class="btn btn-primary">Ajouter le bénéficiaire</button>
+        <div class="d-flex justify-content-between mb-4">
+            <a href="/beneficiaries" class="btn btn-secondary">Annuler</a>
+            <button type="submit" class="btn btn-primary">Enregistrer le bénéficiaire</button>
         </div>
     </form>
 </div>
+
+{{!-- Client-side validation için JS eklendi --}}
+{{#*inline "pageScripts"}}
+<script>
+  // Bootstrap validation
+  (function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+      .forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+          if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+          }
+          form.classList.add('was-validated')
+        }, false)
+      })
+  })()
+</script>
+{{/inline}}
+
+{{/layouts/main}}

@@ -1,0 +1,48 @@
+```
++----------------------------------------------------------------------+
+|                                                                      |
+| LOGO  PLATEFORME BILAN DE COMPÉTENCES         Consultant ▼  [🔔] [✉] |
+|                                                                      |
++----------------------------------------------------------------------+
+|                                                                      |
+| [≡] MENU  |  TABLEAU DE BORD                                         |
+|           |                                                          |
+|-----------+----------------------------------------------------------+
+|           |                                                          |
+| Dashboard | BIENVENUE, JEAN DUPONT                                   |
+| Bénéfic.  |                                                          |
+| Agenda    | +------------------------+  +------------------------+   |
+| Messages  | | BILANS EN COURS        |  | PROCHAINS RENDEZ-VOUS  |   |
+| Documents | | 12                     |  | Aujourd'hui            |   |
+| Outils    | | ▲ +2 depuis le mois    |  | 10:00 - Marie Lambert  |   |
+| Rapports  | | dernier                |  | 14:30 - Paul Martin    |   |
+|           | |                        |  |                        |   |
+|           | | [VOIR DÉTAILS]         |  | [VOIR AGENDA COMPLET]  |   |
+|           | +------------------------+  +------------------------+   |
+|           |                                                          |
+|           | +------------------------+  +------------------------+   |
+|           | | TÂCHES EN ATTENTE      |  | MESSAGES RÉCENTS       |   |
+|           | | 5                      |  | 3 non lus              |   |
+|           | | • Synthèse à finaliser |  | • Marie Lambert (10:23)|   |
+|           | | • Tests à analyser     |  | • Admin (Hier)         |   |
+|           | | • Convention à signer  |  | • Paul Martin (Lun)    |   |
+|           | |                        |  |                        |   |
+|           | | [VOIR TOUTES]          |  | [VOIR TOUS]            |   |
+|           | +------------------------+  +------------------------+   |
+|           |                                                          |
+|           | ACTIVITÉ RÉCENTE                                         |
+|           | +----------------------------------------------------------+
+|           | | 15/04 - Document de synthèse généré - Marie Lambert     |
+|           | | 14/04 - Rendez-vous complété - Paul Martin              |
+|           | | 14/04 - Nouveau bénéficiaire ajouté - Thomas Petit      |
+|           | | 13/04 - Test de personnalité complété - Marie Lambert   |
+|           | +----------------------------------------------------------+
+|           |                                                          |
+|           | [VOIR TOUTE L'ACTIVITÉ]                                  |
+|           |                                                          |
++-----------+----------------------------------------------------------+
+|                                                                      |
+| © 2025 Plateforme Bilan de Compétences | Aide | Paramètres | Déconnexion |
+|                                                                      |
++----------------------------------------------------------------------+
+```

@@ -1,63 +1,80 @@
-<h1 class="mb-4">
-  {{#if beneficiary}}
-    Conversation avec {{beneficiary.firstName}} {{beneficiary.lastName}}
-  {{else}}
-    Conversation avec {{consultant.firstName}} {{consultant.lastName}}
-  {{/if}}
-</h1>
+{{#> layouts/main}}
 
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="chat-messages mb-4" style="max-height: 400px; overflow-y: auto;">
-      {{#if messages.length}}
-        {{#each messages}}
-          <div class="message {{#if (eq senderType 'consultant')}}message-consultant{{else}}message-beneficiary{{/if}} mb-3">
-            <div class="message-content p-3 rounded {{#if (eq senderType 'consultant')}}bg-light text-dark{{else}}bg-primary text-white{{/if}}" style="max-width: 80%; {{#if (eq senderType 'consultant')}}margin-right: auto;{{else}}margin-left: auto;{{/if}}">
-              <div class="message-text">{{content}}</div>
-              <div class="message-time small text-muted mt-1">{{formatDateTime createdAt}}</div>
-            </div>
-          </div>
-        {{/each}}
-      {{else}}
-        <div class="text-center text-muted py-5">
-          <p>Aucun message dans cette conversation.</p>
-          <p>Commencez à échanger des messages ci-dessous.</p>
+<div class="container py-4">
+    {{!-- Konuşma Başlığı ve Geri Dönüş Linki --}}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">
+            <a href="/messages" class="text-decoration-none me-2"><i class="fas fa-arrow-left"></i></a>
+            Conversation avec {{participant.firstName}} {{participant.lastName}}
+        </h1>
+        {{!-- İsteğe bağlı: Katılımcı profiline link? --}}
+        {{#if isConsultant}}
+            {{!-- TODO: participant.id burada User ID mi Beneficiary ID mi kontrol edilmeli --}}
+            {{!-- <a href="/beneficiaries/{{participant.id}}" class="btn btn-sm btn-outline-secondary">Voir Profil Bénéficiaire</a> --}}
+        {{/if}}
+    </div>
+
+    {{> messages}} {{!-- Flash mesajları için --}}
+
+    {{!-- Mesaj Listesi --}}
+    <div class="card shadow-sm mb-4" style="max-height: 60vh; overflow-y: auto;" id="message-list">
+        <div class="card-body p-3">
+            {{#if messages.length}}
+                {{#each messages}}
+                    <div class="d-flex mb-3 {{#ifCond sender.id '===' ../user.id}}justify-content-end{{else}}justify-content-start{{/ifCond}}">
+                        <div class="p-2 rounded {{#ifCond sender.id '===' ../user.id}}bg-primary text-white{{else}}bg-light border{{/ifCond}}" style="max-width: 75%;">
+                            <p class="mb-1">{{{nl2br body}}}</p> {{!-- nl2br eklendi --}}
+                            <small class="text-muted {{#ifCond sender.id '===' ../user.id}}text-white-50{{/ifCond}}">
+                                {{#unless (eq sender.id ../user.id)}} {{sender.firstName}}: {{/unless}} {{formatDateTime createdAt}}
+                            </small>
+                        </div>
+                    </div>
+                {{/each}}
+            {{else}}
+                <p class="text-center text-muted my-3">Aucun message dans cette conversation.</p>
+            {{/if}}
         </div>
-      {{/if}}
     </div>
-    
-    <form action="{{#if beneficiary}}/messages/send/beneficiary/{{beneficiary.id}}{{else}}/messages/send/consultant{{/if}}" method="POST">
-      <div class="input-group">
-        <textarea class="form-control" name="content" placeholder="Tapez votre message ici..." rows="2" required></textarea>
-        <button class="btn btn-primary" type="submit">
-          <i class="fas fa-paper-plane"></i> Envoyer
-        </button>
-      </div>
-    </form>
-  </div>
+
+    {{!-- Yeni Mesaj Gönderme Formu --}}
+    <div class="card shadow-sm">
+         <div class="card-body">
+             <form action="/messages/new" method="POST">
+                 {{!-- CSRF Token --}}
+                 <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                 {{!-- Gizli alanlar: Alıcı ID --}}
+                 <input type="hidden" name="recipientId" value="{{participant.id}}">
+
+                 {{!-- Konu (isteğe bağlı) --}}
+                 <div class="mb-3">
+                     <label for="subject" class="form-label">Sujet (Optionnel)</label>
+                     <input type="text" class="form-control" id="subject" name="subject">
+                 </div>
+
+                 {{!-- Mesaj İçeriği --}}
+                 <div class="mb-3">
+                     <label for="body" class="form-label">Message *</label>
+                     <textarea class="form-control" id="body" name="body" rows="4" required></textarea>
+                 </div>
+
+                 {{!-- Gönder Butonu --}}
+                 <div class="text-end">
+                     <button type="submit" class="btn btn-primary">Envoyer</button>
+                 </div>
+             </form>
+         </div>
+    </div>
+
 </div>
 
-<div class="d-flex justify-content-between">
-  <a href="/messages" class="btn btn-secondary">
-    <i class="fas fa-arrow-left"></i> Retour aux messages
-  </a>
-  
-  {{#if beneficiary}}
-    <div>
-      <a href="/beneficiaries/{{beneficiary.id}}" class="btn btn-outline-primary">
-        <i class="fas fa-user"></i> Voir le profil du bénéficiaire
-      </a>
-      <a href="/appointments/add?beneficiaryId={{beneficiary.id}}" class="btn btn-outline-success">
-        <i class="fas fa-calendar-plus"></i> Planifier un rendez-vous
-      </a>
-    </div>
-  {{/if}}
-</div>
-
+{{#*inline "pageScripts"}}
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Faire défiler automatiquement vers le bas pour voir les messages les plus récents
-    const chatMessages = document.querySelector('.chat-messages');
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  });
+  // Sayfa yüklendiğinde en son mesaja scroll et
+  var messageList = document.getElementById('message-list');
+  if (messageList) {
+    messageList.scrollTop = messageList.scrollHeight;
+  }
 </script>
+{{/inline}}
+
+{{/layouts/main}}

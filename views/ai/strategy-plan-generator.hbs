@@ -1,0 +1,96 @@
+{{> header}}
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">{{title}}</h1>
+    <div>
+      <span class="badge bg-secondary p-2">
+        <i class="fas fa-coins me-1"></i> Coût: {{aiCredits}} crédits
+      </span>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+      <h2 class="h5 mb-0">Générateur de Plan Stratégique IA</h2>
+    </div>
+    <div class="card-body">
+      <p class="card-text">
+        Cet outil utilise l'IA pour générer un plan stratégique personnalisé pour le bénéficiaire, 
+        incluant un parcours de carrière, un plan de développement de compétences, une stratégie de 
+        marché et des actions d'implémentation concrètes.
+      </p>
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Pour des résultats optimaux, remplissez le profil du bénéficiaire et complétez une analyse 
+        de compétences au préalable.
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h3 class="h5 mb-0">Générer un plan stratégique</h3>
+    </div>
+    <div class="card-body">
+      <form action="/ai/strategy-plan-generator" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+        <div class="mb-3">
+          <label for="beneficiaryId" class="form-label">Bénéficiaire</label>
+          <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+            <option value="">Sélectionner un bénéficiaire</option>
+            {{#each beneficiaries}}
+              <option value="{{id}}" {{#if (eq ../selectedBeneficiaryId (toString id))}}selected{{/if}}>
+                {{user.lastName}} {{user.firstName}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="skills" class="form-label">Compétences (optionnel)</label>
+          <textarea class="form-control" id="skills" name="skills" rows="3" 
+            placeholder="Liste des compétences principales du bénéficiaire (si différentes de celles du profil)"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="career_goals" class="form-label">Objectifs professionnels (optionnel)</label>
+          <textarea class="form-control" id="career_goals" name="career_goals" rows="3" 
+            placeholder="Objectifs professionnels du bénéficiaire (si différents de ceux du profil)"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="timeframe" class="form-label">Horizon temporel</label>
+          <select class="form-select" id="timeframe" name="timeframe">
+            <option value="3-6 months">3-6 mois</option>
+            <option value="6-12 months" selected>6-12 mois</option>
+            <option value="1-2 years">1-2 ans</option>
+            <option value="2-5 years">2-5 ans</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="instructions" class="form-label">Instructions spécifiques (optionnel)</label>
+          <textarea class="form-control" id="instructions" name="instructions" rows="3" 
+            placeholder="Instructions ou demandes spécifiques pour la génération du plan stratégique"></textarea>
+        </div>
+
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="updateBeneficiary" name="updateBeneficiary" value="true">
+          <label class="form-check-label" for="updateBeneficiary">
+            Enregistrer automatiquement ce plan dans le profil du bénéficiaire
+          </label>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <a href="/dashboard" class="btn btn-outline-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-robot me-1"></i> Générer le plan stratégique
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{> footer}} 

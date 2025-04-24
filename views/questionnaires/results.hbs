@@ -17,8 +17,10 @@
                     </a>
                 </p>
                  <p><strong>Statut:</strong> <span class="badge bg-success">Complété</span></p>
-             {{else if isConsultant}}
-                 <p><strong>Statut:</strong> <span class="badge bg-secondary">{{questionnaire.status}}</span> (Non assigné ou non complété)</p>
+             {{else}}
+                {{#if isConsultant}}
+                    <p><strong>Statut:</strong> <span class="badge bg-secondary">{{questionnaire.status}}</span> (Non assigné ou non complété)</p>
+                 {{/if}}
              {{/if}}
         </div>
     </div>
@@ -36,15 +38,13 @@
                         {{#if answers.length}}
                              <div class="alert alert-light mt-2 p-3">
                                 {{#each answers}}
-                                    {{#if (lookup ../../user 'userType') '===' 'consultant'}}
-                                        {{!-- Danışman tüm cevapları veya filtreli cevapları görür --}}
+                                    {{#ifCond ../../../user.userType '===' 'consultant'}}
                                         <p class="mb-0"><strong>Réponse:</strong> {{answer}}</p>
                                     {{else}}
-                                         {{!-- Yararlanıcı sadece kendi cevabını görür --}}
                                          {{#ifCond beneficiaryId '===' ../../../user.beneficiaryProfile.id}}
                                              <p class="mb-0"><strong>Votre Réponse:</strong> {{answer}}</p>
                                          {{/ifCond}}
-                                    {{/if}}
+                                    {{/ifCond}}
                                 {{/each}}
                             </div>
                         {{else}}

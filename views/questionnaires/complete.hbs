@@ -49,6 +49,7 @@
     {{/if}}
     
     <form action="/questionnaires/{{questionnaire.id}}/complete" method="POST" {{#if isConsultant}}class="disabled-form"{{/if}} {{#if (eq questionnaire.status "completed")}}class="disabled-form"{{/if}}>
+      <input type="hidden" name="_csrf" value="{{csrfToken}}">
       {{#each questionnaire.questions}}
         <div class="mb-4 p-3 border rounded">
           <div class="form-group">

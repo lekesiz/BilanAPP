@@ -22,7 +22,7 @@
                  <div class="card-body">
                     <i class="fas fa-users fa-3x text-primary mb-3"></i>
                     <h5 class="card-title">Utilisateurs Total</h5>
-                    <p class="card-text display-6">{{totalUsers}}</p>
+                    <a href="/admin/users" class="text-decoration-none text-dark stretched-link"><p class="card-text display-6">{{totalUsers}}</p></a>
                  </div>
             </div>
         </div>
@@ -31,7 +31,7 @@
                  <div class="card-body">
                      <i class="fas fa-user-tie fa-3x text-success mb-3"></i>
                     <h5 class="card-title">Consultants</h5>
-                    <p class="card-text display-6">{{totalConsultants}}</p>
+                    <a href="/admin/users?userType=consultant" class="text-decoration-none text-dark stretched-link"><p class="card-text display-6">{{totalConsultants}}</p></a>
                  </div>
             </div>
         </div>
@@ -40,7 +40,7 @@
                  <div class="card-body">
                      <i class="fas fa-user-graduate fa-3x text-info mb-3"></i>
                     <h5 class="card-title">Bénéficiaires</h5>
-                    <p class="card-text display-6">{{totalBeneficiaries}}</p>
+                     <a href="/admin/users?userType=beneficiary" class="text-decoration-none text-dark stretched-link"><p class="card-text display-6">{{totalBeneficiaries}}</p></a>
                  </div>
             </div>
         </div>
@@ -49,7 +49,7 @@
      {{!-- Diğer Özetler ve Uyarılar --}}
      <div class="row g-4">
          <div class="col-md-6">
-             <div class="card shadow-sm">
+             <div class="card shadow-sm h-100">
                  <div class="card-header"><i class="fas fa-tags me-2"></i> Répartition par Forfait</div>
                  <ul class="list-group list-group-flush">
                      {{#each forfaitCounts}}
@@ -62,22 +62,25 @@
              </div>
          </div>
           <div class="col-md-6">
-             <div class="card shadow-sm">
+             <div class="card shadow-sm h-100">
                   <div class="card-header"><i class="fas fa-exclamation-triangle text-danger me-2"></i> Actions Administratives Requises</div>
                    <ul class="list-group list-group-flush">
-                       <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <a href="/beneficiaries?consentMissing=true" class="text-decoration-none {{#unless pendingConsentCount}}text-muted{{/unless}}">
-                                <i class="fas fa-handshake-slash me-1 {{#if pendingConsentCount}}text-warning{{/if}}"></i> Consentements Manquants
+                       <li class="list-group-item d-flex justify-content-between align-items-center {{#unless pendingConsentCount}}list-group-item-light text-muted{{/unless}}">
+                            <a href="/beneficiaries?consentMissing=true" class="text-decoration-none {{#if pendingConsentCount}}text-warning{{else}}text-muted{{/if}}">
+                                <i class="fas fa-handshake-slash me-2"></i> Consentements Manquants
                             </a>
                             <span class="badge rounded-pill {{#if pendingConsentCount}}bg-warning text-dark{{else}}bg-light text-muted{{/if}}">{{pendingConsentCount}}</span>
                         </li>
-                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <a href="/beneficiaries?agreementMissing=true" class="text-decoration-none {{#unless pendingAgreementCount}}text-muted{{/unless}}">
-                                <i class="fas fa-file-signature me-1 {{#if pendingAgreementCount}}text-danger{{/if}}"></i> Conventions Non Signées
+                         {{!-- Eksik Sözleşme bölümü kaldırıldı/yorumlandı --}}
+                         {{!-- 
+                         <li class="list-group-item d-flex justify-content-between align-items-center {{#unless pendingAgreementCount}}list-group-item-light text-muted{{/unless}}">
+                            <a href="/beneficiaries?agreementMissing=true" class="text-decoration-none {{#if pendingAgreementCount}}text-danger{{else}}text-muted{{/if}}">
+                                <i class="fas fa-file-signature me-2"></i> Conventions Non Signées
                             </a>
                             <span class="badge rounded-pill {{#if pendingAgreementCount}}bg-danger{{else}}bg-light text-muted{{/if}}">{{pendingAgreementCount}}</span>
-                        </li>
-                         {{!-- TODO: Diğer uyarılar eklenebilir --}}
+                        </li> 
+                        --}}
+                         {{!-- TODO: Diğer uyarılar eklenebilir (örn: Gecikmiş Anketler, Yaklaşan Takipler) --}}
                     </ul>
              </div>
          </div>

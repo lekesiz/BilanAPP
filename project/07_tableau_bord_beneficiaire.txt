@@ -1,0 +1,56 @@
+```
++----------------------------------------------------------------------+
+|                                                                      |
+| LOGO  PLATEFORME BILAN DE COMPÉTENCES         Bénéficiaire ▼ [🔔] [✉]|
+|                                                                      |
++----------------------------------------------------------------------+
+|                                                                      |
+| [≡] MENU  |  TABLEAU DE BORD BÉNÉFICIAIRE                            |
+|           |                                                          |
+|-----------+----------------------------------------------------------+
+|           |                                                          |
+| Accueil   | BIENVENUE, MARIE LAMBERT                                 |
+| Mon bilan | Votre bilan de compétences est en cours.                 |
+| Agenda    |                                                          |
+| Tests     | +------------------------+  +------------------------+   |
+| Documents | | PROGRESSION            |  | PROCHAINS RENDEZ-VOUS  |   |
+| Messages  | | Phase: Investigation   |  | 15/04 - 10:00          |   |
+| Profil    | | Progression: 65%       |  | Exploration motivations|   |
+|           | |                        |  | avec Jean Dupont       |   |
+|           | | [VOIR DÉTAILS]         |  | [VOIR AGENDA COMPLET]  |   |
+|           | +------------------------+  +------------------------+   |
+|           |                                                          |
+|           | +------------------------+  +------------------------+   |
+|           | | TESTS À COMPLÉTER      |  | DOCUMENTS RÉCENTS      |   |
+|           | | 1 en attente           |  | Convention tripartite  |   |
+|           | | • Exploration des      |  | Compte-rendu entretien |   |
+|           | |   motivations          |  | Résultats test person. |   |
+|           | |                        |  |                        |   |
+|           | | [ACCÉDER AUX TESTS]    |  | [VOIR TOUS]            |   |
+|           | +------------------------+  +------------------------+   |
+|           |                                                          |
+|           | PARCOURS DU BILAN                                        |
+|           | +----------------------------------------------------------+
+|           | |                                                        |
+|           | | [✓] Phase préliminaire                                |
+|           | | [⋯] Phase d'investigation                             |
+|           | | [ ] Phase de conclusion                               |
+|           | | [ ] Suivi à 6 mois                                    |
+|           | |                                                        |
+|           | | [VOIR DÉTAILS DU PARCOURS]                            |
+|           | +----------------------------------------------------------+
+|           |                                                          |
+|           | MESSAGES RÉCENTS                                         |
+|           | +----------------------------------------------------------+
+|           | | Jean Dupont (Hier) - Préparation pour notre prochain...  |
+|           | | Jean Dupont (08/04) - Résultats de votre test de pers... |
+|           | +----------------------------------------------------------+
+|           |                                                          |
+|           | [VOIR TOUS LES MESSAGES]                                 |
+|           |                                                          |
++-----------+----------------------------------------------------------+
+|                                                                      |
+| © 2025 Plateforme Bilan de Compétences | Aide | Paramètres | Déconnexion |
+|                                                                      |
++----------------------------------------------------------------------+
+```

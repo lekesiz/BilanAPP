@@ -1,103 +1,136 @@
-<h1 class="mb-4">Mes bénéficiaires</h1>
+{{#> layouts/main}}
 
-{{!-- Aktif Filtre Göstergesi --}}
-{{#if activeFilter}}
-    <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
-        <span>Filtre Actif: {{activeFilter}}</span>
-         <a href="/beneficiaries" class="btn-close" aria-label="Supprimer le filtre"></a>
+<div class="container mt-4">
+  <h1 class="mb-4">{{title}}</h1>
+
+  {{> messages}}
+
+  <!-- Search and Filter Form -->
+  <form method="GET" action="/beneficiaries" class="mb-4 bg-light p-3 rounded border">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label for="search" class="form-label">Rechercher</label>
+        <input type="text" class="form-control form-control-sm" id="search" name="search" placeholder="Nom, Prénom, Email..." value="{{search}}">
+      </div>
+      {{#if isAdmin}}
+      {{!-- Admin için Danışman filtresi eklenebilir --}}
+      {{!-- <div class="col-md-3">
+        <label for="consultantFilter" class="form-label">Consultant</label>
+        <select class="form-select form-select-sm" name="consultant">
+          <option value="">Tous</option>
+        </select>
+      </div> --}}
+      {{/if}}
+      <div class="col-md-{{#if isAdmin}}2{{else}}3{{/if}}">
+        <label for="status" class="form-label">Statut</label>
+        <select class="form-select form-select-sm" id="status" name="status">
+          <option value="" {{#unless filters.status}}selected{{/unless}}>Tous</option>
+          <option value="initial" {{#eq filters.status 'initial'}}selected{{/eq}}>Initial</option>
+          <option value="active" {{#eq filters.status 'active'}}selected{{/eq}}>Actif</option>
+          <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Terminé</option>
+          <option value="on_hold" {{#eq filters.status 'on_hold'}}selected{{/eq}}>En pause</option>
+          <!-- Add other relevant statuses -->
+        </select>
+      </div>
+      <div class="col-md-{{#if isAdmin}}2{{else}}3{{/if}}">
+        <label for="phase" class="form-label">Phase</label>
+        <select class="form-select form-select-sm" id="phase" name="phase">
+          <option value="" {{#unless filters.phase}}selected{{/unless}}>Toutes</option>
+          <option value="preliminary" {{#eq filters.phase 'preliminary'}}selected{{/eq}}>Préliminaire</option>
+          <option value="investigation" {{#eq filters.phase 'investigation'}}selected{{/eq}}>Investigation</option>
+          <option value="conclusion" {{#eq filters.phase 'conclusion'}}selected{{/eq}}>Conclusion</option>
+           <!-- Add other relevant phases -->
+        </select>
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-secondary btn-sm w-100">Filtrer</button>
+      </div>
+      {{#if (or search filters.status filters.phase)}}
+      <div class="col-md-1">
+        <a href="/beneficiaries" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+      </div>
+      {{/if}}
     </div>
-{{/if}}
+  </form>
 
-<div class="mb-4">
-  <a href="/beneficiaries/add" class="btn btn-primary">
-    <i class="fas fa-plus"></i> Ajouter un bénéficiaire
-  </a>
-</div>
-
-{{#if beneficiaries.length}}
-  <div class="table-responsive">
-    <table class="table table-striped table-hover table-sm mb-0">
-      <thead class="table-light">
-        <tr>
-          <th>Nom</th>
-          <th>Email</th>
-          <th>Statut</th>
-          <th>Phase actuelle</th>
-          <th>Progression</th>
-          <th>Dernier RDV</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each beneficiaries}}
-          <tr>
-            <td>
-              <a href="/beneficiaries/{{id}}">{{user.lastName}} {{user.firstName}}</a>
-            </td>
-            <td>{{user.email}}</td>
-            <td>
-                <span class="badge bg-{{#ifCond status '===' 'active'}}success{{else ifCond status '===' 'completed'}}secondary{{else ifCond status '===' 'on_hold'}}warning{{else}}info{{/ifCond}}">
-                    {{status}}
-                </span>
-            </td>
-            <td>
-                <span class="badge bg-{{#ifCond currentPhase '===' 'investigation'}}primary{{else ifCond currentPhase '===' 'conclusion'}}success{{else}}secondary{{/ifCond}}">
-                    {{currentPhase}}
-                </span>
-            </td>
-            <td>
-                {{#with (calculateBilanProgress ../status ../currentPhase) as |progress|}}
-                    <div class="progress" style="height: 10px;" title="{{progress}}%">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{progress}}%;" aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                 {{/with}}
-            </td>
-             <td>
-                {{#if beneficiaryAppointments.length}}
-                    {{#with (first beneficiaryAppointments)}}
-                         <small>{{formatDateTime date}}</small>
-                    {{/with}}
-                {{else}}
-                    <small class="text-muted">Aucun</small>
-                {{/if}}
-             </td>
-            <td>
-              <div class="btn-group btn-group-sm" role="group">
-                <a href="/beneficiaries/{{id}}" class="btn btn-outline-primary" title="Détails">
-                  <i class="fas fa-eye"></i>
-                </a>
-                <a href="/beneficiaries/{{id}}/edit" class="btn btn-outline-secondary" title="Modifier">
-                  <i class="fas fa-edit"></i>
-                </a>
-                <a href="/appointments/new?beneficiary={{id}}" class="btn btn-outline-success" title="Planifier RDV">
-                  <i class="fas fa-calendar-plus"></i>
-                </a>
-                <a href="/messages/new?beneficiary={{id}}" class="btn btn-outline-info" title="Envoyer Message">
-                  <i class="fas fa-envelope"></i>
-                </a>
-                 <a href="/questionnaires?beneficiary={{id}}" class="btn btn-outline-warning" title="Questionnaires">
-                  <i class="fas fa-clipboard-list"></i>
-                </a>
-                 <a href="/documents?beneficiary={{id}}" class="btn btn-outline-dark" title="Documents">
-                  <i class="fas fa-folder"></i>
-                </a>
-              </div>
-            </td>
-          </tr>
-        {{/each}}
-      </tbody>
-    </table>
-  </div>
-{{else}}
-  <div class="alert alert-light text-center border shadow-sm p-4">
-    <h5 class="alert-heading"><i class="fas fa-user-plus fa-2x mb-3 text-muted"></i></h4>
-    <p class="mb-3">Vous n'avez pas encore de bénéficiaires enregistrés.</p>
-    <a href="/beneficiaries/add" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i> Ajouter votre premier bénéficiaire
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <p>Affichage de {{beneficiaries.length}} bénéficiaires.</p> {{!-- Bu kısım route güncellenince daha dinamik olacak (örn. toplam sayı) --}}
+    <a href="/beneficiaries/add" class="btn btn-success">
+      <i class="fas fa-plus"></i> Ajouter un bénéficiaire
     </a>
   </div>
-{{/if}}
 
-{{#addHelper 'first' array}}
-    {{#if array}}{{array.[0]}}{{/if}}
-{{/addHelper}}
+  {{#if beneficiaries.length}}
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Nom</th>
+            <th scope="col">Prénom</th>
+            <th scope="col">Email</th>
+            {{#if isAdmin}}
+                <th scope="col">Consultant</th>
+            {{/if}}
+            <th scope="col">Statut</th>
+            <th scope="col">Phase Actuelle</th>
+            <th scope="col" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each beneficiaries}}
+          <tr>
+            <td>{{user.lastName}}</td>
+            <td>{{user.firstName}}</td>
+            <td><a href="mailto:{{user.email}}">{{user.email}}</a></td>
+            {{#if ../isAdmin}}
+                <td>{{#if consultant}}{{consultant.firstName}} {{consultant.lastName}}{{else}}-{{/if}}</td>
+            {{/if}}
+            <td>
+              {{!-- Status Badge (Updated Usage) --}}
+              {{#with (statusBadges status)}}
+                <span class="badge {{this.badge}}">{{this.text}}</span>
+              {{/with}}
+            </td>
+             <td>
+              {{!-- Phase Badge (Updated Usage) --}}
+              {{#with (phaseBadges currentPhase)}}
+                <span class="badge {{this.badge}}">{{this.text}}</span>
+              {{/with}}
+            </td>
+            <td class="text-end">
+              <a href="/beneficiaries/{{id}}" class="btn btn-sm btn-outline-primary me-1" title="Voir Détails">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a href="/beneficiaries/{{id}}/edit" class="btn btn-sm btn-outline-secondary me-1" title="Modifier">
+                <i class="fas fa-edit"></i>
+              </a>
+              <a href="/appointments/add?beneficiaryId={{id}}" class="btn btn-sm btn-outline-success" title="Créer RDV">
+                <i class="fas fa-calendar-plus"></i>
+              </a>
+              {{!-- Gerekirse başka aksiyonlar eklenebilir --}}
+            </td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {{#if pagination.totalPages}}
+      {{> pagination pagination=pagination search=search filters=filters}}
+    {{/if}}
+
+  {{else}}
+    <div class="alert alert-info" role="alert">
+      Aucun bénéficiaire trouvé{{#if search}} pour la recherche "{{search}}"{{/if}}{{#if filters.status}} avec le statut "{{lookup helpers.statusBadges filters.status 'text'}}"{{/if}}{{#if filters.phase}} dans la phase "{{lookup helpers.phaseBadges filters.phase 'text'}}"{{/if}}.
+       <a href="/beneficiaries/add">Ajouter un nouveau bénéficiaire</a>?
+    </div>
+  {{/if}}
+
+</div>
+
+{{/layouts/main}}
+
+{{#*inline "pageScripts"}}
+  <!-- Add any specific JS for this page if needed -->
+{{/inline}}

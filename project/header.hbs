@@ -1,0 +1,54 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand" href="/">Bilan de Compétences</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        {{#if user}}
+          {{#if (eq user.userType "consultant")}}
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/consultant">Tableau de bord</a>
+            </li>
+          {{else}}
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard/beneficiary">Mon bilan</a>
+            </li>
+          {{/if}}
+        {{/if}}
+      </ul>
+      <ul class="navbar-nav">
+        {{#if user}}
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="navbarDropdown"
+              role="button"
+              data-bs-toggle="dropdown"
+            >
+              {{user.firstName}}
+              {{user.lastName}}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a
+                  class="dropdown-item"
+                  href="/auth/logout"
+                >Déconnexion</a></li>
+            </ul>
+          </li>
+        {{else}}
+          <li class="nav-item">
+            <a class="nav-link" href="/auth/login">Connexion</a>
+          </li>
+        {{/if}}
+      </ul>
+    </div>
+  </div>
+</nav>

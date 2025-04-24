@@ -1,32 +1,36 @@
 <div class="card h-100 shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">Messages Récents</h5>
-         <div>
-             <a href="/messages/new?beneficiary={{beneficiary.id}}" class="btn btn-sm btn-success me-1" title="Envoyer Message">
-                <i class="fas fa-plus"></i>
-            </a>
-            {{!-- Tüm mesajları görme linki (ileride eklenebilir) --}}
-             {{!-- <a href="/messages?beneficiary={{beneficiary.id}}" class="btn btn-sm btn-outline-primary" title="Voir tout"> --}}
-             {{!--     <i class="fas fa-list"></i> --}}
-             {{!-- </a> --}}
-        </div>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">Messages Récents</h5>
+    <div>
+      <a
+        href="/messages/new?beneficiary={{beneficiary.id}}"
+        class="btn btn-sm btn-success me-1"
+        title="Envoyer Message"
+      >
+        <i class="fas fa-plus"></i>
+      </a>
+      {{! Tüm mesajları görme linki (ileride eklenebilir) }}
+      {{!-- <a href="/messages?beneficiary={{beneficiary.id}}" class="btn btn-sm btn-outline-primary" title="Voir tout"> --}}
+      {{!     <i class="fas fa-list"></i> }}
+      {{! </a> }}
     </div>
-    <div class="card-body">
-         {{#if beneficiary.beneficiaryMessages.length}}
-            <ul class="list-group list-group-flush">
-                 {{#each (limit beneficiary.beneficiaryMessages 5)}}
-                    <li class="list-group-item px-0">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold">{{subject}}</span>
-                            <small class="text-muted">{{formatDateTime createdAt}}</small>
-                        </div>
-                         <p class="mb-0"><small>{{truncate body 70}}</small></p>
-                         <small class="text-muted">De: {{sender.firstName}}</small>
-                    </li>
-                {{/each}}
-            </ul>
-         {{else}}
-            <p class="text-muted text-center my-4">Aucun message récent.</p>
-        {{/if}}
-    </div>
-</div> 
+  </div>
+  <div class="card-body">
+    {{#if beneficiary.beneficiaryMessages.length}}
+      <ul class="list-group list-group-flush">
+        {{#each (limit beneficiary.beneficiaryMessages 5)}}
+          <li class="list-group-item px-0">
+            <div class="d-flex justify-content-between">
+              <span class="fw-bold">{{subject}}</span>
+              <small class="text-muted">{{formatDateTime createdAt}}</small>
+            </div>
+            <p class="mb-0"><small>{{truncate body 70}}</small></p>
+            <small class="text-muted">De: {{sender.firstName}}</small>
+          </li>
+        {{/each}}
+      </ul>
+    {{else}}
+      <p class="text-muted text-center my-4">Aucun message récent.</p>
+    {{/if}}
+  </div>
+</div>

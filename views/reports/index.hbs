@@ -4,27 +4,17 @@
     <div class="row g-4">
         {{!-- Yararlanıcı Durumları --}}
         <div class="col-md-6">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header"><i class="fas fa-users me-2"></i> Statut des Bénéficiaires</div>
                 <div class="card-body">
-                     <div class="row text-center">
-                        <div class="col">
-                            <h6 class="text-muted">Actifs</h6>
-                            <a href="/beneficiaries?status=active" class="text-decoration-none"><p class="fs-4">{{statusCounts.active}}</p></a>
-                        </div>
-                        <div class="col">
-                             <h6 class="text-muted">En Attente</h6>
-                             <a href="/beneficiaries?status=on_hold" class="text-decoration-none"><p class="fs-4">{{statusCounts.on_hold}}</p></a>
-                        </div>
-                         <div class="col">
-                             <h6 class="text-muted">Terminés</h6>
-                             <a href="/beneficiaries?status=completed" class="text-decoration-none"><p class="fs-4">{{statusCounts.completed}}</p></a>
-                        </div>
-                        <div class="col">
-                             <h6 class="text-muted">Initiaux</h6>
-                             <a href="/beneficiaries?status=initial" class="text-decoration-none"><p class="fs-4">{{statusCounts.initial}}</p></a>
-                        </div>
-                    </div>
+                     <div class="row">
+                         <div class="col-md-6">
+                            <canvas id="statusChartDoughnut"></canvas>
+                         </div>
+                         <div class="col-md-6">
+                             <canvas id="statusChartBar"></canvas>
+                         </div>
+                     </div>
                 </div>
                 <div class="card-footer text-center">
                      <a href="/beneficiaries">Voir tous les bénéficiaires</a>
@@ -34,23 +24,10 @@
 
          {{!-- Bilan Aşamaları --}}
         <div class="col-md-6">
-             <div class="card shadow-sm">
+             <div class="card shadow-sm h-100">
                  <div class="card-header"><i class="fas fa-tasks me-2"></i> Répartition par Phase de Bilan</div>
                  <div class="card-body">
-                    <div class="row text-center">
-                         <div class="col">
-                            <h6 class="text-muted">Préliminaire</h6>
-                             <a href="/beneficiaries?phase=preliminary" class="text-decoration-none"><p class="fs-4">{{phaseCounts.preliminary}}</p></a>
-                        </div>
-                        <div class="col">
-                             <h6 class="text-muted">Investigation</h6>
-                            <a href="/beneficiaries?phase=investigation" class="text-decoration-none"><p class="fs-4">{{phaseCounts.investigation}}</p></a>
-                        </div>
-                        <div class="col">
-                             <h6 class="text-muted">Conclusion</h6>
-                             <a href="/beneficiaries?phase=conclusion" class="text-decoration-none"><p class="fs-4">{{phaseCounts.conclusion}}</p></a>
-                        </div>
-                    </div>
+                    <canvas id="phaseChart"></canvas>
                  </div>
              </div>
         </div>
@@ -76,11 +53,25 @@
                             <span class="text-warning"><i class="fas fa-handshake-slash me-1"></i> Consentements Manquants</span>
                             <span class="badge bg-warning text-dark rounded-pill">{{missingConsentsCount}}</span>
                         </a>
-                        <a href="/beneficiaries?agreementMissing=true" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{#unless missingAgreementsCount}}disabled{{/unless}}">
-                            <span class="text-danger"><i class="fas fa-file-signature me-1"></i> Conventions Non Signées</span>
-                            <span class="badge bg-danger rounded-pill">{{missingAgreementsCount}}</span>
-                        </a>
                  </div> 
+             </div>
+         </div>
+
+         {{!-- Yararlanıcı Paket Dağılımı --}}
+         <div class="col-md-6">
+             <div class="card shadow-sm h-100">
+                 <div class="card-header"><i class="fas fa-tags me-2"></i> Répartition des Bénéficiaires par Forfait</div>
+                 <ul class="list-group list-group-flush">
+                     {{#each beneficiaryForfaitCounts}}
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                             {{@key}}
+                             <span class="badge bg-secondary rounded-pill">{{this}}</span>
+                         </li>
+                     {{else}}
+                         <li class="list-group-item text-muted">Aucun bénéficiaire trouvé pour afficher la répartition.</li>
+                     {{/each}}
+                 </ul>
+                 {{!-- İsteğe bağlı: Buraya da bir bar/pasta grafik eklenebilir --}}
              </div>
          </div>
 
@@ -164,26 +155,53 @@
             });
         }
        
-        // Status Chart (Doughnut)
-        const statusCtx = document.getElementById('statusChart');
-         if(statusCtx) {
-             new Chart(statusCtx, {
+        // Status Chart (Doughnut) - ID Değişti
+        const statusCtxDoughnut = document.getElementById('statusChartDoughnut');
+         if(statusCtxDoughnut) {
+             new Chart(statusCtxDoughnut, {
                 type: 'doughnut',
                 data: statusData,
                  options: {
                     responsive: true,
                     plugins: {
-                        legend: {
+                         legend: {
                             position: 'top',
-                        },
+                         },
                         title: {
                             display: false,
-                            text: 'Répartition par Statut'
+                            text: 'Statut (Doughnut)' // Başlık ekleyebiliriz
                         }
                     }
                 }
             });
          }
+
+         // Status Chart (Bar) - Yeni Grafik
+         const statusCtxBar = document.getElementById('statusChartBar');
+          if(statusCtxBar) {
+             new Chart(statusCtxBar, {
+                type: 'bar',
+                data: statusData, // Aynı veriyi kullan
+                 options: {
+                    indexAxis: 'y', // Yatay bar grafik için
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false // Datasets tek olduğu için legend gereksiz
+                        },
+                        title: {
+                            display: false,
+                            text: 'Statut (Bar)'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true // Eksen 0'dan başlasın
+                        }
+                    }
+                }
+            });
+          }
     });
 </script>
 {{/addScript}} 

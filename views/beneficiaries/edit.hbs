@@ -1,8 +1,9 @@
-{{!-- Yararlanıcı Düzenleme Formu --}}
+{{#> layouts/main}}
 <div class="container py-4">
     <h1 class="mb-4">Modifier le bénéficiaire : {{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</h1>
      {{> messages}}
     <form action="/beneficiaries/{{beneficiary.id}}/edit" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
          {{!-- Kişisel Bilgiler ve Profil --}}
         <div class="card mb-4 shadow-sm">
             <div class="card-header"><h5 class="mb-0">Informations Personnelles & Profil</h5></div>
@@ -44,20 +45,18 @@
                     <div class="col-md-6">
                         <label for="status" class="form-label">Statut Bilan</label>
                          <select class="form-select" id="status" name="status">
-                            {{!-- Options --}}
-                            <option value="initial" {{#ifCond beneficiary.status '===' 'initial'}}selected{{/ifCond}}>Initial</option>
-                            <option value="active" {{#ifCond beneficiary.status '===' 'active'}}selected{{/ifCond}}>Actif</option>
-                            <option value="completed" {{#ifCond beneficiary.status '===' 'completed'}}selected{{/ifCond}}>Terminé</option>
-                            <option value="on_hold" {{#ifCond beneficiary.status '===' 'on_hold'}}selected{{/ifCond}}>En attente</option>
+                            <option value="initial" {{#eq beneficiary.status 'initial'}}selected{{/eq}}>Initial</option>
+                            <option value="active" {{#eq beneficiary.status 'active'}}selected{{/eq}}>Actif</option>
+                            <option value="completed" {{#eq beneficiary.status 'completed'}}selected{{/eq}}>Terminé</option>
+                            <option value="on_hold" {{#eq beneficiary.status 'on_hold'}}selected{{/eq}}>En pause</option>
                         </select>
                     </div>
                      <div class="col-md-6">
                         <label for="currentPhase" class="form-label">Phase Actuelle</label>
                         <select class="form-select" id="currentPhase" name="currentPhase">
-                             {{!-- Options --}}
-                              <option value="preliminary" {{#ifCond beneficiary.currentPhase '===' 'preliminary'}}selected{{/ifCond}}>Phase préliminaire</option>
-                            <option value="investigation" {{#ifCond beneficiary.currentPhase '===' 'investigation'}}selected{{/ifCond}}>Phase d'investigation</option>
-                            <option value="conclusion" {{#ifCond beneficiary.currentPhase '===' 'conclusion'}}selected{{/ifCond}}>Phase de conclusion</option>
+                              <option value="preliminary" {{#eq beneficiary.currentPhase 'preliminary'}}selected{{/eq}}>Phase préliminaire</option>
+                            <option value="investigation" {{#eq beneficiary.currentPhase 'investigation'}}selected{{/eq}}>Phase d'investigation</option>
+                            <option value="conclusion" {{#eq beneficiary.currentPhase 'conclusion'}}selected{{/eq}}>Phase de conclusion</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -68,36 +67,32 @@
                         <label for="bilanEndDate" class="form-label">Date de fin du Bilan</label>
                         <input type="date" class="form-control" id="bilanEndDate" name="bilanEndDate" value="{{formatDateForInput beneficiary.bilanEndDate}}">
                     </div>
-                    {{!-- Rıza Alanları --}}
-                     <div class="row g-3 mb-3" id="edit-consent-section">
-                         <div class="col-md-6 d-flex align-items-end"> 
-                            <div class="form-check form-switch mb-0">
-                                <input type="hidden" name="consentGiven" value="false">
-                                <input class="form-check-input" type="checkbox" role="switch" id="consentGiven" name="consentGiven" value="true" {{#if beneficiary.consentGiven}}checked{{/if}}>
-                                <label class="form-check-label" for="consentGiven">Consentement reçu</label>
-                            </div>
-                         </div>
-                          <div class="col-md-6">
-                            <label for="consentDate" class="form-label">Date du consentement</label>
-                            <input type="date" class="form-control" id="consentDate" name="consentDate" value="{{formatDateForInput beneficiary.consentDate}}">
+                 </div>
+                 {{!-- Rıza ve Sözleşme Alanları --}}
+                 <hr class="my-4">
+                 <div class="row g-3">
+                     <div class="col-md-6">
+                        <div class="form-check form-switch mb-2">
+                            <input type="hidden" name="consentGiven" value="false">
+                            <input class="form-check-input" type="checkbox" role="switch" id="consentGiven" name="consentGiven" value="true" {{#if beneficiary.consentGiven}}checked{{/if}}>
+                            <label class="form-check-label" for="consentGiven">Consentement reçu</label>
                         </div>
+                        <label for="consentDate" class="form-label small">Date du consentement</label>
+                        <input type="date" class="form-control form-control-sm" id="consentDate" name="consentDate" value="{{formatDateForInput beneficiary.consentDate}}">
                      </div>
-                    {{!-- Sözleşme Alanları --}}
-                    <hr class="my-3">
-                     <div class="row g-3" id="edit-agreement-section">
-                         <div class="col-md-6 d-flex align-items-end"> 
-                            <div class="form-check form-switch mb-0">
-                                <input type="hidden" name="agreementSigned" value="false">
-                                <input class="form-check-input" type="checkbox" role="switch" id="agreementSigned" name="agreementSigned" value="true" {{#if beneficiary.agreementSigned}}checked{{/if}}>
-                                <label class="form-check-label" for="agreementSigned">Convention Tripartite Signée</label>
-                            </div>
-                         </div>
-                          <div class="col-md-6">
-                            <label for="agreementDate" class="form-label">Date de signature Convention</label>
-                            <input type="date" class="form-control" id="agreementDate" name="agreementDate" value="{{formatDateForInput beneficiary.agreementDate}}">
+                      <div class="col-md-6">
+                        <div class="form-check form-switch mb-2">
+                            <input type="hidden" name="agreementSigned" value="false">
+                            <input class="form-check-input" type="checkbox" role="switch" id="agreementSigned" name="agreementSigned" value="true" {{#if beneficiary.agreementSigned}}checked{{/if}}>
+                            <label class="form-check-label" for="agreementSigned">Convention Tripartite Signée</label>
                         </div>
+                         <label for="agreementDate" class="form-label small">Date de signature Convention</label>
+                        <input type="date" class="form-control form-control-sm" id="agreementDate" name="agreementDate" value="{{formatDateForInput beneficiary.agreementDate}}">
                      </div>
-                    {{!-- Takip Görüşmesi Alanları --}}
+                 </div>
+                 {{!-- Takip Görüşmesi Alanları --}}
+                 <hr class="my-4">
+                 <div class="row g-3">
                      <div class="col-md-6">
                         <label for="followUpDate" class="form-label">Date Entretien de Suivi (6 mois)</label>
                         <input type="date" class="form-control" id="followUpDate" name="followUpDate" value="{{formatDateForInput beneficiary.followUpDate}}">
@@ -106,71 +101,40 @@
                         <label for="followUpNotes" class="form-label">Notes Entretien de Suivi</label>
                         <textarea class="form-control" id="followUpNotes" name="followUpNotes" rows="3">{{beneficiary.followUpNotes}}</textarea>
                     </div>
-                     <div class="col-12">
-                        <label for="notes" class="form-label">Notes générales (Consultant)</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3">{{beneficiary.notes}}</textarea>
-                    </div>
-                    {{!-- Checklist Alanları --}}
-                    <hr class="my-3">
-                     <h6 class="mb-3 text-muted">Checklist des Étapes Clés</h6>
-                     <div class="row g-2">
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mb-2">
-                               <input type="hidden" name="preliminaryInterviewDone" value="false">
-                               <input class="form-check-input" type="checkbox" role="switch" id="preliminaryInterviewDone" name="preliminaryInterviewDone" value="true" {{#if beneficiary.preliminaryInterviewDone}}checked{{/if}}>
-                               <label class="form-check-label" for="preliminaryInterviewDone">Entretien Préliminaire Réalisé</label>
-                           </div>
-                       </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mb-2">
-                               <input type="hidden" name="investigationPhaseStarted" value="false">
-                               <input class="form-check-input" type="checkbox" role="switch" id="investigationPhaseStarted" name="investigationPhaseStarted" value="true" {{#if beneficiary.investigationPhaseStarted}}checked{{/if}}>
-                               <label class="form-check-label" for="investigationPhaseStarted">Phase Investigation Démarrée</label>
-                           </div>
-                       </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mb-2">
-                               <input type="hidden" name="synthesisMeetingDone" value="false">
-                               <input class="form-check-input" type="checkbox" role="switch" id="synthesisMeetingDone" name="synthesisMeetingDone" value="true" {{#if beneficiary.synthesisMeetingDone}}checked{{/if}}>
-                               <label class="form-check-label" for="synthesisMeetingDone">Entretien de Synthèse Réalisé</label>
-                           </div>
-                       </div>
-                         <div class="col-md-6">
-                           <div class="form-check form-switch mb-2">
-                               <input type="hidden" name="followUpMeetingDone" value="false">
-                               <input class="form-check-input" type="checkbox" role="switch" id="followUpMeetingDone" name="followUpMeetingDone" value="true" {{#if beneficiary.followUpMeetingDone}}checked{{/if}}>
-                               <label class="form-check-label" for="followUpMeetingDone">Entretien de Suivi Réalisé</label>
-                           </div>
-                       </div>
-                     </div>
+                 </div>
+                  {{!-- Genel Notlar --}}
+                 <hr class="my-4">
+                 <div class="mb-3">
+                    <label for="notes" class="form-label">Notes générales (Consultant)</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3">{{beneficiary.notes}}</textarea>
                 </div>
-            </div>
+             </div>
         </div>
         
         {{!-- Bilan İçeriği ve Dokümanlar --}}
          <div class="card mb-4 shadow-sm">
              <div class="card-header"><h5 class="mb-0">Contenu du Bilan & Documents Associés</h5></div>
              <div class="card-body">
-                  <div class="mb-3" id="edit-skills-section">
+                  <div class="mb-3">
                     <label for="identifiedSkills" class="form-label">Compétences identifiées</label>
                     <textarea class="form-control" id="identifiedSkills" name="identifiedSkills" rows="4">{{beneficiary.identifiedSkills}}</textarea>
                      <small class="form-text text-muted">Séparez les compétences par des virgules ou écrivez une liste.</small>
                 </div>
-                 <div class="mb-3" id="edit-objectives-section">
+                 <div class="mb-3">
                     <label for="careerObjectives" class="form-label">Projet(s) professionnel(s) envisagé(s)</label>
                     <textarea class="form-control" id="careerObjectives" name="careerObjectives" rows="4">{{beneficiary.careerObjectives}}</textarea>
                 </div>
-                 <div class="mb-3" id="edit-actionplan-section">
+                 <div class="mb-3">
                     <label for="actionPlan" class="form-label">Plan d'action post-bilan</label>
                     <textarea class="form-control" id="actionPlan" name="actionPlan" rows="4">{{beneficiary.actionPlan}}</textarea>
                      <small class="form-text text-muted">Écrivez chaque étape ou action sur une nouvelle ligne.</small>
                 </div>
-                 <div class="mb-3" id="edit-synthesis-section">
+                 <div class="mb-3">
                     <label for="synthesis" class="form-label">Synthèse du bilan (résumé)</label>
                     <textarea class="form-control" id="synthesis" name="synthesis" rows="5">{{beneficiary.synthesis}}</textarea>
                 </div>
                  {{!-- Sentez Tamamlama Alanları --}}
-                 <div class="row g-3 mt-2 border-top pt-3" id="edit-synthesis-final-section">
+                 <div class="row g-3 mt-2 border-top pt-3">
                     <div class="col-md-6 d-flex align-items-center">
                         <div class="form-check form-switch">
                             <input type="hidden" name="synthesisFinalized" value="false">
@@ -184,12 +148,98 @@
                     </div>
                  </div>
                  <hr>
-                 {{!-- Dokümanları İlişkilendirme --}}
+                 {{!-- Doküman İlişkilendirme (Dropdown yerine not olarak bırakıldı) --}}
                  <p class="text-muted small">
                      <i class="fas fa-info-circle me-1"></i> Les documents finaux (Synthèse, Plan d'Action) doivent être téléchargés et gérés depuis la section "Documents".
                  </p>
              </div>
          </div>
+         
+        {{!-- Checklist Detayı --}}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header"><h5 class="mb-0">Checklist Détaillé par Phase</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    {{!-- Kolon 1: Préliminaire & Investigation (Part 1) --}}
+                    <div class="col-md-6">
+                        {{!-- Phase Préliminaire --}}
+                        <div class="mb-3 border-start border-4 border-warning ps-3">
+                            <strong class="d-block mb-2">Phase Préliminaire</strong>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="prelim_entretienInfoFait" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="prelim_entretienInfoFait" name="prelim_entretienInfoFait" value="true" {{#if beneficiary.prelim_entretienInfoFait}}checked{{/if}}>
+                                <label class="form-check-label small" for="prelim_entretienInfoFait">Entretien Information/Analyse Demande</label>
+                            </div>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="prelim_conventionSignee" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="prelim_conventionSignee" name="prelim_conventionSignee" value="true" {{#if beneficiary.prelim_conventionSignee}}checked{{/if}}>
+                                <label class="form-check-label small" for="prelim_conventionSignee">Convention Signée</label>
+                            </div>
+                        </div>
+                         {{!-- Phase Investigation (Part 1) --}}
+                        <div class="mb-3 border-start border-4 border-primary ps-3">
+                            <strong class="d-block mb-2">Phase Investigation</strong>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="invest_parcoursDetailleFait" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="invest_parcoursDetailleFait" name="invest_parcoursDetailleFait" value="true" {{#if beneficiary.invest_parcoursDetailleFait}}checked{{/if}}>
+                                <label class="form-check-label small" for="invest_parcoursDetailleFait">Analyse Parcours Détaillé</label>
+                            </div>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="invest_competencesEvaluees" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="invest_competencesEvaluees" name="invest_competencesEvaluees" value="true" {{#if beneficiary.invest_competencesEvaluees}}checked{{/if}}>
+                                <label class="form-check-label small" for="invest_competencesEvaluees">Évaluation Compétences/Aptitudes</label>
+                            </div>
+                             <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="invest_interetsExplores" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="invest_interetsExplores" name="invest_interetsExplores" value="true" {{#if beneficiary.invest_interetsExplores}}checked{{/if}}>
+                                <label class="form-check-label small" for="invest_interetsExplores">Exploration Intérêts/Motivations</label>
+                            </div>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="invest_projetExplore" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="invest_projetExplore" name="invest_projetExplore" value="true" {{#if beneficiary.invest_projetExplore}}checked{{/if}}>
+                                <label class="form-check-label small" for="invest_projetExplore">Exploration Projet(s) Professionnel(s)</label>
+                            </div>
+                        </div>
+                    </div>
+                    {{!-- Kolon 2: Conclusion & Suivi --}}
+                    <div class="col-md-6">
+                        {{!-- Phase Conclusion --}}
+                        <div class="mb-3 border-start border-4 border-success ps-3">
+                            <strong class="d-block mb-2">Phase Conclusion</strong>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="conclu_syntheseRedigee" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="conclu_syntheseRedigee" name="conclu_syntheseRedigee" value="true" {{#if beneficiary.conclu_syntheseRedigee}}checked{{/if}}>
+                                <label class="form-check-label small" for="conclu_syntheseRedigee">Synthèse Rédigée/Remise</label>
+                            </div>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="conclu_planActionDefini" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="conclu_planActionDefini" name="conclu_planActionDefini" value="true" {{#if beneficiary.conclu_planActionDefini}}checked{{/if}}>
+                                <label class="form-check-label small" for="conclu_planActionDefini">Plan d'Action Défini</label>
+                            </div>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="conclu_entretienSyntheseFait" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="conclu_entretienSyntheseFait" name="conclu_entretienSyntheseFait" value="true" {{#if beneficiary.conclu_entretienSyntheseFait}}checked{{/if}}>
+                                <label class="form-check-label small" for="conclu_entretienSyntheseFait">Entretien de Synthèse Réalisé</label>
+                            </div>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="satisfactionSurveySent" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="satisfactionSurveySent" name="satisfactionSurveySent" value="true" {{#if beneficiary.satisfactionSurveySent}}checked{{/if}}>
+                                <label class="form-check-label small" for="satisfactionSurveySent">Enquête Satisfaction Envoyée</label>
+                            </div>
+                        </div>
+                        {{!-- Suivi --}}
+                        <div class="border-start border-4 border-secondary ps-3">
+                            <strong class="d-block mb-2">Suivi</strong>
+                            <div class="form-check form-switch mb-1">
+                                <input type="hidden" name="suivi_entretien6moisFait" value="false">
+                                <input class="form-check-input" type="checkbox" role="switch" id="suivi_entretien6moisFait" name="suivi_entretien6moisFait" value="true" {{#if beneficiary.suivi_entretien6moisFait}}checked{{/if}}>
+                                <label class="form-check-label small" for="suivi_entretien6moisFait">Entretien Suivi (6 mois) Réalisé</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="d-flex justify-content-between mb-4">
             <a href="/beneficiaries/{{beneficiary.id}}" class="btn btn-secondary">Annuler</a>
@@ -197,3 +247,4 @@
         </div>
     </form>
 </div>
+{{/layouts/main}}

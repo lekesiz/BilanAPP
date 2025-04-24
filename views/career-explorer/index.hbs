@@ -1,0 +1,125 @@
+{{> layouts/header }}
+
+<div class="container my-4">
+  <h1 class="mb-4">Explorateur de Carrière</h1>
+  
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Analyse de votre profil professionnel</h4>
+    </div>
+    <div class="card-body">
+      <p>L'explorateur de carrière utilise l'intelligence artificielle pour vous proposer des opportunités professionnelles adaptées à votre profil, vos compétences et vos aspirations.</p>
+      <p>Veuillez compléter le formulaire ci-dessous avec le plus de détails possible pour obtenir des recommandations pertinentes.</p>
+    </div>
+  </div>
+
+  {{> partials/messages }}
+
+  <form action="/career-explorer/process" method="POST" class="needs-validation" novalidate>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Informations professionnelles</h5>
+        
+        <div class="mb-3">
+          <label for="currentPosition" class="form-label">Poste actuel ou dernier poste occupé*</label>
+          <input type="text" class="form-control" id="currentPosition" name="currentPosition" required>
+          <div class="invalid-feedback">
+            Veuillez indiquer votre poste actuel ou dernier poste occupé.
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="skills" class="form-label">Compétences clés*</label>
+          <textarea class="form-control" id="skills" name="skills" rows="3" placeholder="Listez vos principales compétences, séparées par des virgules" required></textarea>
+          <div class="invalid-feedback">
+            Veuillez indiquer vos compétences.
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="educationLevel" class="form-label">Niveau d'études*</label>
+          <select class="form-select" id="educationLevel" name="educationLevel" required>
+            <option value="" selected disabled>Sélectionnez votre niveau d'études</option>
+            <option value="CAP/BEP">CAP/BEP</option>
+            <option value="Baccalauréat">Baccalauréat</option>
+            <option value="Bac+2 (BTS, DUT)">Bac+2 (BTS, DUT)</option>
+            <option value="Bac+3 (Licence)">Bac+3 (Licence)</option>
+            <option value="Bac+5 (Master)">Bac+5 (Master)</option>
+            <option value="Bac+8 (Doctorat)">Bac+8 (Doctorat)</option>
+            <option value="Autre">Autre</option>
+          </select>
+          <div class="invalid-feedback">
+            Veuillez sélectionner votre niveau d'études.
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="yearsOfExperience" class="form-label">Années d'expérience professionnelle*</label>
+          <select class="form-select" id="yearsOfExperience" name="yearsOfExperience" required>
+            <option value="" selected disabled>Sélectionnez votre expérience</option>
+            <option value="< 1 an">Moins d'1 an</option>
+            <option value="1-3 ans">1-3 ans</option>
+            <option value="3-5 ans">3-5 ans</option>
+            <option value="5-10 ans">5-10 ans</option>
+            <option value="10-15 ans">10-15 ans</option>
+            <option value="> 15 ans">Plus de 15 ans</option>
+          </select>
+          <div class="invalid-feedback">
+            Veuillez sélectionner vos années d'expérience.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title mb-3">Préférences et aspirations</h5>
+        
+        <div class="mb-3">
+          <label for="interests" class="form-label">Centres d'intérêt professionnels*</label>
+          <textarea class="form-control" id="interests" name="interests" rows="3" placeholder="Ex: innovation, créativité, gestion d'équipe, analyse de données..." required></textarea>
+          <div class="invalid-feedback">
+            Veuillez indiquer vos centres d'intérêt professionnels.
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="preferences" class="form-label">Préférences de travail</label>
+          <textarea class="form-control" id="preferences" name="preferences" rows="3" placeholder="Ex: télétravail, horaires flexibles, environnement international..."></textarea>
+        </div>
+        
+        <div class="mb-3">
+          <label for="constraints" class="form-label">Contraintes ou limitations</label>
+          <textarea class="form-control" id="constraints" name="constraints" rows="3" placeholder="Ex: mobilité géographique limitée, disponibilité à temps partiel..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+      <button type="submit" class="btn btn-lg btn-primary">
+        <i class="fas fa-search me-2"></i>Explorer les opportunités
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Form validation script
+  (function() {
+    'use strict';
+    window.addEventListener('load', function() {
+      const forms = document.getElementsByClassName('needs-validation');
+      Array.prototype.filter.call(forms, function(form) {
+        form.addEventListener('submit', function(event) {
+          if (form.checkValidity() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+        }, false);
+      });
+    }, false);
+  })();
+</script>
+
+{{> layouts/footer }} 

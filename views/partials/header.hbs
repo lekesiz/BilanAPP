@@ -1,39 +1,98 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container">
-    <a class="navbar-brand" href="/">Bilan de Compétences</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        {{#if user}}
-          {{#if (eq user.userType 'consultant')}}
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/consultant">Tableau de bord</a>
-            </li>
-          {{else}}
-            <li class="nav-item">
-              <a class="nav-link" href="/dashboard/beneficiary">Mon bilan</a>
-            </li>
-          {{/if}}
-        {{/if}}
-      </ul>
-      <ul class="navbar-nav">
-        {{#if user}}
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-              {{user.firstName}} {{user.lastName}}
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="/auth/logout">Déconnexion</a></li>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img src="/images/logo.png" alt="Logo" width="30" height="30" class="d-inline-block align-top me-2">
+            Bilan.App
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            {{#if user}}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/dashboard">
+                        <i class="fas fa-tachometer-alt me-1"></i> Tableau de bord
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'beneficiaries')}}active{{/if}}" href="/beneficiaries">
+                        <i class="fas fa-users me-1"></i> Bénéficiaires
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'appointments')}}active{{/if}}" href="/appointments">
+                        <i class="far fa-calendar-alt me-1"></i> Rendez-vous
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'messages')}}active{{/if}}" href="/messages">
+                        <i class="far fa-envelope me-1"></i> Messages
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'questionnaires')}}active{{/if}}" href="/questionnaires">
+                        <i class="fas fa-clipboard-list me-1"></i> Questionnaires
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'documents')}}active{{/if}}" href="/documents">
+                        <i class="far fa-file-alt me-1"></i> Documents
+                    </a>
+                </li>
+                
+                {{> aiToolsDropdown}}
+                {{> reportDropdown}}
+                {{> adminDropdown}}
             </ul>
-          </li>
-        {{else}}
-          <li class="nav-item">
-            <a class="nav-link" href="/auth/login">Connexion</a>
-          </li>
-        {{/if}}
-      </ul>
+            <ul class="navbar-nav">
+                {{#if (eq user.role 'consultant')}}
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'credits')}}active{{/if}}" href="/credits">
+                        <i class="fas fa-coins me-1"></i> Crédits: {{user.credits}}
+                    </a>
+                </li>
+                {{/if}}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i> {{user.firstName}} {{user.lastName}}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/profile">
+                                <i class="fas fa-id-card me-2"></i>Profil
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/settings">
+                                <i class="fas fa-cog me-2"></i>Paramètres
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            {{else}}
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'login')}}active{{/if}}" href="/login">
+                        <i class="fas fa-sign-in-alt me-1"></i> Connexion
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{#if (eq active 'register')}}active{{/if}}" href="/register">
+                        <i class="fas fa-user-plus me-1"></i> Inscription
+                    </a>
+                </li>
+            </ul>
+            {{/if}}
+        </div>
     </div>
-  </div>
 </nav>

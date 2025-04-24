@@ -1,0 +1,41 @@
+{{#if pagination.totalPages}}
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    {{!-- Previous Button --}}
+    {{#if pagination.hasPrev}}
+      <li class="page-item">
+        <a class="page-link" href="?page={{subtract pagination.page 1}}{{#if search}}&search={{search}}{{/if}}{{#if filters.status}}&status={{filters.status}}{{/if}}{{#if filters.phase}}&phase={{filters.phase}}{{/if}}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+    {{else}}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+    {{/if}}
+
+    {{!-- Page Numbers (Using #times helper correctly) --}}
+    {{#times pagination.totalPages}}
+      {{#if (eq (add this 1) ../pagination.page)}}
+        <li class="page-item active" aria-current="page"><span class="page-link">{{add this 1}}</span></li>
+      {{else}}
+        {{!-- Sadece belirli sayıda sayfa göster (opsiyonel, basitlik için tümünü gösteriyoruz) --}}
+        <li class="page-item"><a class="page-link" href="?page={{add this 1}}{{#if ../search}}&search={{../search}}{{/if}}{{#if ../filters.status}}&status={{../filters.status}}{{/if}}{{#if ../filters.phase}}&phase={{../filters.phase}}{{/if}}">{{add this 1}}</a></li>
+      {{/if}}
+    {{/times}}
+
+    {{!-- Next Button --}}
+    {{#if pagination.hasNext}}
+      <li class="page-item">
+        <a class="page-link" href="?page={{add pagination.page 1}}{{#if search}}&search={{search}}{{/if}}{{#if filters.status}}&status={{filters.status}}{{/if}}{{#if filters.phase}}&phase={{filters.phase}}{{/if}}" aria-label="Next">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+    {{else}}
+      <li class="page-item disabled">
+        <span class="page-link">&raquo;</span>
+      </li>
+    {{/if}}
+  </ul>
+</nav>
+{{/if}} 

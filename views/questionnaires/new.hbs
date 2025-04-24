@@ -6,6 +6,7 @@
     {{> messages}}
 
     <form action="/questionnaires/new" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card mb-4">
             <div class="card-header">
                 <h5 class="card-title mb-0">Informations Générales</h5>

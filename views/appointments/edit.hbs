@@ -3,6 +3,8 @@
     <h1 class="mb-4">Modifier le rendez-vous du {{formatDateTime appointment.date}}</h1>
 
     <form action="/appointments/{{appointment.id}}/edit" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
         <div class="card">
             <div class="card-body">
                 {{#if isConsultant}}

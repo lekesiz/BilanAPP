@@ -1,0 +1,70 @@
+<div class="container-fluid py-4">
+  <h1 class="mb-4">Générateur de Plan d'Action IA</h1>
+  
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    Cet outil permet de générer un plan d'action concret et structuré pour le bénéficiaire, basé sur la synthèse du bilan et les objectifs professionnels définis.
+    <br>
+    Le coût est de <strong>{{aiCredits}} crédits</strong> par génération. Le plan généré pourra être modifié avant d'être sauvegardé.
+  </div>
+  
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form action="/ai/action-plan-generator" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+        <div class="mb-3">
+          <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+          <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+            <option value="" selected disabled>Choisir un bénéficiaire...</option>
+            {{#each beneficiaries}}
+              <option value="{{id}}" {{#ifCond ../selectedBeneficiaryId '===' id}}selected{{/ifCond}}>
+                {{user.firstName}} {{user.lastName}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+        
+        <div class="mb-3">
+          <label for="instructions" class="form-label">Instructions spécifiques (facultatif)</label>
+          <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Précisez des objectifs prioritaires, des actions spécifiques à inclure, des contraintes à prendre en compte..."></textarea>
+        </div>
+        
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="updateBeneficiary" name="updateBeneficiary" value="true">
+          <label class="form-check-label" for="updateBeneficiary">Mettre à jour le plan d'action du bénéficiaire avec le texte généré</label>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+          <a href="/dashboard" class="btn btn-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-robot me-2"></i>
+            Générer le plan d'action ({{aiCredits}} crédits)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div class="mt-4">
+    <h5>Structure du plan d'action</h5>
+    <p>Le plan d'action généré suivra cette structure :</p>
+    <ol>
+      <li><strong>Rappel du projet professionnel principal</strong> validé pendant le bilan</li>
+      <li><strong>Actions prioritaires</strong> à court terme (0-6 mois) avec :
+        <ul>
+          <li>Objectifs SMART pour chaque action</li>
+          <li>Moyens et ressources nécessaires</li>
+          <li>Échéances précises</li>
+          <li>Indicateurs de succès</li>
+        </ul>
+      </li>
+      <li><strong>Actions secondaires</strong> à moyen terme (6-12 mois)</li>
+      <li><strong>Ressources et appuis</strong> identifiés</li>
+      <li><strong>Modalités de suivi</strong> prévues</li>
+    </ol>
+    <p class="text-muted small">
+      <i class="fas fa-lightbulb me-1"></i>
+      Conseil : Pour de meilleurs résultats, assurez-vous que la synthèse et les objectifs professionnels du bénéficiaire sont bien définis.
+    </p>
+  </div>
+</div> 

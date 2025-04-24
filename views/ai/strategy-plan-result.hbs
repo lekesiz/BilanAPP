@@ -1,0 +1,290 @@
+{{> header}}
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">{{title}}</h1>
+    <div>
+      {{#if wasSaved}}
+        <span class="badge bg-success p-2">
+          <i class="fas fa-check me-1"></i> Enregistré
+        </span>
+      {{else}}
+        <form action="/ai/strategy-plan-generator" method="POST" class="d-inline">
+          <input type="hidden" name="_csrf" value="{{csrfToken}}">
+          <input type="hidden" name="saveAction" value="true">
+          <input type="hidden" name="beneficiaryId" value="{{beneficiary.id}}">
+          <input type="hidden" name="updateBeneficiary" value="true">
+          <input type="hidden" name="strategyPlanJson" value="{{json strategyPlan}}">
+          <button type="submit" class="btn btn-sm btn-success">
+            <i class="fas fa-save me-1"></i> Sauvegarder dans le profil
+          </button>
+        </form>
+      {{/if}}
+      <a href="/ai/strategy-plan-generator" class="btn btn-sm btn-primary ms-2">
+        <i class="fas fa-redo me-1"></i> Nouveau plan
+      </a>
+    </div>
+  </div>
+
+  {{#if strategyPlan.error}}
+    <div class="alert alert-danger">
+      <h4 class="alert-heading">Erreur lors de la génération</h4>
+      <p>{{strategyPlan.error}}</p>
+      <hr>
+      <p class="mb-0">Veuillez réessayer ou contacter le support si le problème persiste.</p>
+    </div>
+  {{else}}
+    <!-- Bénéficiaire info -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0">Plan Stratégique pour {{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</h2>
+          <div>
+            <button class="btn btn-sm btn-light" onclick="window.print()">
+              <i class="fas fa-print me-1"></i> Imprimer
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="h6 text-center fw-bold mb-3">{{strategyPlan.summary}}</h3>
+        <div class="text-muted small text-center mb-3">Généré le {{formatDate (now) "DD/MM/YYYY à HH:mm"}}</div>
+      </div>
+    </div>
+
+    <!-- Career Path Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white">
+        <h3 class="h5 mb-0"><i class="fas fa-route me-2"></i>Parcours de Carrière</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <h4 class="h6 fw-bold">Objectif Principal</h4>
+              <p>{{strategyPlan.careerPath.primary}}</p>
+            </div>
+            <div class="mb-3">
+              <h4 class="h6 fw-bold">Plan Alternatif</h4>
+              <p>{{strategyPlan.careerPath.alternative}}</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <h4 class="h6 fw-bold">Horizon Temporel</h4>
+              <p>{{strategyPlan.careerPath.timeline}}</p>
+            </div>
+            <div class="mb-3">
+              <h4 class="h6 fw-bold">Étapes Clés</h4>
+              <ul class="list-group list-group-flush">
+                {{#each strategyPlan.careerPath.keyMilestones}}
+                  <li class="list-group-item">{{this}}</li>
+                {{/each}}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skill Development Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white">
+        <h3 class="h5 mb-0"><i class="fas fa-brain me-2"></i>Développement de Compétences</h3>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-12">
+            <h4 class="h6 fw-bold">Compétences Prioritaires</h4>
+            <div class="d-flex flex-wrap">
+              {{#each strategyPlan.skillDevelopment.priorities}}
+                <span class="badge bg-success me-2 mb-2 p-2">{{this}}</span>
+              {{/each}}
+            </div>
+          </div>
+        </div>
+
+        <h4 class="h6 fw-bold">Formations Recommandées</h4>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Formation</th>
+                <th>Compétence(s) ciblée(s)</th>
+                <th>Durée</th>
+                <th>Importance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each strategyPlan.skillDevelopment.recommendedTraining}}
+                <tr>
+                  <td>{{this.name}}</td>
+                  <td>{{this.focus}}</td>
+                  <td>{{this.duration}}</td>
+                  <td>
+                    <span class="badge {{#if (eq this.importance "Critique")}}bg-danger{{else if (eq this.importance "Importante")}}bg-warning{{else}}bg-info{{/if}}">
+                      {{this.importance}}
+                    </span>
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Strategy Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-info text-white">
+        <h3 class="h5 mb-0"><i class="fas fa-bullseye me-2"></i>Stratégie de Marché</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <h4 class="h6 fw-bold">Secteurs Cibles</h4>
+            <ul class="list-group list-group-flush">
+              {{#each strategyPlan.marketStrategy.targetSectors}}
+                <li class="list-group-item">{{this}}</li>
+              {{/each}}
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <h4 class="h6 fw-bold">Actions de Réseautage</h4>
+            <ul class="list-group list-group-flush">
+              {{#each strategyPlan.marketStrategy.networkingActions}}
+                <li class="list-group-item">{{this}}</li>
+              {{/each}}
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <h4 class="h6 fw-bold">Image Professionnelle</h4>
+            <ul class="list-group list-group-flush">
+              {{#each strategyPlan.marketStrategy.personalBranding}}
+                <li class="list-group-item">{{this}}</li>
+              {{/each}}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Implementation Plan Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-warning text-dark">
+        <h3 class="h5 mb-0"><i class="fas fa-tasks me-2"></i>Plan d'Implémentation</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h4 class="h6 fw-bold mb-0">Court Terme</h4>
+              </div>
+              <div class="card-body">
+                <ul class="list-group list-group-flush">
+                  {{#each strategyPlan.implementation.shortTerm}}
+                    <li class="list-group-item">{{this}}</li>
+                  {{/each}}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h4 class="h6 fw-bold mb-0">Moyen Terme</h4>
+              </div>
+              <div class="card-body">
+                <ul class="list-group list-group-flush">
+                  {{#each strategyPlan.implementation.mediumTerm}}
+                    <li class="list-group-item">{{this}}</li>
+                  {{/each}}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-light">
+                <h4 class="h6 fw-bold mb-0">Long Terme</h4>
+              </div>
+              <div class="card-body">
+                <ul class="list-group list-group-flush">
+                  {{#each strategyPlan.implementation.longTerm}}
+                    <li class="list-group-item">{{this}}</li>
+                  {{/each}}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Metrics Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">
+        <h3 class="h5 mb-0"><i class="fas fa-chart-line me-2"></i>Métriques de Succès</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <ul class="list-group">
+              {{#each strategyPlan.successMetrics}}
+                <li class="list-group-item d-flex align-items-center">
+                  <i class="fas fa-check-circle text-success me-2"></i>
+                  {{this}}
+                </li>
+              {{/each}}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comment/Notes Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h3 class="h5 mb-0"><i class="fas fa-comment me-2"></i>Notes du Consultant</h3>
+      </div>
+      <div class="card-body">
+        <textarea class="form-control" rows="4" placeholder="Ajoutez vos remarques et commentaires sur ce plan stratégique..."></textarea>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="d-flex justify-content-between mt-4">
+    <a href="/beneficiary/{{beneficiary.id}}" class="btn btn-outline-secondary">
+      <i class="fas fa-user me-1"></i> Retour au profil du bénéficiaire
+    </a>
+    <a href="/ai/strategy-plan-generator" class="btn btn-primary">
+      <i class="fas fa-redo me-1"></i> Générer un nouveau plan
+    </a>
+  </div>
+</div>
+
+{{> footer}}
+
+<style>
+  @media print {
+    .btn, form, .footer, .navbar {
+      display: none !important;
+    }
+    .card {
+      border: 1px solid #ddd !important;
+      break-inside: avoid;
+    }
+    .card-header {
+      background-color: #f8f9fa !important;
+      color: #212529 !important;
+    }
+    body {
+      font-size: 12pt;
+    }
+    .container {
+      max-width: 100%;
+      padding: 0;
+    }
+  }
+</style> 

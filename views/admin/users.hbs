@@ -1,188 +1,216 @@
-<div class="container py-4">
-    <h1 class="mb-4">Gestion des Utilisateurs</h1>
-
-     {{> messages}}
-
-    {{!-- Filtreleme Formu --}}
-     <form method="GET" action="/admin/users" class="mb-3 border rounded p-3 bg-light">
-         <div class="row g-2 align-items-end">
-             <div class="col-md-4">
-                 <label for="userTypeFilter" class="form-label">Filtrer par Type</label>
-                <select class="form-select form-select-sm" id="userTypeFilter" name="userType">
-                    <option value="">Tous les Types</option>
-                    {{#each userTypeOptions}}
-                         <option value="{{this}}" {{#ifCond ../selectedUserType '===' this}}selected{{/ifCond}}>{{this}}</option>
-                     {{/each}}
-                 </select>
-             </div>
-              <div class="col-md-4">
-                 <label for="forfaitTypeFilter" class="form-label">Filtrer par Forfait</label>
-                 <select class="form-select form-select-sm" id="forfaitTypeFilter" name="forfaitType">
-                     <option value="">Tous les Forfaits</option>
-                     <option value="null" {{#ifCond selectedForfaitType '===' 'null'}}selected{{/ifCond}}>-- Aucun --</option>
-                     {{#each forfaitOptions}}
-                         <option value="{{this}}" {{#ifCond ../selectedForfaitType '===' this}}selected{{/ifCond}}>{{this}}</option>
-                     {{/each}}
-                 </select>
-             </div>
-             <div class="col-auto">
-                 <button type="submit" class="btn btn-secondary btn-sm">Filtrer</button>
-                 <a href="/admin/users" class="btn btn-link btn-sm">Réinitialiser</a>
-             </div>
-         </div>
-     </form>
-
-    <div class="d-flex justify-content-end mb-3">
+{{#> layouts/main}}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Gestion des Utilisateurs</h1>
         <a href="/admin/users/add" class="btn btn-primary">
-             <i class="fas fa-plus me-1"></i> Ajouter Utilisateur
+            <i class="fas fa-user-plus me-1"></i> Ajouter un Utilisateur
         </a>
     </div>
 
+    <!-- Filtres -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Filtres</h5>
+        </div>
+        <div class="card-body">
+            <form id="userFiltersForm" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Type d'utilisateur</label>
+                    <select class="form-select" name="userType">
+                        <option value="">Tous</option>
+                        <option value="admin">Admin</option>
+                        <option value="consultant">Consultant</option>
+                        <option value="beneficiary">Bénéficiaire</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Forfait</label>
+                    <select class="form-select" name="forfaitType">
+                        <option value="">Tous</option>
+                        {{#each forfaitOptions}}
+                            <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Recherche</label>
+                    <input type="text" class="form-control" name="search" placeholder="Nom, Email...">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i> Rechercher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des utilisateurs -->
     <div class="card shadow-sm">
-        <div class="card-body p-0">
-            {{#if users.length}}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover table-sm mb-0">
-                         <thead class="table-light">
-                             <tr>
-                                 <th>ID</th>
-                                 <th>Nom</th>
-                                 <th>Email</th>
-                                 <th>Type</th>
-                                 <th>Forfait</th>
-                                 <th>Crédits</th>
-                                 <th>Date Création</th>
-                                 <th>Actions</th>
-                             </tr>
-                         </thead>
-                         <tbody>
-                             {{#each users}}
-                                 <tr>
-                                     <td>{{id}}</td>
-                                     <td>{{lastName}}, {{firstName}}</td>
-                                     <td>{{email}}</td>
-                                     <td>{{userType}}</td>
-                                     <td>
-                                         {{#ifCond ../user.id '!==' id}}
-                                             <a href="#" data-bs-toggle="modal" data-bs-target="#changeForfaitModal-{{id}}" class="badge bg-info text-decoration-none">
-                                                {{#if forfaitType}}{{forfaitType}}{{else}}Aucun{{/if}}
-                                             </a>
-                                         {{else}}
-                                            <span class="badge bg-secondary">{{#if forfaitType}}{{forfaitType}}{{else}}Aucun{{/if}}</span>
-                                         {{/ifCond}}
-                                     </td>
-                                     <td>{{availableCredits}}</td>
-                                     <td><small>{{formatDate createdAt}}</small></td>
-                                     <td>
-                                         <a href="/admin/users/{{id}}/edit" class="btn btn-sm btn-outline-secondary" title="Modifier Utilisateur"><i class="fas fa-edit"></i></a>
-                                         {{!-- Kredi Ayarlama Butonu/Modalı --}}
-                                         {{#ifCond ../user.id '!==' id}}
-                                             <button type="button" class="btn btn-sm btn-outline-warning" title="Ajuster Crédits" 
-                                                    data-bs-toggle="modal" data-bs-target="#adjustCreditsModal-{{id}}">
-                                                <i class="fas fa-coins"></i>
-                                            </button>
-                                             <button type="button" class="btn btn-sm btn-outline-danger" title="Supprimer" 
-                                                    data-bs-toggle="modal" data-bs-target="#deleteUserModal-{{id}}">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                         {{else}}
-                                              {{!-- Kendisi için kredi ayarlama ve silme devre dışı --}}
-                                               <button class="btn btn-sm btn-outline-warning" disabled><i class="fas fa-coins"></i></button>
-                                               <button class="btn btn-sm btn-outline-danger" disabled><i class="fas fa-trash"></i></button>
-                                         {{/ifCond}}
-                                     </td>
-                                 </tr>
-                                 {{!-- Silme Onay Modalı --}}
-                                 <div class="modal fade" id="deleteUserModal-{{id}}" tabindex="-1" aria-labelledby="deleteUserModalLabel-{{id}}" aria-hidden="true">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Liste des Utilisateurs</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Type</th>
+                        <th>Forfait</th>
+                        <th>Crédits</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each users}}
+                        <tr>
+                            <td>{{lastName}} {{firstName}}</td>
+                            <td>{{email}}</td>
+                            <td><span class="badge {{#ifCond userType '===' 'admin'}}bg-danger{{else ifCond userType '===' 'consultant'}}bg-primary{{else}}bg-success{{/ifCond}}">{{userType}}</span></td>
+                            <td>{{forfaitType}}</td>
+                            <td>{{availableCredits}}</td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <!-- Bouton d'ajustement des crédits -->
+                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                            data-bs-toggle="modal" data-bs-target="#adjustCreditsModal-{{id}}"
+                                            title="Ajuster les crédits">
+                                        <i class="fas fa-coins"></i>
+                                    </button>
+                                    
+                                    <!-- Bouton de modification de forfait -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" data-bs-target="#changeForfaitModal-{{id}}"
+                                            title="Changer le forfait">
+                                        <i class="fas fa-tag"></i>
+                                    </button>
+                                    
+                                    <!-- Bouton de modification -->
+                                    <a href="/admin/users/{{id}}/edit" class="btn btn-sm btn-outline-secondary" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <!-- Bouton de suppression (désactivé pour l'admin actuel) -->
+                                    {{#ifCond id '!==' ../user.id}}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal-{{id}}"
+                                                title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {{else}}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" disabled title="Vous ne pouvez pas supprimer votre propre compte">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {{/ifCond}}
+                                </div>
+                                
+                                <!-- Modal de suppression -->
+                                <div class="modal fade" id="deleteModal-{{id}}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" id="deleteUserModalLabel-{{id}}">Confirmer la Suppression</h5>
+                                                <h5 class="modal-title">Confirmer la suppression</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
                                             <div class="modal-body">
-                                                Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{firstName}} {{lastName}} ({{email}})</strong> ? <br>
-                                                <strong class="text-danger">Attention :</strong> Cette action est irréversible et supprimera toutes les données associées à cet utilisateur (profil bénéficiaire éventuel, documents, messages, réponses, logs de crédit, etc.).
+                                                <p>Êtes-vous sûr de vouloir supprimer l'utilisateur <strong>{{firstName}} {{lastName}}</strong> ?</p>
+                                                <p class="text-danger"><strong>Attention:</strong> Cette action est irréversible et supprimera également toutes les données associées.</p>
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                <form action="/admin/users/{{id}}/delete" method="POST" style="display: inline;">
-                                                    <button type="submit" class="btn btn-danger">Supprimer l'Utilisateur</button>
+                                                <form action="/admin/users/{{id}}/delete" method="POST">
+                                                    <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
                                                 </form>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                 {{!-- Kredi Ayarlama Modalı --}}
-                                 <div class="modal fade" id="adjustCreditsModal-{{id}}" tabindex="-1" aria-labelledby="adjustCreditsModalLabel-{{id}}" aria-hidden="true">
+                                
+                                <!-- Modal d'ajustement des crédits -->
+                                <div class="modal fade" id="adjustCreditsModal-{{id}}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
-                                             <form action="/admin/users/{{id}}/adjust-credits" method="POST">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="adjustCreditsModalLabel-{{id}}">Ajuster les Crédits pour {{firstName}} {{lastName}}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Solde actuel: <strong class="text-primary">{{availableCredits}}</strong> crédits</p>
-                                                    <div class="mb-3">
-                                                        <label for="amount-{{id}}" class="form-label">Montant à Ajouter/Retirer *</label>
-                                                        <input type="number" class="form-control" id="amount-{{id}}" name="amount" placeholder="Ex: 100 ou -50" required>
-                                                        <small class="form-text text-muted">Entrez un nombre positif pour ajouter, négatif pour retirer.</small>
-                                                    </div>
-                                                    <div class="mb-3">
-                                                         <label for="reason-{{id}}" class="form-label">Raison de l'ajustement *</label>
-                                                         <textarea class="form-control" id="reason-{{id}}" name="reason" rows="2" required></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                    <button type="submit" class="btn btn-warning">Appliquer l'Ajustement</button>
-                                                </form>
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Ajuster les crédits</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                 {{!-- Paket Değiştirme Modalı --}}
-                                 <div class="modal fade" id="changeForfaitModal-{{id}}" tabindex="-1" aria-labelledby="changeForfaitModalLabel-{{id}}" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                             <form action="/admin/users/{{id}}/update-forfait" method="POST">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="changeForfaitModalLabel-{{id}}">Modifier le Forfait pour {{firstName}} {{lastName}}</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
+                                            <form action="/admin/users/{{id}}/adjust-credits" method="POST">
+                                                <input type="hidden" name="_csrf" value="{{csrfToken}}">
                                                 <div class="modal-body">
-                                                    <p>Forfait actuel: <strong class="text-info">{{#if forfaitType}}{{forfaitType}}{{else}}Aucun{{/if}}</strong></p>
+                                                    <p>Utilisateur: <strong>{{firstName}} {{lastName}}</strong></p>
+                                                    <p>Crédits actuels: <strong>{{availableCredits}}</strong></p>
+                                                    
                                                     <div class="mb-3">
-                                                        <label for="forfaitType-{{id}}" class="form-label">Nouveau Forfait *</label>
-                                                        <select class="form-select" id="forfaitType-{{id}}" name="forfaitType">
-                                                            <option value="">-- Aucun Forfait --</option> 
-                                                            {{#each ../forfaitOptions}}
-                                                                <option value="{{this}}" {{#ifCond ../forfaitType '===' this}}selected{{/ifCond}}>{{this}}</option>
-                                                            {{/each}}
-                                                        </select>
-                                                         <small class="form-text text-danger fw-bold">Attention: Changer le forfait réinitialisera les crédits disponibles au montant par défaut.</small>
+                                                        <label for="creditAmount-{{id}}" class="form-label">Montant à ajuster:</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">±</span>
+                                                            <input type="number" class="form-control" id="creditAmount-{{id}}" name="amount" required placeholder="Ex: 50 pour ajouter, -20 pour déduire">
+                                                        </div>
+                                                        <div class="form-text">Utilisez un nombre positif pour ajouter des crédits ou un nombre négatif pour en retirer.</div>
                                                     </div>
-                                                    <p class="small text-muted">Les crédits seront ajustés automatiquement.</p>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="creditReason-{{id}}" class="form-label">Raison:</label>
+                                                        <input type="text" class="form-control" id="creditReason-{{id}}" name="reason" required placeholder="Ex: Bonus pour fidélité">
+                                                    </div>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                                                    <button type="submit" class="btn btn-primary">Changer le Forfait</button>
+                                                    <button type="submit" class="btn btn-success">Confirmer l'ajustement</button>
                                                 </div>
                                             </form>
                                         </div>
                                     </div>
                                 </div>
-                             {{/each}}
-                         </tbody>
-                     </table>
-                 </div>
-            {{else}}
-                 <p class="text-muted text-center p-4 mb-0">Aucun utilisateur trouvé.</p>
-            {{/if}}
+                                
+                                <!-- Modal de changement de forfait -->
+                                <div class="modal fade" id="changeForfaitModal-{{id}}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Changer le forfait</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form action="/admin/users/{{id}}/update-forfait" method="POST">
+                                                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                                                <div class="modal-body">
+                                                    <p>Utilisateur: <strong>{{firstName}} {{lastName}}</strong></p>
+                                                    <p>Forfait actuel: <strong>{{forfaitType}}</strong></p>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="newForfait-{{id}}" class="form-label">Nouveau forfait:</label>
+                                                        <select class="form-select" id="newForfait-{{id}}" name="forfaitType" required>
+                                                            <option value="">Aucun forfait</option>
+                                                            {{#each ../forfaitOptions}}
+                                                                <option value="{{this}}" {{#ifCond this '===' ../forfaitType}}selected{{/ifCond}}>{{this}}</option>
+                                                            {{/each}}
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div class="alert alert-warning">
+                                                        <strong>Note:</strong> Le changement de forfait réinitialisera les crédits de l'utilisateur selon les valeurs par défaut du nouveau forfait.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn btn-primary">Confirmer le changement</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {{else}}
+                        <tr>
+                            <td colspan="6" class="text-center py-3">Aucun utilisateur trouvé.</td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
         </div>
-         {{!-- TODO: Pagination --}}
     </div>
-</div> 
+</div>
+{{/layouts/main}} 

@@ -1,0 +1,60 @@
+```
++----------------------------------------------------------------------+
+|                                                                      |
+| LOGO  PLATEFORME BILAN DE COMPÉTENCES         Consultant ▼  [🔔] [✉] |
+|                                                                      |
++----------------------------------------------------------------------+
+|                                                                      |
+| [≡] MENU  |  FICHE BÉNÉFICIAIRE                                      |
+|           |                                                          |
+|-----------+----------------------------------------------------------+
+|           |                                                          |
+| Dashboard | MARIE LAMBERT                                            |
+| Bénéfic.  | [Retour à la liste]                                      |
+| Agenda    |                                                          |
+| Messages  | +------------------+  +------------------+  +------------+
+| Documents | | INFORMATIONS     |  | PROGRESSION      |  | ACTIONS    |
+| Outils    | | Âge: 34 ans      |  | Phase:           |  | [MESSAGE]  |
+| Rapports  | | Tél: 0612345678  |  | Investigation    |  | [RDV]      |
+|           | | Email: m.lamb... |  | Progression: 65% |  | [DOCUMENT] |
+|           | | Employeur: ABC   |  | Début: 01/03/25  |  | [TEST]     |
+|           | | Financement: CPF |  | Fin prévue: 15/06|  | [SYNTHÈSE] |
+|           | +------------------+  +------------------+  +------------+
+|           |                                                          |
+|           | ONGLETS:  [PARCOURS]  [TESTS]  [DOCUMENTS]  [MESSAGES]   |
+|           |                                                          |
+|           | +----------------------------------------------------------+
+|           | |                                                        |
+|           | |  PARCOURS DU BILAN                                     |
+|           | |                                                        |
+|           | |  +------------------------------------------------+    |
+|           | |  |                                                |    |
+|           | |  |  [✓] Phase préliminaire                        |    |
+|           | |  |      ├── [✓] Entretien d'accueil (01/03/25)    |    |
+|           | |  |      ├── [✓] Analyse de la demande (08/03/25)  |    |
+|           | |  |      └── [✓] Programme personnalisé (15/03/25) |    |
+|           | |  |                                                |    |
+|           | |  |  [⋯] Phase d'investigation                     |    |
+|           | |  |      ├── [✓] Parcours professionnel (22/03/25) |    |
+|           | |  |      ├── [✓] Compétences techniques (29/03/25) |    |
+|           | |  |      ├── [✓] Tests personnalité (05/04/25)     |    |
+|           | |  |      ├── [⋯] Exploration motivations (12/04/25)|    |
+|           | |  |      └── [ ] Exploration pistes (prévu 19/04)  |    |
+|           | |  |                                                |    |
+|           | |  |  [ ] Phase de conclusion                       |    |
+|           | |  |      ├── [ ] Validation projet (prévu 03/05)   |    |
+|           | |  |      ├── [ ] Plan d'action (prévu 17/05)       |    |
+|           | |  |      └── [ ] Document synthèse (prévu 31/05)   |    |
+|           | |  |                                                |    |
+|           | |  |  [ ] Suivi à 6 mois (prévu 30/11)              |    |
+|           | |  |                                                |    |
+|           | |  +------------------------------------------------+    |
+|           | |                                                        |
+|           | +----------------------------------------------------------+
+|           |                                                          |
++-----------+----------------------------------------------------------+
+|                                                                      |
+| © 2025 Plateforme Bilan de Compétences | Aide | Paramètres | Déconnexion |
+|                                                                      |
++----------------------------------------------------------------------+
+```

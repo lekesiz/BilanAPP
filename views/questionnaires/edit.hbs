@@ -6,6 +6,7 @@
   </div>
   <div class="card-body">
     <form action="/questionnaires/{{questionnaire.id}}/edit" method="POST">
+      <input type="hidden" name="_csrf" value="{{csrfToken}}">
       <div class="row mb-3">
         <div class="col-md-12">
           <div class="form-group">
@@ -101,7 +102,8 @@
               </div>
               <div>
                 <form action="/questionnaires/questions/{{id}}/delete" method="POST" class="d-inline">
-                  <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette question ?')">
+                  <input type="hidden" name="_csrf" value="{{../../../csrfToken}}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer la question">
                     <i class="fas fa-trash"></i>
                   </button>
                 </form>
@@ -119,6 +121,7 @@
     
     <h6 class="mb-3">Ajouter une question</h6>
     <form action="/questionnaires/{{questionnaire.id}}/questions/add" method="POST">
+      <input type="hidden" name="_csrf" value="{{../csrfToken}}">
       <div class="row mb-3">
         <div class="col-md-12">
           <div class="form-group">

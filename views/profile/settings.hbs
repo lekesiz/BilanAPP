@@ -10,6 +10,7 @@
                 <div class="card-header">Informations Personnelles</div>
                 <div class="card-body">
                      <form action="/profile/settings/info" method="POST">
+                         <input type="hidden" name="_csrf" value="{{csrfToken}}">
                          <div class="mb-3">
                             <label for="firstName" class="form-label">Prénom</label>
                             <input type="text" class="form-control" id="firstName" name="firstName" value="{{user.firstName}}" required>
@@ -34,6 +35,7 @@
                 <div class="card-header">Modifier le mot de passe</div>
                 <div class="card-body">
                     <form action="/profile/settings/password" method="POST">
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
                          {{!-- ... (Şifre alanları aynı) ... --}}
                         <div class="mb-3">
                             <label for="currentPassword" class="form-label">Mot de passe actuel *</label>

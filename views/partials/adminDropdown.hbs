@@ -1,0 +1,37 @@
+{{#if (eq user.role 'admin')}}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle {{#if (eq active 'admin')}}active{{/if}}" 
+       href="#" id="adminDropdown" role="button" 
+       data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-tools me-1"></i> Administration
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+        <li>
+            <a class="dropdown-item" href="/admin/users">
+                <i class="fas fa-users me-2"></i>Gestion des Utilisateurs
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="/admin/credits">
+                <i class="fas fa-coins me-2"></i>Gestion des Crédits
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="/admin/statistics">
+                <i class="fas fa-chart-bar me-2"></i>Statistiques
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="/admin/settings">
+                <i class="fas fa-cog me-2"></i>Paramètres
+            </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a class="dropdown-item" href="/admin/logs">
+                <i class="fas fa-file-alt me-2"></i>Journaux d'activité
+            </a>
+        </li>
+    </ul>
+</li>
+{{/if}} 

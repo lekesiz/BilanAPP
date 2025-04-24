@@ -7,6 +7,7 @@
      {{/if}}
 
     <form action="/questionnaires/{{questionnaire.id}}/answer" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card">
             <div class="card-body">
                 {{#each questionnaire.questions}}
@@ -57,16 +58,15 @@
     </form>
 </div>
 
-{{#addHelper 'range' min max}}
-    {{#block}}
-        {{#times max}}
-            {{#if (gte this min)}}
-                 {{yield this}}
-            {{/if}}
-        {{/times}}
-    {{/block}}
-{{/addHelper}}
+<script>
+  // Helper function for range in Handlebars
+  Handlebars.registerHelper('range', function(start, end, options) {
+    let result = '';
+    for (let i = start; i <= end; i++) {
+      result += options.fn(i);
+    }
+    return result;
+  });
+</script>
 
-{{#addHelper 'gte' v1 v2}}
-    {{#if (v1 >= v2)}} true {{/if}}
-{{/addHelper}} 
+{{!-- Hatalı/Gereksiz Helper tanımları kaldırıldı --}} 

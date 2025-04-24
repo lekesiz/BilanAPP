@@ -1,0 +1,118 @@
+{{> header}}
+
+<div class="container-fluid">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{title}}</h1>
+    {{#if beneficiary}}
+      <a href="/beneficiaries/{{beneficiary.id}}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Retour au profil
+      </a>
+    {{else}}
+      <a href="/dashboard" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Retour au tableau de bord
+      </a>
+    {{/if}}
+  </div>
+
+  {{> messages}}
+
+  <div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Explorateur de Carrière AI</h6>
+      {{#if beneficiary}}
+        <span class="badge badge-info">Bénéficiaire: {{beneficiary.user.firstName}} {{beneficiary.user.lastName}}</span>
+      {{/if}}
+    </div>
+    <div class="card-body">
+      <p class="mb-4">
+        Cet outil utilise l'intelligence artificielle pour analyser votre profil professionnel actuel et vous proposer des 
+        parcours de carrière adaptés à vos objectifs. Veuillez remplir le formulaire ci-dessous avec le maximum de détails
+        pour obtenir les résultats les plus pertinents.
+      </p>
+
+      <form action="/career-explorer/process" method="POST">
+        {{#if beneficiary}}
+          <input type="hidden" name="beneficiaryId" value="{{beneficiary.id}}">
+        {{/if}}
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="currentRole">Poste actuel / dernière expérience <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="currentRole" name="currentRole" required>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="targetRole">Poste visé / domaine d'intérêt <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="targetRole" name="targetRole" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="yearsExperience">Années d'expérience professionnelle</label>
+              <input type="number" class="form-control" id="yearsExperience" name="yearsExperience" min="0" max="50">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="education">Niveau d'éducation / Formation</label>
+              <select class="form-control" id="education" name="education">
+                <option value="">Sélectionnez</option>
+                <option value="CAP/BEP">CAP/BEP</option>
+                <option value="Baccalauréat">Baccalauréat</option>
+                <option value="Bac+2 (DUT, BTS)">Bac+2 (DUT, BTS)</option>
+                <option value="Bac+3 (Licence)">Bac+3 (Licence)</option>
+                <option value="Bac+5 (Master)">Bac+5 (Master)</option>
+                <option value="Doctorat">Doctorat</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="skills">Compétences techniques (séparées par des virgules)</label>
+          <input type="text" class="form-control" id="skills" name="skills" 
+                 placeholder="Ex: JavaScript, HTML/CSS, React, Git, gestion de projet...">
+        </div>
+
+        <div class="form-group">
+          <label for="experience">Résumé des expériences professionnelles pertinentes</label>
+          <textarea class="form-control" id="experience" name="experience" rows="3"></textarea>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="interests">Intérêts professionnels</label>
+              <input type="text" class="form-control" id="interests" name="interests" 
+                     placeholder="Ex: innovation, travail d'équipe, résolution de problèmes...">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="preferences">Préférences de travail</label>
+              <input type="text" class="form-control" id="preferences" name="preferences" 
+                     placeholder="Ex: télétravail, horaires flexibles, stabilité...">
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-robot mr-2"></i>Générer l'analyse de carrière
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{{> footer}} 

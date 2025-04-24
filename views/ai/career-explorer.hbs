@@ -1,0 +1,107 @@
+<div class="container-fluid py-4">
+  <h1 class="mb-4">Explorateur de Carrières IA</h1>
+  
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    Cet outil permet d'explorer des pistes de carrière adaptées au profil du bénéficiaire en fonction de ses compétences, intérêts et contraintes.
+    <br>
+    Le coût est de <strong>{{aiCredits}} crédits</strong> par recherche. Les résultats peuvent être sauvegardés dans les notes du bénéficiaire.
+  </div>
+  
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form action="/ai/career-explorer" method="POST">
+        <div class="mb-3">
+          <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+          <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+            <option value="" selected disabled>Choisir un bénéficiaire...</option>
+            {{#each beneficiaries}}
+              <option value="{{id}}" {{#ifCond ../selectedBeneficiaryId '===' id}}selected{{/ifCond}}>
+                {{user.firstName}} {{user.lastName}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="skills" class="form-label">Compétences *</label>
+              <textarea class="form-control" id="skills" name="skills" rows="4" required
+                placeholder="Ex: Gestion de projet, communication, analyse de données, Excel, design thinking, rédaction..."></textarea>
+              <div class="form-text">Listez les principales compétences techniques et transversales.</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="interests" class="form-label">Intérêts *</label>
+              <textarea class="form-control" id="interests" name="interests" rows="4" required
+                placeholder="Ex: Innovation, environnement, santé, technologie, arts, service client, international..."></textarea>
+              <div class="form-text">Indiquez les domaines/secteurs d'intérêt et motivations professionnelles.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="constraints" class="form-label">Contraintes (facultatif)</label>
+              <textarea class="form-control" id="constraints" name="constraints" rows="3" 
+                placeholder="Ex: Télétravail nécessaire, pas de déplacements fréquents, horaires flexibles requis..."></textarea>
+              <div class="form-text">Précisez les contraintes à prendre en compte dans la recherche.</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="educationLevel" class="form-label">Niveau de formation</label>
+              <select class="form-select" id="educationLevel" name="educationLevel">
+                <option value="">Sélectionner...</option>
+                <option value="CAP/BEP">CAP/BEP</option>
+                <option value="Bac">Bac</option>
+                <option value="Bac+2">Bac+2 (DUT, BTS)</option>
+                <option value="Bac+3">Bac+3 (Licence)</option>
+                <option value="Bac+5">Bac+5 (Master, École d'ingénieur)</option>
+                <option value="Bac+8">Bac+8 (Doctorat)</option>
+              </select>
+              <div class="form-text">Niveau de formation actuel ou visé.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="saveToBeneficiary" name="saveToBeneficiary" value="true">
+          <label class="form-check-label" for="saveToBeneficiary">Sauvegarder les résultats dans les notes du bénéficiaire</label>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+          <a href="/dashboard" class="btn btn-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search me-2"></i> Explorer les carrières ({{aiCredits}} crédits)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div class="mt-4">
+    <h5>À propos de l'explorateur de carrières</h5>
+    <p>Cet outil utilise l'intelligence artificielle pour identifier des pistes de carrière adaptées au profil du bénéficiaire en croisant :</p>
+    <ul>
+      <li>Ses compétences techniques et transversales</li>
+      <li>Ses intérêts professionnels et personnels</li>
+      <li>Ses contraintes et exigences</li>
+      <li>Le marché de l'emploi actuel</li>
+    </ul>
+    <p>Pour chaque piste identifiée, l'outil fournit :</p>
+    <ul>
+      <li>Une description du métier/rôle</li>
+      <li>Un score de correspondance avec le profil</li>
+      <li>Les formations complémentaires éventuellement nécessaires</li>
+      <li>Des conseils pour se positionner sur cette voie</li>
+    </ul>
+    <p class="text-muted small">
+      <i class="fas fa-lightbulb me-1"></i>
+      Conseil : Soyez précis dans la description des compétences et intérêts pour obtenir des suggestions pertinentes.
+    </p>
+  </div>
+</div> 

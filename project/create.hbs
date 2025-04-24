@@ -1,0 +1,311 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Créer un questionnaire</h1>
+    <a href="/questionnaires" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i>
+      Retour à la liste
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form
+        action="/questionnaires/create"
+        method="POST"
+        id="createQuestionnaireForm"
+      >
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="title" class="form-label">Titre
+              <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="title"
+              name="title"
+              required
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="type" class="form-label">Type
+              <span class="text-danger">*</span></label>
+            <select class="form-select" id="type" name="type" required>
+              <option value="skills">Compétences</option>
+              <option value="personality">Personnalité</option>
+              <option value="interests">Intérêts</option>
+              <option value="values">Valeurs</option>
+              <option value="custom">Personnalisé</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <textarea
+            class="form-control"
+            id="description"
+            name="description"
+            rows="3"
+            placeholder="Description du questionnaire..."
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label for="instructions" class="form-label">Instructions pour le
+            bénéficiaire</label>
+          <textarea
+            class="form-control"
+            id="instructions"
+            name="instructions"
+            rows="3"
+            placeholder="Instructions pour compléter le questionnaire..."
+          ></textarea>
+        </div>
+
+        <hr class="my-4" />
+        <h5>Questions</h5>
+        <p class="text-muted mb-3">Ajoutez au moins une question à votre
+          questionnaire.</p>
+
+        <div id="questionsContainer">
+          <!-- Les questions seront ajoutées ici dynamiquement -->
+          <div class="question-item card mb-3">
+            <div class="card-body">
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <h6>Question 1</h6>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger remove-question"
+                  disabled
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Texte de la question
+                  <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="questions[0][text]"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Type de réponse
+                  <span class="text-danger">*</span></label>
+                <select
+                  class="form-select question-type"
+                  name="questions[0][type]"
+                  required
+                >
+                  <option value="text">Texte libre</option>
+                  <option value="single">Choix unique</option>
+                  <option value="multiple">Choix multiple</option>
+                  <option value="scale">Échelle (1-5)</option>
+                </select>
+              </div>
+
+              <div class="options-container d-none">
+                <label class="form-label">Options de réponse
+                  <span class="text-danger">*</span></label>
+                <div class="options-list">
+                  <div class="input-group mb-2">
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="questions[0][options][]"
+                      placeholder="Option 1"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger remove-option"
+                      disabled
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="input-group mb-2">
+                    <input
+                      type="text"
+                      class="form-control"
+                      name="questions[0][options][]"
+                      placeholder="Option 2"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger remove-option"
+                      disabled
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary add-option"
+                >
+                  <i class="fas fa-plus"></i>
+                  Ajouter une option
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <button
+            type="button"
+            class="btn btn-outline-primary"
+            id="addQuestion"
+          >
+            <i class="fas fa-plus"></i>
+            Ajouter une question
+          </button>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="beneficiaryId" class="form-label">Assigner à un
+              bénéficiaire (optionnel)</label>
+            <select class="form-select" id="beneficiaryId" name="beneficiaryId">
+              <option value="">Ne pas assigner maintenant</option>
+              {{#each beneficiaries}}
+                <option value="{{this.id}}">{{this.firstName}}
+                  {{this.lastName}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="status" class="form-label">Statut
+              <span class="text-danger">*</span></label>
+            <select class="form-select" id="status" name="status" required>
+              <option value="draft">Brouillon</option>
+              <option value="assigned">Assigner immédiatement</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-check mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="sendNotification"
+            name="sendNotification"
+          />
+          <label class="form-check-label" for="sendNotification">
+            Envoyer une notification par email au bénéficiaire si assigné
+          </label>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+          <button
+            type="reset"
+            class="btn btn-outline-secondary"
+          >Réinitialiser</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i>
+            Enregistrer le questionnaire
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() { // Gestion de
+  l'ajout de questions const questionsContainer =
+  document.getElementById('questionsContainer'); const addQuestionBtn =
+  document.getElementById('addQuestion'); let questionCount = 1;
+  addQuestionBtn.addEventListener('click', function() { questionCount++; const
+  questionIndex = questionCount - 1; const questionDiv =
+  document.createElement('div'); questionDiv.className = 'question-item card
+  mb-3'; questionDiv.innerHTML = ` <div class="card-body"> <div class="d-flex
+  justify-content-between align-items-start mb-3"> <h6>Question
+  ${questionCount}</h6> <button type="button" class="btn btn-sm
+  btn-outline-danger remove-question"> <i class="fas fa-trash"></i> </button>
+  </div> <div class="mb-3"> <label class="form-label">Texte de la question <span
+  class="text-danger">*</span></label> <input type="text" class="form-control"
+  name="questions[${questionIndex}][text]" required> </div> <div class="mb-3">
+  <label class="form-label">Type de réponse <span
+  class="text-danger">*</span></label> <select class="form-select question-type"
+  name="questions[${questionIndex}][type]" required> <option value="text">Texte
+  libre</option> <option value="single">Choix unique</option> <option
+  value="multiple">Choix multiple</option> <option value="scale">Échelle
+  (1-5)</option> </select> </div> <div class="options-container d-none"> <label
+  class="form-label">Options de réponse <span
+  class="text-danger">*</span></label> <div class="options-list"> <div
+  class="input-group mb-2"> <input type="text" class="form-control"
+  name="questions[${questionIndex}][options][]" placeholder="Option 1"> <button
+  type="button" class="btn btn-outline-danger remove-option" disabled> <i
+  class="fas fa-times"></i> </button> </div> <div class="input-group mb-2">
+  <input type="text" class="form-control"
+  name="questions[${questionIndex}][options][]" placeholder="Option 2"> <button
+  type="button" class="btn btn-outline-danger remove-option" disabled> <i
+  class="fas fa-times"></i> </button> </div> </div> <button type="button"
+  class="btn btn-sm btn-outline-secondary add-option"> <i class="fas
+  fa-plus"></i> Ajouter une option </button> </div> </div> `;
+  questionsContainer.appendChild(questionDiv); // Ajouter les écouteurs
+  d'événements pour la nouvelle question initQuestionEvents(questionDiv); }); //
+  Initialiser les écouteurs d'événements pour les questions existantes function
+  initQuestionEvents(questionElement) { const removeQuestionBtn =
+  questionElement.querySelector('.remove-question'); const questionTypeSelect =
+  questionElement.querySelector('.question-type'); const optionsContainer =
+  questionElement.querySelector('.options-container'); const addOptionBtn =
+  questionElement.querySelector('.add-option'); const optionsList =
+  questionElement.querySelector('.options-list'); // Supprimer une question
+  removeQuestionBtn.addEventListener('click', function() {
+  questionElement.remove(); updateQuestionNumbers(); }); // Afficher/masquer les
+  options en fonction du type de question
+  questionTypeSelect.addEventListener('change', function() { if (this.value ===
+  'single' || this.value === 'multiple') {
+  optionsContainer.classList.remove('d-none'); } else {
+  optionsContainer.classList.add('d-none'); } }); // Ajouter une option
+  addOptionBtn.addEventListener('click', function() { const optionCount =
+  optionsList.children.length + 1; const optionDiv =
+  document.createElement('div'); optionDiv.className = 'input-group mb-2';
+  optionDiv.innerHTML = ` <input type="text" class="form-control"
+  name="${questionTypeSelect.name.replace('type', 'options')}[]"
+  placeholder="Option ${optionCount}"> <button type="button" class="btn
+  btn-outline-danger remove-option"> <i class="fas fa-times"></i> </button> `;
+  optionsList.appendChild(optionDiv); // Ajouter l'écouteur d'événement pour
+  supprimer l'option const removeOptionBtn =
+  optionDiv.querySelector('.remove-option');
+  removeOptionBtn.addEventListener('click', function() { optionDiv.remove();
+  updateOptionButtons(); }); updateOptionButtons(); }); // Mettre à jour les
+  boutons de suppression d'options function updateOptionButtons() { const
+  options = optionsList.querySelectorAll('.input-group');
+  options.forEach((option, index) => { const removeBtn =
+  option.querySelector('.remove-option'); if (options.length <= 2) {
+  removeBtn.disabled = true; } else { removeBtn.disabled = false; } }); } //
+  Initialiser l'état des boutons d'options updateOptionButtons(); } // Mettre à
+  jour les numéros des questions function updateQuestionNumbers() { const
+  questions = questionsContainer.querySelectorAll('.question-item');
+  questions.forEach((question, index) => { const questionNumber = index + 1;
+  question.querySelector('h6').textContent = `Question ${questionNumber}`; //
+  Mettre à jour les noms des champs const inputs =
+  question.querySelectorAll('input, select'); inputs.forEach(input => { if
+  (input.name.includes('questions[')) { input.name =
+  input.name.replace(/questions\[\d+\]/, `questions[${index}]`); } }); }); } //
+  Initialiser les écouteurs d'événements pour la première question const
+  firstQuestion = document.querySelector('.question-item'); if (firstQuestion) {
+  initQuestionEvents(firstQuestion); } // Validation du formulaire const form =
+  document.getElementById('createQuestionnaireForm');
+  form.addEventListener('submit', function(event) { const questions =
+  questionsContainer.querySelectorAll('.question-item'); if (questions.length
+  === 0) { event.preventDefault(); alert('Veuillez ajouter au moins une question
+  au questionnaire.'); } // Vérifier que les questions de type choix ont des
+  options questions.forEach((question, index) => { const questionType =
+  question.querySelector('.question-type').value; if (questionType === 'single'
+  || questionType === 'multiple') { const options =
+  question.querySelectorAll('.options-list input'); if (options.length < 2) {
+  event.preventDefault(); alert(`La question ${index + 1} nécessite au moins
+  deux options de réponse.`); } } }); }); });
+</script>

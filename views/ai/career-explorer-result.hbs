@@ -1,0 +1,184 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Résultats Exploration de Carrière</h1>
+    <div>
+      <button
+        id="btnCopy"
+        class="btn btn-outline-primary me-2"
+        onclick="copyToClipboard()"
+      >
+        <i class="fas fa-copy me-1"></i>
+        Copier
+      </button>
+      {{#unless wasSaved}}
+        <form action="/ai/career-explorer-save" method="POST" class="d-inline">
+          <input
+            type="hidden"
+            name="beneficiaryId"
+            value="{{beneficiary.id}}"
+          />
+          <input
+            type="hidden"
+            name="explorationResults"
+            value="{{explorationResults}}"
+          />
+          <button type="submit" class="btn btn-success me-2">
+            <i class="fas fa-save me-1"></i>
+            Enregistrer dans les notes
+          </button>
+        </form>
+      {{/unless}}
+      <a href="/ai/career-explorer" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>
+        Retour
+      </a>
+    </div>
+  </div>
+
+  {{#if wasSaved}}
+    <div class="alert alert-success">
+      <i class="fas fa-check-circle me-2"></i>
+      Les résultats de l'exploration ont été enregistrés avec succès pour
+      {{beneficiary.user.firstName}}
+      {{beneficiary.user.lastName}}.
+      <a href="/beneficiaries/{{beneficiary.id}}" class="alert-link">Voir la
+        fiche du bénéficiaire</a>
+    </div>
+  {{else}}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      Ces résultats ne sont pas encore enregistrés dans les notes du
+      bénéficiaire.
+    </div>
+  {{/if}}
+
+  {{#if careerSuggestions.message}}
+    <div class="alert alert-warning">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{careerSuggestions.message}}
+    </div>
+  {{/if}}
+
+  <div class="row mb-4">
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Critères de recherche</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Compétences</label>
+            <p>{{inputs.skills}}</p>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Intérêts</label>
+            <p>{{inputs.interests}}</p>
+          </div>
+          {{#if inputs.constraints}}
+            <div class="mb-3">
+              <label class="form-label fw-bold">Contraintes</label>
+              <p>{{inputs.constraints}}</p>
+            </div>
+          {{/if}}
+          {{#if inputs.educationLevel}}
+            <div class="mb-3">
+              <label class="form-label fw-bold">Niveau d'éducation</label>
+              <p>{{inputs.educationLevel}}</p>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div id="explorationContent">
+        {{#if careerSuggestions.suggestions}}
+          <h4 class="mb-3">Pistes de carrière recommandées</h4>
+
+          {{#each careerSuggestions.suggestions}}
+            <div class="card shadow-sm mb-3">
+              <div
+                class="card-header d-flex justify-content-between align-items-center"
+              >
+                <h5 class="mb-0">{{title}}</h5>
+                <span class="badge bg-primary">Match: {{matchScore}}%</span>
+              </div>
+              <div class="card-body">
+                <p>{{description}}</p>
+
+                {{#if educationRequired}}
+                  <div class="mb-2">
+                    <strong>Formation requise:</strong>
+                    {{educationRequired}}
+                  </div>
+                {{/if}}
+
+                {{#if keySkills}}
+                  <div class="mb-2">
+                    <strong>Compétences clés:</strong>
+                    {{#each keySkills}}
+                      <span class="badge bg-secondary me-1">{{this}}</span>
+                    {{/each}}
+                  </div>
+                {{/if}}
+
+                {{#if recommendations}}
+                  <div class="mb-0">
+                    <strong>Recommandations:</strong>
+                    <ul class="mb-0 ps-3">
+                      {{#each recommendations}}
+                        <li>{{this}}</li>
+                      {{/each}}
+                    </ul>
+                  </div>
+                {{/if}}
+              </div>
+            </div>
+          {{/each}}
+
+        {{else}}
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Aucune suggestion de carrière n'a été générée. Veuillez ajuster vos
+            critères et réessayer.
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Important :</strong>
+    Ces suggestions sont générées par l'IA et doivent être utilisées comme point
+    de départ pour une exploration approfondie avec le bénéficiaire.
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+    <a
+      href="/beneficiaries/{{beneficiary.id}}"
+      class="btn btn-outline-secondary"
+    >
+      <i class="fas fa-user me-1"></i>
+      Voir la fiche bénéficiaire
+    </a>
+    <a href="/ai/career-explorer" class="btn btn-primary">
+      <i class="fas fa-search me-1"></i>
+      Nouvelle exploration
+    </a>
+  </div>
+</div>
+
+<script>
+  function copyToClipboard() { // Get the text content, not the HTML const text
+  = document.getElementById('explorationContent').innerText; // Create a
+  temporary textarea element const textarea =
+  document.createElement('textarea'); textarea.value = text;
+  textarea.setAttribute('readonly', ''); textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px'; document.body.appendChild(textarea); //
+  Select and copy textarea.select(); document.execCommand('copy'); // Remove the
+  textarea document.body.removeChild(textarea); // Change button text to
+  indicate success const btn = document.getElementById('btnCopy'); const
+  originalHTML = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check
+  me-1"></i> Copié!'; // Reset button text after 2 seconds setTimeout(() => {
+  btn.innerHTML = originalHTML; }, 2000); }
+</script>

@@ -1,0 +1,44 @@
+```
++----------------------------------------------------------------------+
+|                                                                      |
+| LOGO  PLATEFORME BILAN DE COMPÉTENCES         Bénéficiaire ▼ [🔔] [✉]|
+|                                                                      |
++----------------------------------------------------------------------+
+|                                                                      |
+| [≡] MENU  |  GESTION DES BÉNÉFICIAIRES                               |
+|           |                                                          |
+|-----------+----------------------------------------------------------+
+|           |                                                          |
+| Dashboard | RECHERCHER :                                             |
+| Bénéfic.  | +--------------------------------------------------+     |
+| Agenda    | | Nom, prénom, email...                      [🔍]  |     |
+| Messages  | +--------------------------------------------------+     |
+| Documents |                                                          |
+| Outils    | FILTRES :  [Tous ▼]  [Phase ▼]  [Financement ▼]  [+ Avancé]
+| Rapports  |                                                          |
+|           | [+ NOUVEAU BÉNÉFICIAIRE]                                 |
+|           |                                                          |
+|           | +----------------------------------------------------------+
+|           | | NOM      | PRÉNOM  | PHASE        | PROGRESSION | ACTIONS |
+|           | +----------------------------------------------------------+
+|           | | Lambert  | Marie   | Investigation | 65%        | [···]   |
+|           | | Martin   | Paul    | Préliminaire | 25%        | [···]   |
+|           | | Petit    | Thomas  | En attente   | 0%         | [···]   |
+|           | | Dubois   | Sophie  | Conclusion   | 90%        | [···]   |
+|           | | Moreau   | Claire  | Terminé      | 100%       | [···]   |
+|           | | Leroy    | Michel  | Suivi        | 100%       | [···]   |
+|           | | Garcia   | Lucie   | Archivé      | 100%       | [···]   |
+|           | +----------------------------------------------------------+
+|           |                                                          |
+|           | Pages : [1] 2 3 ... 8  |  Afficher : [10 ▼] par page    |
+|           |                                                          |
+|           | LÉGENDE :                                                |
+|           | ● En attente  ● Préliminaire  ● Investigation           |
+|           | ● Conclusion  ● Terminé       ● Suivi       ● Archivé   |
+|           |                                                          |
++-----------+----------------------------------------------------------+
+|                                                                      |
+| © 2025 Plateforme Bilan de Compétences | Aide | Paramètres | Déconnexion |
+|                                                                      |
++----------------------------------------------------------------------+
+```

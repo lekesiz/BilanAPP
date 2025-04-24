@@ -1,37 +1,54 @@
+{{#> layouts/main}}
 <div class="container py-4">
-    <h1 class="mb-4">Modifier le Forfait : {{forfaitToEdit.name}}</h1>
+    <h1 class="h3 mb-4">{{title}}</h1>
 
-     {{> messages}}
+    {{> messages}}
 
-    <form action="/admin/forfaits/{{forfaitToEdit.name}}/edit" method="POST">
-        <div class="card shadow-sm">
-             <div class="card-header">
-                Détails du Forfait
-             </div>
-            <div class="card-body">
+    <div class="card">
+        <div class="card-body">
+            <form action="/admin/forfaits/{{forfaitToEdit.name}}/edit" method="POST">
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                
                 <div class="mb-3">
-                    <label class="form-label">Nom du Forfait (Non modifiable)</label>
-                    <input type="text" class="form-control" value="{{forfaitToEdit.name}}" disabled readonly>
+                    <label for="name" class="form-label">Nom du Forfait</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{forfaitToEdit.name}}" readonly disabled>
+                    <small class="form-text text-muted">Le nom du forfait ne peut pas être modifié.</small>
                 </div>
+
                  <div class="mb-3">
                     <label for="description" class="form-label">Description</label>
-                    <textarea class="form-control" id="description" name="description" rows="3">{{forfaitToEdit.description}}</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="2">{{forfaitToEdit.description}}</textarea>
                 </div>
+
+                <div class="row mb-3">
+                     <div class="col-md-4">
+                        <label for="defaultCredits" class="form-label">Crédits par Défaut *</label>
+                        <input type="number" class="form-control" id="defaultCredits" name="defaultCredits" value="{{forfaitToEdit.defaultCredits}}" min="0" required>
+                        <small class="form-text text-muted">Crédits assignés lors d'un changement vers ce forfait.</small>
+                    </div>
+                    <div class="col-md-4">
+                         <label for="maxBeneficiaries" class="form-label">Limite Bénéficiaires</label>
+                        <input type="number" class="form-control" id="maxBeneficiaries" name="maxBeneficiaries" value="{{forfaitToEdit.maxBeneficiaries}}" min="0">
+                         <small class="form-text text-muted">Laisser vide pour illimité.</small>
+                    </div>
+                    <div class="col-md-4">
+                         <label for="maxAiGenerationsMonthly" class="form-label">Limite Générations IA / Mois</label>
+                        <input type="number" class="form-control" id="maxAiGenerationsMonthly" name="maxAiGenerationsMonthly" value="{{forfaitToEdit.maxAiGenerationsMonthly}}" min="0">
+                        <small class="form-text text-muted">Laisser vide pour illimité.</small>
+                    </div>
+                </div>
+                
                 <div class="mb-3">
-                    <label for="defaultCredits" class="form-label">Crédits par Défaut *</label>
-                    <input type="number" class="form-control" id="defaultCredits" name="defaultCredits" value="{{forfaitToEdit.defaultCredits}}" min="0" required>
-                    <small class="form-text text-muted">Crédits attribués lors d'un changement vers ce forfait.</small>
+                    <label for="features" class="form-label">Fonctionnalités Clés (une par ligne)</label>
+                    <textarea class="form-control" id="features" name="features" rows="5">{{forfaitToEdit.features}}</textarea>
                 </div>
-                 <div class="mb-3">
-                    <label for="features" class="form-label">Fonctionnalités (une par ligne)</label>
-                    <textarea class="form-control" id="features" name="features" rows="6">{{forfaitToEdit.features}}</textarea>
-                     <small class="form-text text-muted">Ces fonctionnalités sont affichées sur la page de profil de l'utilisateur.</small>
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <a href="/admin/forfaits" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary">Mettre à jour le Forfait</button>
                 </div>
-            </div>
-            <div class="card-footer d-flex justify-content-between">
-                 <a href="/admin/forfaits" class="btn btn-secondary">Annuler</a>
-                 <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
-            </div>
+            </form>
         </div>
-    </form>
-</div> 
+    </div>
+</div>
+{{/layouts/main}} 

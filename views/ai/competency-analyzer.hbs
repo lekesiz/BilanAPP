@@ -1,0 +1,82 @@
+<div class="container-fluid py-4">
+  <h1 class="mb-4">Analyseur de Compétences IA</h1>
+  
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    Cet outil analyse l'adéquation entre le profil du bénéficiaire et un poste visé, en identifiant les compétences correspondantes et les lacunes à combler.
+    <br>
+    Le coût est de <strong>{{aiCredits}} crédits</strong> par analyse. Les résultats peuvent être sauvegardés dans les notes du bénéficiaire.
+  </div>
+  
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form action="/ai/competency-analyzer" method="POST">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+        <div class="mb-3">
+          <label for="beneficiaryId" class="form-label">Bénéficiaire *</label>
+          <select class="form-select" id="beneficiaryId" name="beneficiaryId" required>
+            <option value="" selected disabled>Choisir un bénéficiaire...</option>
+            {{#each beneficiaries}}
+              <option value="{{id}}" {{#ifCond ../selectedBeneficiaryId '===' id}}selected{{/ifCond}}>
+                {{user.firstName}} {{user.lastName}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="cvText" class="form-label">Profil du bénéficiaire / CV *</label>
+              <textarea class="form-control" id="cvText" name="cvText" rows="10" required
+                placeholder="Copiez-collez ici le CV ou le profil du bénéficiaire (parcours, compétences, formations...)"></textarea>
+              <div class="form-text">Détaillez le parcours, les compétences et formations du bénéficiaire.</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="jobDescription" class="form-label">Description du poste visé *</label>
+              <textarea class="form-control" id="jobDescription" name="jobDescription" rows="10" required
+                placeholder="Copiez-collez ici la description du poste visé (titre, missions, compétences requises...)"></textarea>
+              <div class="form-text">Précisez les compétences et qualifications requises pour le poste.</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="saveToBeneficiary" name="saveToBeneficiary" value="true">
+          <label class="form-check-label" for="saveToBeneficiary">Sauvegarder les résultats dans les notes du bénéficiaire</label>
+        </div>
+        
+        <div class="d-flex justify-content-between">
+          <a href="/dashboard" class="btn btn-secondary">Annuler</a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-chart-bar me-2"></i> Analyser les compétences ({{aiCredits}} crédits)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <div class="mt-4">
+    <h5>À propos de l'analyseur de compétences</h5>
+    <p>Cet outil permet d'évaluer l'adéquation entre le profil d'un bénéficiaire et un poste spécifique en :</p>
+    <ul>
+      <li>Analysant le parcours et les compétences actuelles du bénéficiaire</li>
+      <li>Évaluant les exigences et prérequis du poste visé</li>
+      <li>Identifiant les points de correspondance et les écarts</li>
+      <li>Proposant des actions concrètes pour combler ces écarts</li>
+    </ul>
+    <p>L'analyse fournit :</p>
+    <ul>
+      <li>Un score global d'adéquation avec le poste</li>
+      <li>Une liste des compétences déjà maîtrisées par le bénéficiaire</li>
+      <li>Une liste des compétences à développer pour répondre aux exigences du poste</li>
+      <li>Des recommandations personnalisées (formations, certifications, expériences à acquérir)</li>
+    </ul>
+    <p class="text-muted small">
+      <i class="fas fa-lightbulb me-1"></i>
+      Conseil : Utilisez le CV le plus récent du bénéficiaire et une description de poste aussi détaillée que possible pour obtenir une analyse pertinente.
+    </p>
+  </div>
+</div> 
