@@ -1,6 +1,8 @@
 const express = require('express');
-
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
+const { Op } = require('sequelize');
+const { Appointment, Beneficiary, User } = require('../models');
 const {
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
@@ -11,6 +13,36 @@ const {
 
 // Require the new controller
 const appointmentController = require('../controllers/appointmentController');
+
+// --- Validation Rules ---
+const appointmentValidationRules = () => [
+    // beneficiaryId: Controller içinde kontrol ediliyor (yetki vs)
+    body('type').isIn([
+        'Entretien Préliminaire',
+        'Entretien d\'Investigation',
+        'Entretien de Synthèse',
+        'Passation Tests',
+        'Suivi',
+        'Autre']).withMessage('Type de rendez-vous invalide.'),
+    body('date').isISO8601().withMessage('Date invalide.'),
+    body('time').matches(/^([01]\d|2[0-3]):([0-5]\d)$/).withMessage('Heure invalide (HH:MM format requis).'),
+    body('description').optional({ checkFalsy: true }).trim().escape(),
+    body('location').optional({ checkFalsy: true }).trim().escape(),
+    body('notes').optional({ checkFalsy: true }).trim().escape(),
+    // Edit için status ekleyelim (add için gerekli değil)
+    body('status').optional().isIn(['scheduled', 'completed', 'cancelled']).withMessage('Statut invalide.')
+];
+
+const addAppointmentValidationRules = () => [
+    body('beneficiaryId').if((value, { req }) => req.user.userType !== 'beneficiary').notEmpty().withMessage('Bénéficiaire requis.').isInt().withMessage('ID Bénéficiaire invalide.'),
+    ...appointmentValidationRules()
+];
+
+const editAppointmentValidationRules = () => [
+    // beneficiaryId: Controller içinde kontrol ediliyor
+    ...appointmentValidationRules(),
+    body('status').notEmpty().isIn(['scheduled', 'completed', 'cancelled']).withMessage('Statut invalide.') // Edit için zorunlu
+];
 
 // --- Appointment Routes ---
 
@@ -34,7 +66,7 @@ router.get(
 router.post(
   '/new',
   ensureAuthenticated,
-  ensureConsultantOrBeneficiary,
+  addAppointmentValidationRules(),
   appointmentController.addAppointment,
 );
 
@@ -51,6 +83,7 @@ router.post(
   '/:id/edit',
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
+  editAppointmentValidationRules(),
   appointmentController.updateAppointment,
 );
 

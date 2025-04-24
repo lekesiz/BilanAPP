@@ -1,6 +1,6 @@
 const express = require('express');
-
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 // Remove requires handled by controller
 // const bcrypt = require('bcryptjs');
 const { ensureAuthenticated } = require('../middlewares/auth');
@@ -8,6 +8,25 @@ const { ensureAuthenticated } = require('../middlewares/auth');
 
 // Require the new controller
 const profileController = require('../controllers/profileController');
+
+// --- Validation Rules ---
+const infoValidationRules = () => [
+    body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
+    body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
+];
+
+const passwordValidationRules = () => [
+    body('currentPassword').notEmpty().withMessage('Mot de passe actuel requis.'),
+    body('newPassword')
+        .isLength({ min: 6 })
+        .withMessage('Le nouveau mot de passe doit contenir au moins 6 caractères.'),
+    body('confirmPassword').custom((value, { req }) => {
+        if (value !== req.body.newPassword) {
+            throw new Error('Les nouveaux mots de passe ne correspondent pas.');
+        }
+        return true;
+    }),
+];
 
 // GET /profile - Show Profile Page
 router.get('/', ensureAuthenticated, profileController.showProfile);
@@ -19,6 +38,7 @@ router.get('/settings', ensureAuthenticated, profileController.showSettings);
 router.post(
   '/settings/info',
   ensureAuthenticated,
+  infoValidationRules(),
   profileController.updateInfo,
 );
 
@@ -26,6 +46,7 @@ router.post(
 router.post(
   '/settings/password',
   ensureAuthenticated,
+  passwordValidationRules(),
   profileController.changePassword,
 );
 

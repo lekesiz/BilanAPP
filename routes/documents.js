@@ -1,6 +1,6 @@
 const express = require('express');
-
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const {
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
@@ -19,6 +19,31 @@ const documentController = require('../controllers/documentController');
 
 // --- Constants ---
 const UPLOAD_COST = 2; // Define cost here or get from config
+
+// --- Validation Rules ---
+const documentValidationRules = () => [
+  // beneficiaryId: Opsiyonel, ama varsa integer olmalı
+  body('beneficiaryId').optional({ checkFalsy: true }).isInt().withMessage('ID Bénéficiaire invalide.'),
+  body('description').optional({ checkFalsy: true }).trim().escape(),
+  // category: Modeldeki ENUM değerlerinden biri olmalı
+  body('category').optional({ checkFalsy: true }).isIn([
+      'CV',
+      'Lettre de Motivation',
+      'Résultats Tests',
+      'Synthèse',
+      "Plan d'Action",
+      'Administratif',
+      'Convention',
+      'Portfolio',
+      'Autre']).withMessage('Catégorie invalide.'),
+  // bilanPhase: Modeldeki ENUM değerlerinden biri olmalı
+  body('bilanPhase').optional({ checkFalsy: true }).isIn([
+      'Preliminaire',
+      'Investigation',
+      'Conclusion',
+      'Suivi',
+      'General']).withMessage('Phase Bilan invalide.'),
+];
 
 // --- Document Routes ---
 
@@ -42,10 +67,10 @@ router.get(
 router.post(
   '/upload',
   ensureAuthenticated,
-  ensureConsultantOrBeneficiary,
-  checkAndDeductCredits(UPLOAD_COST), // Check credits first
-  documentController.handleUploadMiddleware, // Then handle upload via Multer middleware from controller
-  documentController.uploadDocument, // Finally, process the upload in the controller
+  documentController.handleUploadMiddleware,
+  checkAndDeductCredits(UPLOAD_COST),
+  documentValidationRules(),
+  documentController.uploadDocument,
 );
 
 // GET /:id/edit - Show Edit Document Form
@@ -61,6 +86,7 @@ router.post(
   '/:id/edit',
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
+  documentValidationRules(),
   documentController.updateDocument,
 );
 

@@ -1,5 +1,7 @@
 const { Op } = require('sequelize');
 const { Appointment, Beneficiary, User } = require('../models');
+const { validationResult } = require('express-validator');
+const logger = require('../config/logger');
 
 // GET /appointments - List Appointments
 exports.listAppointments = async (req, res) => {
@@ -108,7 +110,7 @@ exports.listAppointments = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Appointments list error:', err);
+    logger.error('Appointments list error:', { error: err });
     req.flash('error_msg', 'Erreur lors du chargement des rendez-vous.');
     res.redirect('/dashboard');
   }
@@ -150,7 +152,7 @@ exports.showNewForm = async (req, res) => {
       isConsultant: req.user.userType === 'consultant',
     });
   } catch (error) {
-    console.error('New appointment form error:', error);
+    logger.error('New appointment form error:', { error: error });
     req.flash('error_msg', 'Erreur chargement formulaire RDV.');
     res.redirect('/appointments');
   }
@@ -158,11 +160,38 @@ exports.showNewForm = async (req, res) => {
 
 // POST /appointments/new - Add New Appointment
 exports.addAppointment = async (req, res) => {
-  const {
-    beneficiaryId, date, time, type, description, location, notes,
-  } =
-    req.body;
-  const dateTime = `${date} ${time}`;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    try {
+      let beneficiaries = [];
+      const isAdmin = req.user.forfaitType === 'Admin';
+      const isConsultant = req.user.userType === 'consultant';
+      if (isAdmin || isConsultant) {
+        const whereCondition = isAdmin ? {} : { consultantId: req.user.id };
+        const rawBeneficiaries = await Beneficiary.findAll({
+          where: whereCondition,
+          include: { model: User, as: 'user' },
+        });
+        beneficiaries = rawBeneficiaries.map((b) => b.get({ plain: true }));
+      }
+      return res.render('appointments/new', {
+        title: 'Planifier un rendez-vous',
+        user: req.user,
+        beneficiaries,
+        preselectedBeneficiary: req.body.beneficiaryId,
+        isConsultant,
+        errors: errors.array(),
+        formData: req.body,
+      });
+    } catch (renderError) {
+      logger.error('Error re-rendering new appointment form:', { error: renderError });
+      req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+      return res.redirect('/appointments');
+    }
+  }
+
+  const { beneficiaryId, date, time, type, description, location, notes } = req.body;
+  const dateTime = `${date} ${time}:00`;
 
   try {
     let consultantId;
@@ -171,7 +200,7 @@ exports.addAppointment = async (req, res) => {
     if (req.user.userType === 'consultant') {
       consultantId = req.user.id;
       const isOwnBeneficiary = await Beneficiary.findOne({
-        where: { id: beneficiaryId, consultantId: req.user.id },
+        where: { id: finalBeneficiaryId, consultantId: req.user.id },
       });
       if (!isOwnBeneficiary) {
         req.flash('error_msg', 'Sélection bénéficiaire invalide.');
@@ -193,7 +222,7 @@ exports.addAppointment = async (req, res) => {
     await Appointment.create({
       consultantId,
       beneficiaryId: finalBeneficiaryId,
-      date: dateTime,
+      date: new Date(dateTime),
       type,
       description,
       location,
@@ -204,9 +233,33 @@ exports.addAppointment = async (req, res) => {
     req.flash('success_msg', 'Rendez-vous planifié.');
     res.redirect('/appointments');
   } catch (err) {
-    console.error('Appointment add error:', err);
+    logger.error('Appointment add error:', { error: err, body: req.body });
     req.flash('error_msg', 'Erreur lors de la planification du RDV.');
-    res.redirect('/appointments/new'); // Consider re-rendering with data
+    try {
+      let beneficiaries = [];
+      const isAdmin = req.user.forfaitType === 'Admin';
+      const isConsultant = req.user.userType === 'consultant';
+      if (isAdmin || isConsultant) {
+        const whereCondition = isAdmin ? {} : { consultantId: req.user.id };
+        const rawBeneficiaries = await Beneficiary.findAll({
+          where: whereCondition,
+          include: { model: User, as: 'user' },
+        });
+        beneficiaries = rawBeneficiaries.map((b) => b.get({ plain: true }));
+      }
+      return res.render('appointments/new', {
+        title: 'Planifier un rendez-vous',
+        user: req.user,
+        beneficiaries,
+        preselectedBeneficiary: req.body.beneficiaryId,
+        isConsultant,
+        errors: [{ msg: req.flash('error_msg') }],
+        formData: req.body,
+      });
+    } catch (renderError) {
+      logger.error('Error re-rendering new appointment form on catch:', { error: renderError });
+      return res.redirect('/appointments');
+    }
   }
 };
 
@@ -277,7 +330,7 @@ exports.showEditForm = async (req, res) => {
       isConsultant: req.user.userType === 'consultant',
     });
   } catch (err) {
-    console.error('Appointment edit form error:', err);
+    logger.error('Appointment edit form error:', { error: err });
     req.flash('error_msg', 'Erreur chargement formulaire modification RDV.');
     res.redirect('/appointments');
   }
@@ -285,18 +338,45 @@ exports.showEditForm = async (req, res) => {
 
 // POST /appointments/:id/edit - Update Appointment
 exports.updateAppointment = async (req, res) => {
-  const {
-    beneficiaryId,
-    date,
-    time,
-    type,
-    description,
-    location,
-    notes,
-    status,
-  } = req.body;
   const appointmentId = req.params.id;
-  const dateTime = `${date} ${time}`;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    try {
+      const appointment = await Appointment.findByPk(appointmentId, {
+        include: [{ model: Beneficiary, as: 'beneficiary' }],
+      });
+      if (!appointment) {
+        req.flash('error_msg', 'Rendez-vous non trouvé.');
+        return res.redirect('/appointments');
+      }
+      
+      let beneficiaries = [];
+      if (req.user.userType === 'consultant' || req.user.forfaitType === 'Admin') {
+        const whereCondition = req.user.forfaitType === 'Admin' ? {} : { consultantId: req.user.id };
+        beneficiaries = (await Beneficiary.findAll({ where: whereCondition, include: 'user' })).map(b => b.get({plain: true}));
+      }
+
+      return res.render('appointments/edit', {
+        title: 'Modifier le rendez-vous',
+        appointment: appointment.get({ plain: true }),
+        appointmentDate: req.body.date,
+        appointmentTime: req.body.time,
+        beneficiaries,
+        user: req.user,
+        isConsultant: req.user.userType === 'consultant',
+        errors: errors.array(),
+        formData: req.body,
+      });
+    } catch(renderError) {
+      logger.error('Error re-rendering edit appointment form:', { error: renderError });
+      req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+      return res.redirect('/appointments');
+    }
+  }
+
+  const { beneficiaryId, date, time, type, description, location, notes, status } = req.body;
+  const dateTime = `${date} ${time}:00`;
 
   try {
     const appointment = await Appointment.findByPk(appointmentId, {
@@ -350,7 +430,7 @@ exports.updateAppointment = async (req, res) => {
 
     await appointment.update({
       beneficiaryId: finalBeneficiaryId,
-      date: dateTime,
+      date: new Date(dateTime),
       type,
       description,
       location,
@@ -361,7 +441,7 @@ exports.updateAppointment = async (req, res) => {
     req.flash('success_msg', 'Rendez-vous modifié.');
     res.redirect('/appointments');
   } catch (err) {
-    console.error('Appointment edit error:', err);
+    logger.error('Appointment edit error:', { error: err, appointmentId: appointmentId });
     req.flash('error_msg', 'Erreur lors de la modification du RDV.');
     res.redirect(`/appointments/${appointmentId}/edit`);
   }
@@ -396,7 +476,7 @@ exports.deleteAppointment = async (req, res) => {
     req.flash('success_msg', 'Rendez-vous supprimé.');
     res.redirect('/appointments');
   } catch (err) {
-    console.error('Appointment delete error:', err);
+    logger.error('Appointment delete error:', { error: err, appointmentId: appointmentId });
     req.flash('error_msg', 'Erreur lors de la suppression du RDV.');
     res.redirect('/appointments');
   }

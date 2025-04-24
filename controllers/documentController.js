@@ -4,6 +4,8 @@ const fs = require('fs');
 const { Op } = require('sequelize');
 const { Document, Beneficiary, User } = require('../models');
 const { logCreditChange } = require('../services/creditService');
+const { validationResult } = require('express-validator');
+const logger = require('../config/logger');
 
 // --- Multer Configuration (Should ideally be configured once in app.js or a config file) ---
 // For now, keep it here, but consider centralizing it.
@@ -242,15 +244,50 @@ exports.uploadDocument = async (req, res) => {
       'error_msg',
       'Aucun fichier sélectionné ou type de fichier invalide.',
     );
-    // Potentially need credit refund if checkAndDeductCredits ran
     return res.redirect('/documents/upload');
   }
 
-  const {
-    beneficiaryId, description, category, bilanPhase,
-  } = req.body;
+  // express-validator sonuçlarını kontrol et (form verileri için)
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Hata varsa, yüklenen dosyayı sil ve formu tekrar render et
+    if (req.file?.path) {
+      fs.unlink(req.file.path, (unlinkErr) => {
+        if (unlinkErr) logger.error("Error deleting orphaned file after validation error:", { error: unlinkErr, path: req.file.path });
+      });
+    }
+    try {
+        let beneficiaries = [];
+        const isAdmin = req.user.forfaitType === 'Admin';
+        const isConsultant = req.user.userType === 'consultant';
+        if (isAdmin || isConsultant) {
+             const whereCondition = isAdmin ? {} : { consultantId: req.user.id };
+             const rawBeneficiaries = await Beneficiary.findAll({ where: whereCondition, include: 'user'});
+             beneficiaries = rawBeneficiaries.map(b => b.get({plain: true}));
+        }
+        const categories = Document.getAttributes().category.values;
+        return res.render('documents/upload', {
+            title: 'Télécharger un document',
+            user: req.user,
+            beneficiaries,
+            categories,
+            preselectedBeneficiary: req.body.beneficiaryId,
+            preselectedCategory: req.body.category,
+            isConsultant,
+            errors: errors.array(), // Hataları gönder
+            formData: req.body // Form verilerini koru
+        });
+    } catch (renderError) {
+        logger.error('Error re-rendering upload form after validation error:', { error: renderError });
+        req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+        return res.redirect('/documents/upload');
+    }
+  }
+
+  // Doğrulama başarılı, devam et
+  const { beneficiaryId, description, category, bilanPhase } = req.body;
   const uploadedBy = req.user.id;
-  const cost = req.creditCost; // Provided by checkAndDeductCredits middleware
+  const cost = req.creditCost; 
   const isAdmin = req.user.forfaitType === 'Admin';
 
   try {
@@ -293,33 +330,41 @@ exports.uploadDocument = async (req, res) => {
       beneficiaryId: finalBeneficiaryId,
     });
 
-    await logCreditChange(
-      uploadedBy, // userId
-      -cost, // amount (negative because it's a deduction)
-      'DOCUMENT_UPLOAD',
-      `Téléchargement document '${newDocument.originalName}'`,
-      null, // adminUserId (null because it's not an admin action)
-      newDocument.id, // relatedResourceId
-      'Document', // relatedResourceType
-    );
+    // Kredi loglama (try-catch bloğu yoktu, eklendi)
+    try {
+      await logCreditChange(
+        uploadedBy,
+        -cost,
+        "DOCUMENT_UPLOAD",
+        `Téléchargement document '${newDocument.originalName}'`,
+        null,
+        newDocument.id,
+        "Document",
+      );
+      req.flash("success_msg", `Document téléchargé (${cost} crédits déduits).`);
+    } catch (logErr) {
+        logger.error('Credit logging error after document upload:', { error: logErr, documentId: newDocument.id });
+        req.flash('warning_msg', 'Document téléchargé, mais erreur de log de crédit.');
+    }
 
-    req.flash('success_msg', `Document téléchargé (${cost} crédits déduits).`);
-    res.redirect('/documents');
+    res.redirect("/documents");
+
   } catch (dbErr) {
-    console.error('Document DB save error:', dbErr);
-    // Attempt to delete the orphaned file if DB save fails
+    logger.error("Document DB save error:", { error: dbErr, file: req.file?.filename }); // console.error -> logger.error
+    // Orphaned dosyayı silme denemesi aynı kalabilir
     if (req.file?.path) {
       try {
         fs.unlink(req.file.path, (unlinkErr) => {
-          if (unlinkErr) console.error('Error deleting orphaned file:', unlinkErr);
+          if (unlinkErr)
+            logger.error("Error deleting orphaned file after DB error:", { error: unlinkErr }); // console.error -> logger.error
         });
       } catch (unlinkErr) {
-        console.error('Sync Error deleting orphaned file:', unlinkErr);
+        logger.error("Sync Error deleting orphaned file:", { error: unlinkErr }); // console.error -> logger.error
       }
     }
     // TODO: Refund credit if possible/necessary
-    req.flash('error_msg', `Erreur sauvegarde document: ${dbErr.message}`);
-    res.redirect('/documents/upload');
+    req.flash("error_msg", `Erreur sauvegarde document: ${dbErr.message}`);
+    res.redirect("/documents/upload");
   }
 };
 
@@ -394,12 +439,54 @@ exports.showEditForm = async (req, res) => {
 // POST /documents/:id/edit - Update document metadata
 exports.updateDocument = async (req, res) => {
   const documentId = req.params.id;
-  const {
-    description, category, bilanPhase, beneficiaryId,
-  } = req.body;
+  const { description, category, bilanPhase, beneficiaryId } = req.body;
+
+  // express-validator sonuçlarını kontrol et
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      // Hata varsa formu tekrar render et
+      try {
+          const document = await Document.findByPk(documentId, {
+              include: { model: Beneficiary, as: "beneficiary" },
+          });
+          if (!document) {
+              req.flash('error_msg', 'Document non trouvé.');
+              return res.redirect('/documents');
+          }
+          
+          let beneficiaries = [];
+          const isAdmin = req.user.forfaitType === 'Admin';
+          const isConsultant = req.user.userType === 'consultant';
+          if (isAdmin || isConsultant) {
+              const whereCondition = isAdmin ? {} : { consultantId: req.user.id };
+              const rawBeneficiaries = await Beneficiary.findAll({ where: whereCondition, include: 'user' });
+              beneficiaries = rawBeneficiaries.map(b => b.get({plain: true}));
+          }
+          const categories = Document.getAttributes().category.values;
+          const bilanPhases = Document.getAttributes().bilanPhase.values;
+
+          return res.render('documents/edit', {
+              title: `Modifier: ${document.originalName}`,
+              document: document.get({ plain: true }),
+              beneficiaries,
+              categories,
+              bilanPhases,
+              user: req.user,
+              isConsultant,
+              errors: errors.array(),
+              formData: req.body // Form verilerini koru
+          });
+      } catch (renderError) {
+          logger.error('Error re-rendering edit document form:', { error: renderError });
+          req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+          return res.redirect('/documents');
+      }
+  }
+
+  // Doğrulama başarılı, devam et
   try {
     const document = await Document.findByPk(documentId, {
-      include: { model: Beneficiary, as: 'beneficiary' },
+      include: { model: Beneficiary, as: "beneficiary" },
     });
     if (!document) {
       req.flash('error_msg', 'Document non trouvé.');
@@ -465,7 +552,7 @@ exports.updateDocument = async (req, res) => {
     req.flash('success_msg', 'Document mis à jour.');
     res.redirect('/documents');
   } catch (error) {
-    console.error('Document update error:', error);
+    logger.error('Document update error:', { error: error, documentId: documentId }); // console.error -> logger.error
     req.flash('error_msg', 'Erreur mise à jour document.');
     res.redirect(`/documents/${documentId}/edit`);
   }

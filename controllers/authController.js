@@ -1,7 +1,7 @@
-// const passport = require("passport"); // Controller'da doğrudan kullanılmıyor
-// const bcrypt = require("bcryptjs"); // Controller'da doğrudan kullanılmıyor
-const { User } = require('../models');
-const { getDefaultCreditsForForfait } = require('../services/creditService');
+const { User } = require("../models");
+const { getDefaultCreditsForForfait } = require("../services/creditService");
+const { validationResult } = require('express-validator');
+const logger = require('../config/logger');
 
 // GET /login - Show Login Page
 exports.showLoginPage = (req, res) => {
@@ -26,73 +26,52 @@ exports.showRegisterPage = (req, res) => {
 
 // POST /register - Handle Registration Submission
 exports.registerUser = async (req, res) => {
-  const {
-    firstName, lastName, email, password, password2, userType,
-  } =
-    req.body;
-  const errors = [];
-
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !password ||
-    !password2 ||
-    !userType
-  ) {
-    errors.push({ msg: 'Veuillez remplir tous les champs.' });
-  }
-  if (password !== password2) {
-    errors.push({ msg: 'Les mots de passe ne correspondent pas.' });
-  }
-  if (password.length < 6) {
-    errors.push({ msg: 'Mot de passe: 6 caractères minimum.' });
-  }
-
-  if (errors.length > 0) {
-    return res.render('auth/register', {
-      title: 'Inscription',
-      errors,
-      firstName,
-      lastName,
-      email,
-      userType,
-      layout: 'auth',
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render("auth/register", {
+      title: "Inscription",
+      errors: errors.array(),
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      userType: req.body.userType,
+      layout: "auth",
     });
   }
 
+  const { firstName, lastName, email, password, userType } = req.body;
+
   try {
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ where: { email: email } });
     if (existingUser) {
-      errors.push({ msg: 'Cet email est déjà enregistré.' });
-      return res.render('auth/register', {
-        title: 'Inscription',
-        errors,
+      return res.render("auth/register", {
+        title: "Inscription",
+        errors: [{ msg: "Cet email est déjà enregistré." }],
         firstName,
         lastName,
         email,
         userType,
-        layout: 'auth',
+        layout: "auth",
       });
     }
-    const defaultForfait = 'Standard'; // Or determine based on userType?
+    const defaultForfait = "Standard";
     const defaultCredits = await getDefaultCreditsForForfait(defaultForfait);
     const newUser = new User({
       firstName,
       lastName,
       email,
-      password, // Hook will hash password
+      password,
       userType,
       forfaitType: defaultForfait,
       availableCredits: defaultCredits,
     });
     await newUser.save();
-    req.flash('success_msg', 'Inscription réussie! Connectez-vous.');
-    res.redirect('/auth/login');
+    req.flash("success_msg", "Inscription réussie! Connectez-vous.");
+    res.redirect("/auth/login");
   } catch (err) {
-    console.error('Register error:', err);
-    req.flash('error_msg', "Erreur lors de l'inscription.");
-    res.redirect('/auth/register');
+    logger.error("Register error:", { error: err, email: email });
+    req.flash("error_msg", "Erreur lors de l'inscription.");
+    res.redirect("/auth/register");
   }
 };
 

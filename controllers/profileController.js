@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const {
   User, Beneficiary, CreditLog, Forfait,
 } = require('../models');
+const { validationResult } = require('express-validator');
+const logger = require('../config/logger');
 
 // GET /profile - Show Profile Page
 exports.showProfile = async (req, res) => {
@@ -58,7 +60,7 @@ exports.showProfile = async (req, res) => {
       ...additionalData,
     });
   } catch (error) {
-    console.error('Profile page error:', error);
+    logger.error('Profile page error:', { error: error, userId: req.user?.id });
     req.flash('error_msg', 'Erreur chargement profil.');
     res.redirect('/dashboard');
   }
@@ -75,13 +77,19 @@ exports.showSettings = (req, res) => {
 
 // POST /profile/settings/info - Update Profile Info
 exports.updateInfo = async (req, res) => {
-  const { firstName, lastName } = req.body;
   const userId = req.user.id;
-
-  if (!firstName || !lastName) {
-    req.flash('error_msg', 'Prénom et nom requis.');
-    return res.redirect('/profile/settings');
+  
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      return res.render('profile/settings', {
+          title: 'Paramètres du Compte',
+          user: req.user ? req.user.get({ plain: true }) : null,
+          errors: errors.array(),
+          formData: req.body
+      });
   }
+
+  const { firstName, lastName } = req.body;
 
   try {
     const user = await User.findByPk(userId);
@@ -93,7 +101,7 @@ exports.updateInfo = async (req, res) => {
     req.flash('success_msg', 'Informations mises à jour.');
     res.redirect('/profile/settings');
   } catch (error) {
-    console.error('Profile info update error:', error);
+    logger.error('Profile info update error:', { error: error, userId: userId });
     req.flash('error_msg', 'Erreur mise à jour informations.');
     res.redirect('/profile/settings');
   }
@@ -101,24 +109,19 @@ exports.updateInfo = async (req, res) => {
 
 // POST /profile/settings/password - Change Password
 exports.changePassword = async (req, res) => {
-  const { currentPassword, newPassword, confirmPassword } = req.body;
   const userId = req.user.id;
+  
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+       return res.render('profile/settings', {
+          title: 'Paramètres du Compte',
+          user: req.user ? req.user.get({ plain: true }) : null,
+          errors: errors.array(),
+          formData: req.body
+      });
+  }
 
-  if (!currentPassword || !newPassword || !confirmPassword) {
-    req.flash('error_msg', 'Tous les champs sont requis.');
-    return res.redirect('/profile/settings');
-  }
-  if (newPassword !== confirmPassword) {
-    req.flash('error_msg', 'Les nouveaux mots de passe ne correspondent pas.');
-    return res.redirect('/profile/settings');
-  }
-  if (newPassword.length < 6) {
-    req.flash(
-      'error_msg',
-      'Nouveau mot de passe doit faire au moins 6 caractères.',
-    );
-    return res.redirect('/profile/settings');
-  }
+  const { currentPassword, newPassword } = req.body;
 
   try {
     const user = await User.findByPk(userId);
@@ -129,18 +132,20 @@ exports.changePassword = async (req, res) => {
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      req.flash('error_msg', 'Mot de passe actuel incorrect.');
-      return res.redirect('/profile/settings');
+        return res.render('profile/settings', {
+            title: 'Paramètres du Compte',
+            user: req.user ? req.user.get({ plain: true }) : null,
+            errors: [{msg: 'Mot de passe actuel incorrect.'}] 
+        });
     }
 
-    // Rely on the model hook to hash the password
     user.password = newPassword;
     await user.save();
 
     req.flash('success_msg', 'Mot de passe mis à jour.');
     res.redirect('/profile/settings');
   } catch (error) {
-    console.error('Password change error:', error);
+    logger.error('Password change error:', { error: error, userId: userId });
     req.flash('error_msg', 'Erreur changement mot de passe.');
     res.redirect('/profile/settings');
   }
@@ -180,7 +185,7 @@ exports.showCredits = async (req, res) => {
       paginationBaseUrl: '/profile/credits?',
     });
   } catch (error) {
-    console.error('Credit log page error:', error);
+    logger.error('Credit log page error:', { error: error, userId: req.user?.id });
     req.flash('error_msg', 'Erreur chargement historique crédits.');
     res.redirect('/profile');
   }

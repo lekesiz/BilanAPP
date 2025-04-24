@@ -19,6 +19,8 @@ const {
 const { logCreditChange } = require('../services/creditService');
 const aiService = require('../services/aiService');
 const { incrementAiUsage } = require('../middlewares/limits'); // This might be better in the service layer too
+const { validationResult } = require('express-validator'); // Import eklendi
+const logger = require('../config/logger'); // Logger import edildi
 
 // --- Yardımcı Fonksiyonlar ---
 
@@ -53,7 +55,7 @@ async function updateBeneficiaryField(req, res, fieldName) {
       updatedValue: beneficiary[fieldName],
     });
   } catch (error) {
-    console.error(`Beneficiary ${fieldName} update error:`, error);
+    logger.error(`Beneficiary ${fieldName} update error:`, { error: error, beneficiaryId: req.params.id }); // console.error -> logger.error
     res.status(500).json({
       success: false,
       message: `Erreur serveur lors de la mise à jour du champ (${fieldName}).`,
@@ -152,6 +154,18 @@ exports.showAddForm = (req, res) => {
 
 // POST /beneficiaries/add - Traitement du formulaire d'ajout
 exports.addBeneficiary = async (req, res) => {
+  // express-validator sonuçlarını al
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render("beneficiaries/add", {
+      title: "Ajouter un bénéficiaire",
+      user: req.user,
+      errors: errors.array(), // Hataları gönder
+      beneficiaryData: req.body, // Formu tekrar doldurmak için
+    });
+  }
+
+  // Doğrulama başarılıysa devam et
   const {
     firstName,
     lastName,
@@ -173,8 +187,9 @@ exports.addBeneficiary = async (req, res) => {
   let newUser = null;
 
   try {
+    // Forfait kontrolü ve eposta varlığı kontrolü (bunlar hala gerekli)
     const consultantUser = await User.findByPk(consultantId, {
-      include: { model: Forfait, as: 'forfait' },
+      include: { model: Forfait, as: "forfait" },
     });
     const currentBeneficiaryCount = await Beneficiary.count({
       where: { consultantId },
@@ -182,34 +197,42 @@ exports.addBeneficiary = async (req, res) => {
     const maxAllowed = consultantUser?.forfait?.maxBeneficiaries;
     if (maxAllowed !== null && currentBeneficiaryCount >= maxAllowed) {
       req.flash(
-        'error_msg',
+        "error_msg",
         `Limite de ${maxAllowed} bénéficiaires atteinte pour votre forfait (${consultantUser.forfaitType}).`,
       );
-      return res.redirect('/beneficiaries/add');
-    }
-
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      req.flash('error_msg', 'Cet email est déjà enregistré.');
-      return res.render('beneficiaries/add', {
-        title: 'Ajouter un bénéficiaire',
+      // Hata durumunda formu tekrar render etmek daha iyi olabilir
+      return res.render("beneficiaries/add", {
+        title: "Ajouter un bénéficiaire",
         user: req.user,
-        error_msg: req.flash('error_msg')[0],
+        errors: [{ msg: req.flash('error_msg') }],
         beneficiaryData: req.body,
       });
     }
 
-    const temporaryPassword = crypto.randomBytes(8).toString('hex');
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.render("beneficiaries/add", {
+        title: "Ajouter un bénéficiaire",
+        user: req.user,
+        errors: [{ msg: "Cet email est déjà enregistré." }],
+        beneficiaryData: req.body,
+      });
+    }
+
+    // Manuel doğrulama kodları kaldırıldı
+
+    // Geri kalan kullanıcı ve faydalanıcı oluşturma mantığı aynı
+    const temporaryPassword = crypto.randomBytes(8).toString("hex");
     console.log(
       `Generated temporary password for ${email}: ${temporaryPassword}`,
-    ); // Consider removing in production
+    ); 
 
     newUser = await User.create({
       email,
       password: temporaryPassword,
       firstName,
       lastName,
-      userType: 'beneficiary',
+      userType: "beneficiary",
     });
 
     await Beneficiary.create({
@@ -230,30 +253,31 @@ exports.addBeneficiary = async (req, res) => {
     });
 
     req.flash(
-      'success_msg',
+      "success_msg",
       `Bénéficiaire ${firstName} ${lastName} ajouté. Mot de passe temporaire: ${temporaryPassword} - Veuillez le communiquer au bénéficiaire et lui demander de le changer.`,
     );
-    res.redirect('/beneficiaries');
+    res.redirect("/beneficiaries");
+
   } catch (err) {
-    console.error('Beneficiary add error:', err);
-    if (err.name === 'SequelizeValidationError') {
-      req.flash('error_msg', err.errors.map((e) => e.message).join(', '));
-    } else {
-      req.flash('error_msg', "Erreur lors de l'ajout du bénéficiaire.");
-    }
+    console.error("Beneficiary add error:", err);
+    // SequelizeValidationError artık express-validator tarafından yakalanmalı
+    req.flash("error_msg", "Erreur lors de l'ajout du bénéficiaire.");
+    
+    // Rollback işlemi aynı kalabilir
     if (newUser?.id) {
       try {
         await User.destroy({ where: { id: newUser.id } });
         console.log(`Rolled back user creation for ${email}`);
       } catch (destroyError) {
-        console.error('Error rolling back user creation:', destroyError);
+        console.error("Error rolling back user creation:", destroyError);
       }
     }
-    res.render('beneficiaries/add', {
-      title: 'Ajouter un bénéficiaire',
+    // Hata durumunda formu tekrar render et
+    res.render("beneficiaries/add", {
+      title: "Ajouter un bénéficiaire",
       user: req.user,
-      error_msg: req.flash('error_msg')[0],
-      beneficiaryData: req.body,
+      errors: [{ msg: req.flash('error_msg') }], // Genel hata mesajı
+      beneficiaryData: req.body, // Form verilerini koru
     });
   }
 };
@@ -393,9 +417,50 @@ exports.updateBeneficiary = async (req, res) => {
   const requestingUser = req.user;
   const formData = req.body;
 
+  // express-validator sonuçlarını al
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // Hata varsa formu tekrar render et
+    try {
+        const beneficiary = await Beneficiary.findOne({ 
+            where: { id: beneficiaryId }, 
+            include: { model: User, as: "user" } 
+        });
+        if (!beneficiary) { // Eğer faydalanıcı bulunamazsa (çok olası değil ama kontrol edelim)
+            req.flash('error_msg', 'Bénéficiaire non trouvé.');
+            return res.redirect('/beneficiaries');
+        }
+        // Formu tekrar render etmek için dokümanları al
+        const getDocuments = async (category) => Document.findAll({
+            where: { category, beneficiaryId: beneficiary.id },
+            order: [['createdAt', 'DESC']],
+        });
+        const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
+            getDocuments('Synthèse'),
+            getDocuments("Plan d'Action"),
+        ]);
+
+        return res.render("beneficiaries/edit", {
+            title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+            beneficiary: beneficiary.get({ plain: true }),
+            synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
+            actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
+            user: req.user,
+            isAdmin: requestingUser.forfaitType === "Admin",
+            errors: errors.array(), // Doğrulama hatalarını gönder
+            beneficiaryData: formData, // Girilen verileri koru (bu satır eklenmeli mi?)
+        });
+    } catch (renderError) {
+        console.error('Error re-rendering beneficiary edit form:', renderError);
+        req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+        return res.redirect('/beneficiaries');
+    }
+  }
+
+  // Doğrulama başarılı, devam et
   try {
     const whereClause = { id: beneficiaryId };
-    if (requestingUser.forfaitType !== 'Admin') {
+    if (requestingUser.forfaitType !== "Admin") {
       if (requestingUser.userType === 'consultant') whereClause.consultantId = requestingUser.id;
       else {
         req.flash('error_msg', 'Accès non autorisé.');
@@ -405,51 +470,50 @@ exports.updateBeneficiary = async (req, res) => {
 
     const beneficiary = await Beneficiary.findOne({
       where: whereClause,
-      include: { model: User, as: 'user' },
+      include: { model: User, as: "user" },
     });
     if (!beneficiary) {
       req.flash('error_msg', 'Bénéficiaire non trouvé ou accès non autorisé.');
       return res.redirect('/beneficiaries');
     }
 
-    // Check email uniqueness if changed
+    // Eposta değişikliği ve benzersizlik kontrolü (bu hala gerekli)
     if (formData.email && formData.email !== beneficiary.user.email) {
       const existingUser = await User.findOne({
         where: { email: formData.email },
       });
       if (existingUser && existingUser.id !== beneficiary.userId) {
-        req.flash(
-          'error_msg',
-          'Cet email est déjà utilisé par un autre utilisateur.',
-        );
-        // Re-render form with error and old data
-        const getDocuments = async (category) =>
-          Document.findAll({
-            where: { category, beneficiaryId: beneficiary.id },
-            order: [['createdAt', 'DESC']],
-          });
-        const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
-          getDocuments('Synthèse'),
-          getDocuments("Plan d'Action"),
-        ]);
-        return res.render('beneficiaries/edit', {
-          title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
-          beneficiary: beneficiary.get({ plain: true }),
-          synthesisDocuments: synthesisDocuments.map((d) =>
-            d.get({ plain: true }),
-          ),
-          actionPlanDocuments: actionPlanDocuments.map((d) =>
-            d.get({ plain: true }),
-          ),
-          user: req.user,
-          isAdmin: requestingUser.forfaitType === 'Admin',
-          error_msg: req.flash('error_msg')[0],
-          beneficiaryData: formData,
-        });
+        // Eposta hatası varsa formu tekrar render et
+        try {
+            const getDocuments = async (category) => Document.findAll({
+                where: { category, beneficiaryId: beneficiary.id }, 
+                order: [['createdAt', 'DESC']]
+            });
+            const [synthesisDocuments, actionPlanDocuments] = await Promise.all([
+                getDocuments('Synthèse'), 
+                getDocuments("Plan d'Action")
+            ]);
+            return res.render("beneficiaries/edit", {
+                title: `Modifier: ${beneficiary.user.firstName} ${beneficiary.user.lastName}`,
+                beneficiary: beneficiary.get({ plain: true }),
+                synthesisDocuments: synthesisDocuments.map((d) => d.get({ plain: true })),
+                actionPlanDocuments: actionPlanDocuments.map((d) => d.get({ plain: true })),
+                user: req.user,
+                isAdmin: requestingUser.forfaitType === "Admin",
+                errors: [{ msg: "Cet email est déjà utilisé par un autre utilisateur." }], // Özel hata
+                beneficiaryData: formData, // Girilen veriler
+            });
+        } catch (renderError) {
+             console.error('Error re-rendering beneficiary edit form (email check):', renderError);
+            req.flash('error_msg', 'Erreur lors de l\'affichage du formulaire.');
+            return res.redirect('/beneficiaries');
+        }
       }
     }
 
-    // Update User details
+    // Manuel doğrulamalar kaldırıldı
+
+    // Geri kalan güncelleme mantığı aynı
     await User.update(
       {
         firstName: formData.firstName,
@@ -459,7 +523,6 @@ exports.updateBeneficiary = async (req, res) => {
       { where: { id: beneficiary.userId } },
     );
 
-    // Prepare and Update Beneficiary details
     const getCheckboxValue = (value) => value === 'true' || value === true;
     const checklistFields = [
       'prelim_entretienInfoFait',
@@ -506,6 +569,7 @@ exports.updateBeneficiary = async (req, res) => {
 
     req.flash('success_msg', 'Informations du bénéficiaire mises à jour.');
     res.redirect(`/beneficiaries/${beneficiary.id}`);
+
   } catch (err) {
     console.error(
       `Beneficiary Edit POST error for ID ${beneficiaryId} by User ${requestingUser.id}:`,

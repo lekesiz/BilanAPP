@@ -8,6 +8,8 @@ const {
 } = require('../models');
 const { logCreditChange } = require('../services/creditService');
 const sequelize = require('../config/database');
+const { validationResult } = require('express-validator');
+const logger = require('../config/logger');
 
 // Constants (Consider moving to a config file)
 const ASSIGN_COST = 10;
@@ -175,7 +177,7 @@ exports.listQuestionnaires = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Questionnaire list error:', err);
+    logger.error('Questionnaire list error:', { error: err });
     req.flash('error_msg', 'Erreur chargement questionnaires.');
     res.redirect('/dashboard');
   }
@@ -195,51 +197,23 @@ exports.showNewForm = (req, res) => {
 
 // POST /questionnaires/new - Create new questionnaire
 exports.createQuestionnaire = async (req, res) => {
-  const {
-    title, description, category, questions,
-  } = req.body;
+  // express-validator sonuçlarını al
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      // const questionTypes = Question.getAttributes().type.values;
+      return res.render('questionnaires/new', {
+        title: 'Créer un Questionnaire',
+        errors: errors.array(),
+        formData: req.body, // Form verilerini koru
+        // questionTypes, // Bu artık view'da doğrudan tanımlı olabilir
+        user: req.user,
+      });
+  }
+
+  // Doğrulama başarılı, devam et
+  const { title, description, category, questions } = req.body;
   const createdBy = req.user.id;
-  const errors = [];
-
-  if (!title || !description) errors.push({ msg: 'Titre et description requis.' });
-
-  let validQuestions = [];
-  if (questions && Array.isArray(questions)) {
-    validQuestions = questions.filter(
-      (q) =>
-        q && q.text && q.text.trim() !== '' && q.type && q.type.trim() !== '',
-    );
-    validQuestions.forEach((q) => {
-      if (
-        ['multiple_choice', 'single_choice'].includes(q.type) &&
-        (!q.options || q.options.trim() === '')
-      ) {
-        errors.push({
-          msg: `Options requises pour la question: "${q.text.substring(0, 20)}..."`,
-        });
-      }
-    });
-  }
-  if (validQuestions.length === 0 && errors.length === 0) {
-    errors.push({ msg: 'Ajoutez au moins une question valide.' });
-  }
-
-  if (errors.length > 0) {
-    const questionTypes = Question.getAttributes().type.values;
-    const formData = {
-      title,
-      description,
-      category,
-      questions: questions || [{}],
-    };
-    return res.render('questionnaires/new', {
-      title: 'Créer un Questionnaire',
-      errors,
-      formData,
-      questionTypes,
-      user: req.user,
-    });
-  }
+  // Manuel validasyonlar kaldırıldı
 
   let newQuestionnaire = null;
   try {
@@ -250,6 +224,11 @@ exports.createQuestionnaire = async (req, res) => {
       createdBy,
       status: 'draft',
     });
+
+    // Sadece geçerli soruları al (validator bunu tam yapamıyor olabilir)
+    const validQuestions = (questions && Array.isArray(questions)) ? questions.filter(
+      (q) => q && q.text && q.text.trim() !== '' && q.type && q.type.trim() !== ''
+    ) : [];
 
     const questionPromises = validQuestions.map((q, index) => {
       let options = null;
@@ -262,7 +241,7 @@ exports.createQuestionnaire = async (req, res) => {
               .filter((opt) => opt),
           );
         } catch (e) {
-          console.warn('Invalid JSON options for question:', q.text);
+          logger.warn('Invalid JSON options for question:', { questionText: q.text });
         }
       }
       return Question.create({
@@ -277,28 +256,25 @@ exports.createQuestionnaire = async (req, res) => {
 
     req.flash('success_msg', 'Questionnaire créé (brouillon).');
     res.redirect(`/questionnaires/${newQuestionnaire.id}`);
+
   } catch (err) {
-    console.error('Questionnaire creation error:', err);
-    // Rollback questionnaire creation if questions failed?
+    logger.error('Questionnaire creation error:', { error: err });
+    // Rollback
     if (newQuestionnaire?.id) {
-      await Question.destroy({
-        where: { questionnaireId: newQuestionnaire.id },
-      });
-      await newQuestionnaire.destroy();
+      try {
+          await Question.destroy({ where: { questionnaireId: newQuestionnaire.id } });
+          await newQuestionnaire.destroy();
+          logger.info(`Rolled back questionnaire creation for ID: ${newQuestionnaire.id}`);
+      } catch (rollbackError) {
+          logger.error(`Error rolling back questionnaire ${newQuestionnaire.id}:`, { error: rollbackError });
+      }
     }
     req.flash('error_msg', 'Erreur serveur création questionnaire.');
-    const questionTypes = Question.getAttributes().type.values;
-    const formData = {
-      title,
-      description,
-      category,
-      questions: questions || [{}],
-    };
+    // Hata durumunda formu tekrar render et
     res.render('questionnaires/new', {
       title: 'Créer un Questionnaire',
-      errors: errors.length > 0 ? errors : [{ msg: 'Erreur serveur.' }],
-      formData,
-      questionTypes,
+      errors: [{msg: 'Erreur serveur.'}], // Genel hata
+      formData: req.body,
       user: req.user,
     });
   }
@@ -358,7 +334,7 @@ exports.showDetails = async (req, res) => {
             try {
                 plainQuestion.parsedOptions = JSON.parse(plainQuestion.options || '[]');
             } catch (e) {
-                console.error(`Error parsing options for question ${plainQuestion.id}:`, e);
+                logger.error(`Error parsing options for question ${plainQuestion.id}:`, { error: e });
                 plainQuestion.parsedOptions = []; // Hata durumunda boş dizi
             }
         }
@@ -375,7 +351,7 @@ exports.showDetails = async (req, res) => {
       isConsultant: req.user.userType === 'consultant',
     });
   } catch (err) {
-    console.error('Questionnaire details error:', err);
+    logger.error('Questionnaire details error:', { error: err, questionnaireId: req.params.id });
     req.flash('error_msg', 'Erreur chargement détails questionnaire.');
     res.redirect('/questionnaires');
   }
@@ -383,12 +359,22 @@ exports.showDetails = async (req, res) => {
 
 // POST /questionnaires/:id/assign - Assign questionnaire
 exports.assignQuestionnaire = async (req, res) => {
-  const { beneficiaryId, dueDate } = req.body;
+  // express-validator sonuçlarını al
+  const errors = validationResult(req);
   const questionnaireId = req.params.id;
+  if (!errors.isEmpty()) {
+      req.flash('error_msg', errors.array().map(e => e.msg).join(', '));
+      // Hata varsa detay sayfasına geri yönlendir (modal kapanır)
+      return res.redirect(`/questionnaires/${questionnaireId}`);
+  }
+
+  // Doğrulama başarılı, devam et
+  const { beneficiaryId, dueDate } = req.body;
   const consultantId = req.user.id;
   const cost = req.creditCost || ASSIGN_COST;
 
   try {
+    // Manuel validasyonlar (questionnaire/beneficiary varlığı) hala gerekli
     const questionnaire = await Questionnaire.findOne({
       where: { id: questionnaireId, createdBy: consultantId },
     });
@@ -408,12 +394,12 @@ exports.assignQuestionnaire = async (req, res) => {
       return res.redirect(`/questionnaires/${questionnaireId}`);
     }
 
+    // Güncelleme ve loglama
     await questionnaire.update({
       beneficiaryId,
       dueDate: dueDate || null,
       status: 'pending',
     });
-
     await logCreditChange(
       consultantId, // userId
       -cost, // amount (negative because it's a deduction)
@@ -424,13 +410,11 @@ exports.assignQuestionnaire = async (req, res) => {
       'Questionnaire', // relatedResourceType
     );
 
-    req.flash(
-      'success_msg',
-      `Questionnaire assigné (${cost} crédits déduits).`,
-    );
+    req.flash('success_msg', `Questionnaire assigné (${cost} crédits déduits).`);
     res.redirect(`/questionnaires/${questionnaireId}`);
+
   } catch (err) {
-    console.error('Questionnaire assign error:', err);
+    logger.error('Questionnaire assign error:', { error: err, questionnaireId: questionnaireId, beneficiaryId: beneficiaryId });
     req.flash('error_msg', "Erreur lors de l'assignation.");
     res.redirect(`/questionnaires/${questionnaireId}`);
   }
@@ -477,7 +461,7 @@ exports.showAnswerForm = async (req, res) => {
       user: req.user,
     });
   } catch (err) {
-    console.error('Questionnaire answer form error:', err);
+    logger.error('Questionnaire answer form error:', { error: err, questionnaireId: req.params.id });
     req.flash('error_msg', 'Erreur chargement formulaire questionnaire.');
     res.redirect('/questionnaires');
   }
@@ -486,7 +470,18 @@ exports.showAnswerForm = async (req, res) => {
 // POST /questionnaires/:id/answer - Submit beneficiary answers
 exports.submitAnswers = async (req, res) => {
   const questionnaireId = req.params.id;
-  const receivedAnswersArray = req.body.answers;
+  
+  // express-validator sonuçlarını al
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      // Hata varsa formu tekrar render et (render edemeyiz, cevapları bilmiyoruz)
+      // Geri yönlendirip hata mesajı gösterelim
+      req.flash('error_msg', errors.array().map(e => e.msg).join(', '));
+      return res.redirect(`/questionnaires/${questionnaireId}/answer`);
+  }
+  
+  // Doğrulama başarılı (ama tüm soruların cevaplandığını manuel kontrol et)
+  const receivedAnswersArray = req.body.answers; 
 
   try {
     const beneficiaryProfile = await Beneficiary.findOne({
@@ -507,6 +502,7 @@ exports.submitAnswers = async (req, res) => {
       return res.redirect('/questionnaires');
     }
 
+    // Tüm soruların cevaplandığını manuel kontrol et (bu hala gerekli olabilir)
     let allQuestionsAnswered = true;
     if (
       !receivedAnswersArray ||
@@ -557,8 +553,9 @@ exports.submitAnswers = async (req, res) => {
 
     req.flash('success_msg', 'Questionnaire soumis.');
     res.redirect('/questionnaires');
+
   } catch (err) {
-    console.error('Questionnaire submit error:', err);
+    logger.error('Questionnaire submit error:', { error: err, questionnaireId: questionnaireId });
     req.flash('error_msg', 'Erreur soumission questionnaire.');
     res.redirect(`/questionnaires/${questionnaireId}/answer`);
   }
@@ -660,7 +657,7 @@ exports.showResults = async (req, res) => {
       isConsultant,
     });
   } catch (err) {
-    console.error('Questionnaire results error:', err);
+    logger.error('Questionnaire results error:', { error: err, questionnaireId: req.params.id });
     req.flash('error_msg', 'Erreur chargement résultats.');
     res.redirect('/questionnaires');
   }
@@ -684,6 +681,87 @@ exports.updateQuestionnaire = async (req, res) => {
   res.redirect(`/questionnaires/${req.params.id}`);
 };
 
+// POST /:id/questions/add - Add a question to a questionnaire
+exports.addQuestion = async (req, res) => {
+    const questionnaireId = req.params.id;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        req.flash('error_msg', errors.array().map(e => e.msg).join(', '));
+        // Düzenleme sayfasına geri yönlendirebiliriz, ancak o sayfa şu an stub
+        return res.redirect(`/questionnaires/${questionnaireId}`); // Şimdilik detay sayfasına yönlendir
+    }
+    
+    const { text, type, options, order } = req.body;
+    try {
+        // Yetki kontrolü: Sadece anketi oluşturan değiştirebilir
+        const questionnaire = await Questionnaire.findOne({ where: { id: questionnaireId, createdBy: req.user.id }});
+        if (!questionnaire) {
+            req.flash('error_msg', 'Questionnaire non trouvé ou accès refusé.');
+            return res.redirect('/questionnaires');
+        }
+
+        let optionsJSON = null;
+        if ((type === 'radio' || type === 'checkbox') && options) {
+             try {
+                optionsJSON = JSON.stringify(
+                    options.split(/\r?\n/).map(opt => opt.trim()).filter(opt => opt)
+                );
+            } catch(e) { 
+                logger.warn('Invalid options format on add:', { options });
+                // İsteğe bağlı: hata mesajı göster
+            }
+        } else if (type !== 'radio' && type !== 'checkbox') {
+            optionsJSON = null; // Diğer tipler için options null olmalı
+        }
+
+        await Question.create({
+            questionnaireId: questionnaireId,
+            text: text,
+            type: type,
+            options: optionsJSON,
+            order: order || 0 
+        });
+
+        req.flash('success_msg', 'Question ajoutée avec succès.');
+        res.redirect(`/questionnaires/${questionnaireId}`); // Detay sayfasına yönlendir
+
+    } catch (error) {
+        logger.error('Error adding question:', { error: error, questionnaireId: questionnaireId });
+        req.flash('error_msg', 'Erreur lors de l\'ajout de la question.');
+        res.redirect(`/questionnaires/${questionnaireId}`);
+    }
+};
+
+// POST /questions/:questionId/delete - Delete a question
+exports.deleteQuestion = async (req, res) => {
+    const questionId = req.params.questionId;
+    try {
+        // Soruyu bul ve ilişkili anketi getir
+        const question = await Question.findByPk(questionId, { include: 'questionnaire' });
+        if (!question) {
+            req.flash('error_msg', 'Question non trouvée.');
+            return res.redirect('back'); // Önceki sayfaya
+        }
+
+        // Yetki kontrolü: Sadece anketi oluşturan silebilir
+        if (question.questionnaire.createdBy !== req.user.id) {
+            req.flash('error_msg', 'Accès refusé.');
+            return res.redirect('/questionnaires');
+        }
+
+        const questionnaireId = question.questionnaireId;
+        await question.destroy(); // Cascade delete varsa cevapları da siler
+
+        req.flash('success_msg', 'Question supprimée.');
+        res.redirect(`/questionnaires/${questionnaireId}`); // Ankete geri dön
+
+    } catch (error) {
+        logger.error('Error deleting question:', { error: error, questionId: questionId });
+        req.flash('error_msg', 'Erreur lors de la suppression de la question.');
+        res.redirect('back');
+    }
+};
+
 // POST /questionnaires/:id/delete - Delete Questionnaire
 exports.deleteQuestionnaire = async (req, res) => {
   const questionnaireId = req.params.id;
@@ -701,10 +779,7 @@ exports.deleteQuestionnaire = async (req, res) => {
     req.flash('success_msg', 'Questionnaire supprimé.');
     res.redirect('/questionnaires');
   } catch (error) {
-    console.error(
-      `Questionnaire delete error for ID ${questionnaireId}:`,
-      error,
-    );
+    logger.error(`Questionnaire delete error for ID ${questionnaireId}:`, { error: error });
     req.flash('error_msg', 'Erreur suppression questionnaire.');
     res.redirect('/questionnaires');
   }

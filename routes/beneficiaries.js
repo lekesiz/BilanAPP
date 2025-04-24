@@ -1,4 +1,5 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 
 const router = express.Router();
 const {
@@ -8,10 +9,30 @@ const {
 } = require('../middlewares/auth');
 const { checkAndDeductCredits } = require('../middlewares/credits');
 const { checkAccessLevel } = require('../middlewares/permissions');
-const { checkAiLimit } = require('../middlewares/credits');
+const { checkAiLimit } = require('../middlewares/limits');
 
 // Require the new controller
 const beneficiaryController = require('../controllers/beneficiaryController');
+
+// --- Validation Rules ---
+const beneficiaryValidationRules = () => [
+  body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
+  body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
+  body('email').isEmail().withMessage('Adresse email invalide.').normalizeEmail(),
+  body('phone').optional({ checkFalsy: true }).trim().escape(), // Opsiyonel, ama varsa temizle
+  body('status').isIn(['initial', 'active', 'completed', 'on_hold']).withMessage('Statut invalide.'),
+  body('currentPhase').isIn(['preliminary', 'investigation', 'conclusion']).withMessage('Phase invalide.'),
+  // Diğer alanlar için de kurallar eklenebilir (escape, trim vb.)
+  body('notes').optional({ checkFalsy: true }).trim().escape(),
+  body('education').optional({ checkFalsy: true }).trim().escape(),
+  body('experience').optional({ checkFalsy: true }).trim().escape(),
+  body('identifiedSkills').optional({ checkFalsy: true }).trim().escape(),
+  body('careerObjectives').optional({ checkFalsy: true }).trim().escape(),
+  body('actionPlan').optional({ checkFalsy: true }).trim().escape(),
+  body('synthesis').optional({ checkFalsy: true }).trim().escape(),
+  body('bilanStartDate').optional({ checkFalsy: true }).isISO8601().toDate(),
+  body('bilanEndDate').optional({ checkFalsy: true }).isISO8601().toDate(),
+];
 
 // --- Beneficiary Routes ---
 
@@ -36,6 +57,7 @@ router.post(
   '/add',
   ensureAuthenticated,
   ensureConsultant,
+  beneficiaryValidationRules(),
   beneficiaryController.addBeneficiary,
 );
 
@@ -60,6 +82,7 @@ router.post(
   '/:id/edit',
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
+  beneficiaryValidationRules(),
   beneficiaryController.updateBeneficiary,
 );
 
@@ -76,6 +99,7 @@ router.post(
   '/:id/update-phase',
   ensureAuthenticated,
   ensureConsultantOrBeneficiary,
+  body('currentPhase').isIn(['preliminary', 'investigation', 'conclusion']).withMessage('Phase invalide.'),
   beneficiaryController.updatePhase,
 );
 

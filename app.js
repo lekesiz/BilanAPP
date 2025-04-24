@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
-const logger = require('morgan');
+const logger = require('./config/logger');
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
@@ -65,7 +65,7 @@ app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middlewares
-app.use(logger('dev'));
+app.use(require('morgan')('combined', { stream: logger.stream }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -114,8 +114,7 @@ app.use((req, res, next) => {
   res.locals.error_msg = req.flash('error_msg');
   res.locals.error = req.flash('error');
   res.locals.success = req.flash('success');
-  res.locals.user = req.user || null;
-  // Aktif rotayı locale ekle (navbar'da kullanmak için)
+  res.locals.user = req.user ? req.user.get({ plain: true }) : null;
   res.locals.currentRoute = req.path;
   next();
 });
@@ -137,35 +136,31 @@ app.use('/ai', aiRouter);
 
 // Gestion des erreurs 404
 app.use((req, res, next) => {
-  res.status(404).render('error', {
-    title: 'Page non trouvée',
-    message: "La page que vous recherchez n'existe pas.",
-    error: { status: 404 },
-  });
+  const err = new Error("La page que vous recherchez n'existe pas.");
+  err.status = 404;
+  logger.warn(`404 Not Found - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  next(err);
 });
 
-// Gestionnaire d'erreurs (CSRF için özel hata yönetimi eklenebilir)
+// Gestionnaire d'erreurs
 app.use((err, req, res, next) => {
+  logger.error(
+    `${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`,
+    { error: err }
+  );
+
   if (err.code === 'EBADCSRFTOKEN') {
-    console.error('CSRF Token Error:', err);
-    console.warn('Invalid CSRF token detected. Redirecting user back.');
     return res.redirect(req.headers.referer || '/');
   }
 
-  // Diğer hataları ele al
   const status = err.status || 500;
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // Diğer hatalar için flash mesajı kullanmayı dene (varsa)
   if (req.flash) {
     req.flash('error_msg', res.locals.message || 'Une erreur inattendue est survenue.');
   }
 
-  // Hata detaylarını logla (geliştirme için)
-  console.error(`Error [${status}]: ${err.message}\nStack: ${err.stack}`);
-
-  // Rendu de la page d'erreur
   res.status(status);
   res.render('error', {
     title: 'Erreur',
