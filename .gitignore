@@ -12,5 +12,9 @@ dist/
 coverage/
 uploads/
 
+# Test Database
+*.sqlite-journal
+database_test.sqlite
+
 # Keep .gitkeep in empty directories if needed
 # example: uploads/.gitkeep

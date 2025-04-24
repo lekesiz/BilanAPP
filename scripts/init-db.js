@@ -120,7 +120,9 @@ const initDatabase = async (force = false, createDemoData = true) => {
 
     // Create all demo data through the main function
     await createDefaultForfaits();
-    await createDemoData();
+    if (createDemoData) {
+        await createDemoDataInternal();
+    }
 
     console.log('Database initialized successfully!');
   } catch (error) {
@@ -129,7 +131,10 @@ const initDatabase = async (force = false, createDemoData = true) => {
 };
 
 // Başlatma fonksiyonunu çalıştır
-initDatabase();
+// initDatabase(); // Script doğrudan çalıştırılmayacaksa bu kaldırılabilir
+
+// Testlerde kullanmak için export et
+module.exports = { createDefaultForfaits, initDatabase };
 
 // Varsayılan Forfait'leri oluşturma fonksiyonu
 async function createDefaultForfaits() {

@@ -1,14 +1,18 @@
 const { Sequelize } = require('sequelize');
-const path = require('path');
+require('dotenv').config(); // Ana .env dosyasını her zaman yükle
 
-// Création d'une instance Sequelize avec SQLite
+// Test ortamı için ayrı veritabanı yolu
+const storagePath = process.env.NODE_ENV === 'test' 
+    ? './database_test.sqlite' 
+    : process.env.DB_STORAGE || './database.sqlite';
+
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, '../database.sqlite'),
-  logging: false,
+  storage: storagePath,
+  logging: process.env.NODE_ENV === 'development' ? console.log : false, // Sadece geliştirme ortamında logla
 });
 
-// Test de la connexion
+// Bağlantıyı test et (isteğe bağlı)
 async function testConnection() {
   try {
     await sequelize.authenticate();
