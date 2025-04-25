@@ -2,6 +2,7 @@
  * Utility functions for career data and mock career opportunities
  */
 
+// Helper Functions - Moved Up
 /**
  * Generate mock career opportunities based on user profile
  * In a production environment, this would be replaced with an actual AI call
@@ -279,22 +280,20 @@ const careerDatabase = [
  * @param {number} userExperienceYears - User's years of experience.
  * @returns {Array<object>} - Array of matching career objects.
  */
-exports.findMatchingCareers = (userSkills, userExperienceYears) => {
+exports.findMatchingCareers = (userSkills, userExperienceYears) =>
   // const currentPosition = 'Entry-level'; // Not used, removed
-  return careerDatabase.filter((career) => {
+  careerDatabase.filter((career) =>
     // Simple matching logic (can be improved)
-    return true;
-  });
-};
+    true,
+  )
+;
 
 /**
  * Provides detailed information about a specific career.
  * @param {string} careerTitle - The title of the career.
  * @returns {object|null} - Career details or null if not found.
  */
-exports.getCareerDetails = (careerTitle) => {
-  return careerDatabase.find((c) => c.title.toLowerCase() === careerTitle.toLowerCase()) || null;
-};
+exports.getCareerDetails = (careerTitle) => careerDatabase.find((c) => c.title.toLowerCase() === careerTitle.toLowerCase()) || null;
 
 /**
  * Calculates the match score between a user profile and a career path.

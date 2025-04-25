@@ -3,9 +3,9 @@ require('dotenv').config(); // Ana .env dosyasını her zaman yükle
 
 // Test ortamı için ayrı veritabanı yolu
 const storagePath =
-  process.env.NODE_ENV === 'test'
-    ? './database_test.sqlite'
-    : process.env.DB_STORAGE || './database.sqlite';
+  process.env.NODE_ENV === 'test' ?
+    './database_test.sqlite' :
+    process.env.DB_STORAGE || './database.sqlite';
 
 const sequelize = new Sequelize({
   dialect: 'sqlite',

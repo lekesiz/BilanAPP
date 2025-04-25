@@ -1,5 +1,6 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
+
 const router = express.Router();
 const {
   ensureAuthenticated,
@@ -20,8 +21,10 @@ const ASSIGN_COST = 10;
 
 // Yeni Anket Oluşturma/Düzenleme için Kurallar
 const questionnaireValidationRules = () => [
-  body('title').trim().notEmpty().withMessage('Le titre est requis.').escape(),
-  body('description').trim().notEmpty().withMessage('La description est requise.').escape(),
+  body('title').trim().notEmpty().withMessage('Le titre est requis.')
+    .escape(),
+  body('description').trim().notEmpty().withMessage('La description est requise.')
+    .escape(),
   body('category')
     .optional({ checkFalsy: true })
     .isIn([
@@ -71,7 +74,8 @@ const answerValidationRules = () => [
 
 // Soru Ekleme/Düzenleme için Kurallar
 const questionValidationRules = () => [
-  body('text').trim().notEmpty().withMessage('Le texte de la question est requis.').escape(),
+  body('text').trim().notEmpty().withMessage('Le texte de la question est requis.')
+    .escape(),
   body('type')
     .isIn(['text', 'textarea', 'radio', 'checkbox', 'scale'])
     .withMessage('Type de question invalide.'),

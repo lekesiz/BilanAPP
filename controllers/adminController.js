@@ -62,7 +62,9 @@ exports.showAddUserForm = async (req, res) => {
 
 // POST Yeni Kullanıcı Ekleme
 exports.addUser = async (req, res) => {
-  const { firstName, lastName, email, password, userType, forfaitType, availableCredits } =
+  const {
+    firstName, lastName, email, password, userType, forfaitType, availableCredits,
+  } =
     req.body;
   const errors = [];
 
@@ -198,7 +200,9 @@ exports.showEditUserForm = async (req, res) => {
 // POST Kullanıcı Güncelleme
 exports.updateUser = async (req, res) => {
   const userIdToEdit = req.params.id;
-  const { firstName, lastName, userType, forfaitType, newPassword, confirmPassword } = req.body;
+  const {
+    firstName, lastName, userType, forfaitType, newPassword, confirmPassword,
+  } = req.body;
   const errors = [];
 
   // Doğrulamalar
@@ -460,16 +464,18 @@ exports.showEditForfaitForm = async (req, res) => {
 // POST Paket Güncelleme
 exports.updateForfait = async (req, res) => {
   const forfaitName = req.params.name;
-  const { description, defaultCredits, features, maxBeneficiaries, maxAiGenerationsMonthly } =
+  const {
+    description, defaultCredits, features, maxBeneficiaries, maxAiGenerationsMonthly,
+  } =
     req.body;
 
   const credits = parseInt(defaultCredits, 10);
   const maxBen =
     maxBeneficiaries === '' || maxBeneficiaries === null ? null : parseInt(maxBeneficiaries, 10);
   const maxAi =
-    maxAiGenerationsMonthly === '' || maxAiGenerationsMonthly === null
-      ? null
-      : parseInt(maxAiGenerationsMonthly, 10);
+    maxAiGenerationsMonthly === '' || maxAiGenerationsMonthly === null ?
+      null :
+      parseInt(maxAiGenerationsMonthly, 10);
 
   // Doğrulamalar
   if (Number.isNaN(credits) || credits < 0) {

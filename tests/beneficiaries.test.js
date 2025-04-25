@@ -1,8 +1,23 @@
 const request = require('supertest');
 const app = require('../app');
 const sequelize = require('../config/database');
-const { User, Beneficiary, Forfait } = require('../models');
+const { User, Beneficiary } = require('../models');
 const { createDefaultForfaits } = require('../scripts/init-db');
+
+// Helper to get CSRF token (Moved to top)
+async function getCsrfToken(agentInstance, url) {
+  const response = await agentInstance.get(url);
+  // Daha esnek regex: value içindeki tırnak işaretlerine ve aradaki boşluklara izin ver
+  const match = response.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/);
+  if (!match || !match[1]) {
+    // Hata mesajını logla
+    console.error(`Could not extract CSRF token from URL: ${url}`);
+    console.error(`Response Status: ${response.statusCode}`);
+    // console.error(`Response Text Snippet: ${response.text.substring(0, 500)}`); // Debug için gerekirse eklenebilir
+    throw new Error(`Could not extract CSRF token from ${url}`);
+  }
+  return match[1];
+}
 
 let agent; // Agent for session cookies
 let consultantUser; // Test consultant user
@@ -45,21 +60,6 @@ beforeAll(async () => {
     throw error;
   }
 });
-
-// Helper to get CSRF token
-async function getCsrfToken(agentInstance, url) {
-  const response = await agentInstance.get(url);
-  // Daha esnek regex: value içindeki tırnak işaretlerine ve aradaki boşluklara izin ver
-  const match = response.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/);
-  if (!match || !match[1]) {
-    // Hata mesajını logla
-    console.error(`Could not extract CSRF token from URL: ${url}`);
-    console.error(`Response Status: ${response.statusCode}`);
-    // console.error(`Response Text Snippet: ${response.text.substring(0, 500)}`); // Debug için gerekirse eklenebilir
-    throw new Error(`Could not extract CSRF token from ${url}`);
-  }
-  return match[1];
-}
 
 afterAll(async () => {
   await sequelize.close();

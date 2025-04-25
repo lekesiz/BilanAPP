@@ -21,13 +21,77 @@ const consoleFormat = winston.format.combine(
 // Dosya formatı (JSON olabilir veya basit metin)
 const fileFormat = winston.format.combine(
   winston.format.timestamp(),
-  winston.format.json(), // JSON formatında kaydet
+  winston.format.json(),
 );
 
-const logger = winston.createLogger({
-  level: level, // Minimum log seviyesi
+const logFormat = winston.format.printf(({ level: logLevel, message, timestamp: logTimestamp, stack, metadata: logMetadata }) => {
+  let log = `${logTimestamp} ${logLevel}: ${message}`;
+  // Metadata'yı stringify et ve log'a ekle (obje veya dizi ise)
+  if (logMetadata && Object.keys(logMetadata).length > 0) {
+    try {
+      // Hataları ve diğer özel nesneleri düzgün işle
+      const serializedMetadata = JSON.stringify(logMetadata, (key, value) => {
+        if (value instanceof Error) {
+          // Hata nesnelerini daha okunabilir formatta serialize et
+          return {
+            message: value.message,
+            stack: value.stack,
+            // İsteğe bağlı: Diğer hata özellikleri (örn: code)
+            ...(value.code && { code: value.code }),
+          };
+        }
+        return value;
+      }, 2); // 2 boşluklu girinti
+      // Limit log length for metadata if needed
+      // log += ` - Metadata: ${serializedMetadata.substring(0, 1000)}${serializedMetadata.length > 1000 ? '...' : ''}`;
+      log += ` - Metadata: ${serializedMetadata}`;
+    } catch (e) {
+      log += ' - [Metadata serialization error]';
+    }
+  }
+  // Stack trace varsa ekle
+  // Format stack trace for better readability on multiple lines
+  if (stack) {
+    // log += `\nStack: ${stack}`;
+    log += `\nStack:\n${stack.split('\n').map((line) => `  ${line}`).join('\n')}`;
+  }
+  return log;
+});
+
+// Console transport options
+const consoleTransportOptions = {
   format: winston.format.combine(
-    winston.format.errors({ stack: true }), // Hata stack trace'lerini ekle
+    // winston.format.colorize(), // Renklendirme üretimde sorun çıkarabilir, isteğe bağlı
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
+    winston.format.errors({ stack: true }),
+    logFormat,
+  ),
+  handleExceptions: true,
+  handleRejections: true,
+};
+
+// File transport options
+const fileTransportOptions = {
+  filename: path.join(__dirname, '../logs/app.log'),
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
+    winston.format.errors({ stack: true }),
+    logFormat,
+    // winston.format.json() // Logları JSON formatında kaydetmek isterseniz
+  ),
+  maxsize: 5242880, // 5MB
+  maxFiles: 5,
+  handleExceptions: true,
+  handleRejections: true,
+};
+
+const logger = winston.createLogger({
+  level, // Minimum log seviyesi
+  format: winston.format.combine(
+    winston.format.errors({ stack: true }),
     winston.format.splat(),
     winston.format.json(),
   ),

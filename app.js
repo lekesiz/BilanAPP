@@ -1,14 +1,14 @@
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
-const logger = require('./config/logger');
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
 const { create } = require('express-handlebars');
 const dotenv = require('dotenv');
-const helpers = require('./config/handlebars-helpers');
 const csrf = require('csurf');
+const helpers = require('./config/handlebars-helpers');
+const logger = require('./config/logger');
 
 // Chargement des variables d'environnement
 dotenv.config();
@@ -50,14 +50,6 @@ const hbs = create({
 hbs.handlebars.registerHelper('addHelper', (name, helperFunc) => {
   hbs.handlebars.registerHelper(name, helperFunc);
 });
-hbs.handlebars.registerHelper('JSONparse', (jsonString) => {
-  try {
-    return JSON.parse(jsonString);
-  } catch (e) {
-    console.error('Handlebars JSONparse error:', e);
-    return [];
-  }
-});
 
 // Configuration du moteur de template Handlebars
 app.engine('hbs', hbs.engine);
@@ -66,6 +58,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Middlewares
 app.use(require('morgan')('combined', { stream: logger.stream }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -143,13 +136,17 @@ app.use((req, res, next) => {
 });
 
 // Gestionnaire d'erreurs
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error(
     `${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`,
     { error: err },
   );
 
   if (err.code === 'EBADCSRFTOKEN') {
+    // Add a flash message to inform the user about CSRF error
+    if (req.flash) {
+      req.flash('error_msg', 'Erreur de sécurité. Veuillez réessayer.');
+    }
     return res.redirect(req.headers.referer || '/');
   }
 

@@ -2,6 +2,7 @@ const { Model, DataTypes } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
 const sequelize = require('../config/database');
+const logger = require('../config/logger');
 
 class Document extends Model {}
 
@@ -81,18 +82,20 @@ Document.init(
     hooks: {
       afterDestroy: async (document) => {
         if (document.filePath) {
-          const fullPath = path.join(__dirname, '../public', document.filePath); // Assuming filePath starts with /uploads/
-          console.log(`Attempting to delete file: ${fullPath}`);
-          fs.unlink(fullPath, (err) => {
-            if (err) {
-              console.error(`Error deleting file ${fullPath}:`, err);
-              // Decide if you want to throw an error or just log it
+          const fullPath = path.join(__dirname, '../public/uploads', document.filePath);
+          logger.info(`[Hook afterDestroy] Attempting to delete file: ${fullPath}`);
+          try {
+            await fs.promises.unlink(fullPath);
+            logger.info(`[Hook afterDestroy] Successfully deleted file: ${fullPath}`);
+          } catch (err) {
+            if (err.code === 'ENOENT') {
+              logger.warn(`[Hook afterDestroy] File not found for deletion (ENOENT): ${fullPath}`);
             } else {
-              console.log(`Successfully deleted file: ${fullPath}`);
+              logger.error(`[Hook afterDestroy] Error deleting file ${fullPath}:`, err);
             }
-          });
+          }
         } else {
-          console.warn(`Document ID ${document.id} destroyed, but no filePath found.`);
+          logger.warn(`[Hook afterDestroy] Document ID ${document.id} destroyed, but no filePath found.`);
         }
       },
     },

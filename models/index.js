@@ -80,7 +80,7 @@ Questionnaire.hasMany(Question, {
   foreignKey: 'questionnaireId',
   as: 'questions',
 });
-Question.belongsTo(Questionnaire, { foreignKey: 'questionnaireId' });
+Question.belongsTo(Questionnaire, { foreignKey: 'questionnaireId', as: 'questionnaire' });
 Questionnaire.hasMany(Answer, {
   foreignKey: 'questionnaireId',
   as: 'questionnaireAnswers',

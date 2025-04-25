@@ -1,10 +1,8 @@
 const request = require('supertest');
 const app = require('../app'); // Express uygulamasını import et
 const sequelize = require('../config/database');
-const { User } = require('../models');
+const { User, Beneficiary } = require('../models');
 const { createDefaultForfaits } = require('../scripts/init-db'); // Fonksiyonu import et
-
-let agent; // Session cookie'lerini saklamak için agent
 
 beforeAll(async () => {
   try {
@@ -15,88 +13,215 @@ beforeAll(async () => {
     console.log('[TEST SETUP] Creating default forfaits...');
     await createDefaultForfaits(); // Varsayılan forfait'ları oluştur
     console.log('[TEST SETUP] Default forfaits created.');
-
-    console.log('[TEST SETUP] Creating test user...');
-    await User.create({
-      email: 'test@example.com',
-      password: 'password123', // Hook hashleyecek
-      firstName: 'Test',
-      lastName: 'User',
-      userType: 'consultant',
-      forfaitType: 'Standard',
-    });
-    console.log('[TEST SETUP] Test user created.');
-
-    agent = request.agent(app);
-    console.log('[TEST SETUP] Agent created.');
   } catch (error) {
-    console.error('[TEST SETUP] Error during beforeAll:', error); // Hata loglandı
-    throw error; // Hatanın testi fail etmesini sağla
+    console.error('[TEST SETUP] Error during beforeAll:', error);
+    throw error;
+  }
+});
+
+// Cleanup hook after each test
+afterEach(async () => {
+  // Clean up created beneficiaries and their associated users
+  try {
+    // Delete users with specific test emails
+    const emailsToDelete = [
+      'wrongpass.test@example.com',
+      'correctpass.test@example.com',
+      'dash.test@example.com',
+      'logout.test@example.com',
+      'register.test@example.com',
+      'existing.test@example.com',
+    ];
+    const usersToDelete = await User.findAll({
+      where: { email: emailsToDelete }, // Use exact emails
+      attributes: ['id'],
+    });
+    const userIds = usersToDelete.map((u) => u.id);
+    if (userIds.length > 0) {
+      // Explicitly delete Beneficiaries first if User cascade isn't guaranteed
+      await Beneficiary.destroy({ where: { userId: userIds }, force: true });
+      await User.destroy({ where: { id: userIds }, force: true });
+    }
+  } catch (error) {
+    console.error('Error during afterEach auth cleanup:', error);
   }
 });
 
 afterAll(async () => {
-  // Test sonrası veritabanı bağlantısını kapat
   await sequelize.close();
 });
 
 describe('Auth Routes', () => {
   it('GET /auth/login - Should render login page', async () => {
+    const agent = request.agent(app); // Create agent locally for this test
     const res = await agent.get('/auth/login');
     expect(res.statusCode).toEqual(200);
-    expect(res.text).toContain('Connexion'); // Sayfada 'Connexion' metni var mı?
+    expect(res.text).toContain('Connexion');
   });
 
   it('POST /auth/login - Should fail with wrong password', async () => {
-    // CSRF token'ını almak için önce GET isteği yapalım
+    // Create user specifically for this test
+    await User.create({
+      email: 'wrongpass.test@example.com',
+      password: 'password123',
+      firstName: 'Wrong',
+      lastName: 'Pass',
+      userType: 'consultant',
+      forfaitType: 'Standard',
+    });
+
+    const agent = request.agent(app); // Create agent locally
     const loginPageRes = await agent.get('/auth/login');
-    const csrfToken = loginPageRes.text.match(/<input type="hidden" name="_csrf" value="(.*)">/)[1];
+    const csrfToken = loginPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
 
     const res = await agent.post('/auth/login').send({
-      email: 'test@example.com',
+      email: 'wrongpass.test@example.com',
       password: 'wrongpassword',
       _csrf: csrfToken,
     });
-    // Başarısız login /auth/login'e geri yönlendirmeli
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/auth/login');
-    // TODO: Flash mesajını kontrol etmek daha karmaşık, şimdilik atlayalım.
   });
 
   it('POST /auth/login - Should login successfully with correct credentials', async () => {
-    const loginPageRes = await agent.get('/auth/login');
-    const csrfToken = loginPageRes.text.match(/<input type="hidden" name="_csrf" value="(.*)">/)[1];
+    // Create user specifically for this test
+    await User.create({
+      email: 'correctpass.test@example.com',
+      password: 'password123',
+      firstName: 'Correct',
+      lastName: 'Pass',
+      userType: 'consultant',
+      forfaitType: 'Standard',
+    });
 
-    const res = await agent.post('/auth/login').send({
-      email: 'test@example.com',
+    // Need a fresh agent for this test to avoid carrying over session state
+    const testAgent = request.agent(app);
+    const loginPageRes = await testAgent.get('/auth/login');
+    const csrfToken = loginPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
+
+    const res = await testAgent.post('/auth/login').send({
+      email: 'correctpass.test@example.com',
       password: 'password123',
       _csrf: csrfToken,
     });
-    // Başarılı login /dashboard'a yönlendirmeli
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/dashboard');
   });
 
   it('GET /dashboard - Should require authentication after login', async () => {
-    // Agent session cookie'sini sakladığı için bu istek başarılı olmalı
-    const res = await agent.get('/dashboard');
-    // /dashboard -> /dashboard/consultant yönlendirmesi olmalı
+    // Create user and log in for this test
+    await User.create({
+      email: 'dash.test@example.com',
+      password: 'password123',
+      firstName: 'Dash',
+      lastName: 'Test',
+      userType: 'consultant',
+      forfaitType: 'Standard',
+    });
+    const testAgent = request.agent(app);
+    // let csrf = await getCsrfToken(testAgent, '/auth/login'); // REMOVED
+    // Login process needs a valid token
+    const loginPageRes = await testAgent.get('/auth/login');
+    const csrf = loginPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
+    await testAgent.post('/auth/login').send({ email: 'dash.test@example.com', password: 'password123', _csrf: csrf });
+
+    const res = await testAgent.get('/dashboard');
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/dashboard/consultant');
   });
 
   it('GET /auth/logout - Should logout successfully', async () => {
-    // Önce login olalım (zaten önceki testte olmuştuk, agent cookie'yi tutuyor)
-    const res = await agent.get('/auth/logout');
-    // Başarılı logout ana sayfaya (/) yönlendirmeli
+    // Create user and log in for this test
+    await User.create({
+      email: 'logout.test@example.com',
+      password: 'password123',
+      firstName: 'Logout',
+      lastName: 'Test',
+      userType: 'consultant',
+      forfaitType: 'Standard',
+    });
+    const testAgent = request.agent(app);
+    // let csrf = await getCsrfToken(testAgent, '/auth/login'); // REMOVED
+    // Login process needs a valid token
+    const loginPageRes = await testAgent.get('/auth/login');
+    const csrf = loginPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
+    await testAgent.post('/auth/login').send({ email: 'logout.test@example.com', password: 'password123', _csrf: csrf });
+
+    // Perform logout
+    const res = await testAgent.get('/auth/logout');
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/');
 
-    // Logout sonrası /dashboard'a erişememeli
-    const dashboardRes = await agent.get('/dashboard');
+    // Verify access is denied after logout
+    const dashboardRes = await testAgent.get('/dashboard');
     expect(dashboardRes.statusCode).toEqual(302);
-    expect(dashboardRes.headers.location).toEqual('/auth/login'); // Login'e yönlendirilmeli
+    expect(dashboardRes.headers.location).toEqual('/auth/login');
   });
 
-  // TODO: Add tests for /register route
+  it('GET /auth/register - Should render register page', async () => {
+    const agent = request.agent(app); // Create agent locally
+    const res = await agent.get('/auth/register');
+    expect(res.statusCode).toEqual(200);
+    expect(res.text).toContain('Inscription');
+    expect(res.text).toContain('_csrf');
+  });
+
+  it('POST /auth/register - Should fail with missing fields', async () => {
+    const agent = request.agent(app); // Create agent locally
+    const regPageRes = await agent.get('/auth/register');
+    const regCsrfToken = regPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
+    const res = await agent.post('/auth/register').send({ _csrf: regCsrfToken });
+    expect(res.statusCode).toEqual(200);
+    expect(res.text).toContain('Le prénom est requis');
+    // ... other validation checks
+  });
+
+  it('POST /auth/register - Should register a new user successfully', async () => {
+    const agent = request.agent(app); // Create agent locally
+    const regPageRes = await agent.get('/auth/register');
+    const regCsrfToken = regPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
+    const userData = {
+      firstName: 'Register',
+      lastName: 'TestUser',
+      email: 'register.test@example.com',
+      password: 'password123',
+      password2: 'password123',
+      userType: 'consultant',
+      _csrf: regCsrfToken,
+    };
+    const res = await agent.post('/auth/register').send(userData);
+    expect(res.statusCode).toEqual(302);
+    expect(res.headers.location).toEqual('/auth/login');
+    const newUser = await User.findOne({ where: { email: 'register.test@example.com' } });
+    expect(newUser).not.toBeNull();
+    // afterEach cleans this user
+  });
+
+  it('POST /auth/register - Should fail if email already exists', async () => {
+    // Create user specifically for this test to ensure it exists
+    await User.create({
+      email: 'existing.test@example.com',
+      password: 'password123',
+      firstName: 'Existing',
+      lastName: 'User',
+      userType: 'consultant',
+      forfaitType: 'Standard',
+    });
+
+    const agent = request.agent(app); // Create agent locally
+    const regPageRes = await agent.get('/auth/register');
+    const regCsrfToken = regPageRes.text.match(/<input[^>]*name="_csrf"[^>]*value="([^"]*)"[^>]*>/)[1];
+    const userData = {
+      firstName: 'Another',
+      lastName: 'User',
+      email: 'existing.test@example.com', // Use the email just created
+      password: 'password123',
+      password2: 'password123',
+      userType: 'consultant',
+      _csrf: regCsrfToken,
+    };
+    const res = await agent.post('/auth/register').send(userData);
+    expect(res.statusCode).toEqual(200);
+    expect(res.text).toContain('Cet email est déjà enregistré.'); // Corrected message
+  });
 });

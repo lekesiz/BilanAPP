@@ -1,6 +1,6 @@
+const { validationResult } = require('express-validator');
 const { User } = require('../models');
 const { getDefaultCreditsForForfait } = require('../services/creditService');
-const { validationResult } = require('express-validator');
 const logger = require('../config/logger');
 
 // GET /login - Show Login Page
@@ -8,7 +8,11 @@ exports.showLoginPage = (req, res) => {
   if (req.isAuthenticated()) {
     return res.redirect('/dashboard');
   }
-  res.render('auth/login', { title: 'Connexion', layout: 'auth' });
+  res.render('auth/login', {
+    title: 'Connexion',
+    layout: 'auth',
+    user: req.user,
+  });
 };
 
 // POST /login - Handle Login Attempt
@@ -21,7 +25,11 @@ exports.showRegisterPage = (req, res) => {
   if (req.isAuthenticated()) {
     return res.redirect('/dashboard');
   }
-  res.render('auth/register', { title: 'Inscription', layout: 'auth' });
+  res.render('auth/register', {
+    title: 'Inscription',
+    layout: 'auth',
+    user: req.user,
+  });
 };
 
 // POST /register - Handle Registration Submission
@@ -39,10 +47,12 @@ exports.registerUser = async (req, res) => {
     });
   }
 
-  const { firstName, lastName, email, password, userType } = req.body;
+  const {
+    firstName, lastName, email, password, userType,
+  } = req.body;
 
   try {
-    const existingUser = await User.findOne({ where: { email: email } });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.render('auth/register', {
         title: 'Inscription',
@@ -67,11 +77,11 @@ exports.registerUser = async (req, res) => {
     });
     await newUser.save();
     req.flash('success_msg', 'Inscription réussie! Connectez-vous.');
-    res.redirect('/auth/login');
+    return res.redirect('/auth/login');
   } catch (err) {
-    logger.error('Register error:', { error: err, email: email });
+    logger.error('Register error:', { error: err, email });
     req.flash('error_msg', "Erreur lors de l'inscription.");
-    res.redirect('/auth/register');
+    return res.redirect('/auth/register');
   }
 };
 
@@ -79,9 +89,11 @@ exports.registerUser = async (req, res) => {
 exports.logoutUser = (req, res, next) => {
   req.logout((err) => {
     if (err) {
-      return next(err);
+      logger.error('Logout error:', err);
+      req.flash('error_msg', 'Erreur lors de la déconnexion.');
+      return res.redirect('back');
     }
     req.flash('success_msg', 'Déconnexion réussie.');
-    res.redirect('/');
+    return res.redirect('/');
   });
 };

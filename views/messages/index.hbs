@@ -1,52 +1,49 @@
 {{!-- Mesaj Listeleme (Konuşmalar) --}}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">Mes Messages</h1>
-        <a href="/messages/new" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nouveau Message
-        </a>
-    </div>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">Messages</h1>
+                {{#unless isAdmin}}
+                    <a href="/messages/new" class="btn btn-primary">+ Nouveau message</a>
+                {{/unless}}
+            </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            {{#if conversations.length}}
-                <div class="list-group list-group-flush">
-                    {{#each conversations}}
-                        <a href="/messages/conversation/{{#if ../isConsultant}}{{participant.id}}{{else}}{{participant.id}}{{/if}}" 
-                           class="list-group-item list-group-item-action {{#unless isRead}}list-group-item-secondary fw-bold{{/unless}}">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">
-                                    {{#if ../isConsultant}}
-                                        {{participant.user.firstName}} {{participant.user.lastName}}
-                                    {{else}}
-                                        {{participant.firstName}} {{participant.lastName}} (Consultant)
-                                    {{/if}}
-                                </h5>
-                                <small>{{formatDateTime lastMessage.createdAt}}</small>
+            {{#if conversations}}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Conversations</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {{#each conversations}}
+                            <div class="mb-3">
+                                <a href="/messages/conversation/{{#if isBeneficiary}}{{participant.id}}{{else}}{{beneficiaryId}}{{/if}}" 
+                                   class="list-group-item list-group-item-action {{#unless isRead}}list-group-item-secondary fw-bold{{/unless}}">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h5 class="mb-1">
+                                            {{#if participant}}
+                                                {{participant.firstName}} {{participant.lastName}}
+                                            {{else}}
+                                                Conversation
+                                            {{/if}}
+                                        </h5>
+                                        <small>{{formatDate lastMessage.createdAt}}</small>
+                                    </div>
+                                    <p class="mb-1">{{lastMessage.body}}</p>
+                                </a>
                             </div>
-                            <p class="mb-1">
-                                <small class="text-muted me-1">
-                                    {{#ifCond lastMessage.senderId '===' ../user.id}}
-                                        Vous:
-                                    {{else}}
-                                        {{lastMessage.sender.firstName}}:
-                                    {{/ifCond}}
-                                </small>
-                                {{truncate lastMessage.subject 50}}
-                            </p>
-                            <small>{{truncate lastMessage.body 100}}</small>
-                             {{#unless isRead}}
-                                <span class="badge bg-primary rounded-pill float-end">Nouveau</span>
-                             {{/unless}}
-                        </a>
-                    {{/each}}
+                        {{/each}}
+                    </div>
                 </div>
             {{else}}
-                <div class="text-center p-5">
-                    <p class="text-muted">Aucune conversation trouvée.</p>
-                     <a href="/messages/new" class="btn btn-primary mt-2">
-                        <i class="fas fa-plus"></i> Envoyer un nouveau message
-                    </a>
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        {{#if isBeneficiary}}
+                            Vous n'avez pas encore de messages. Contactez votre consultant pour démarrer une conversation.
+                        {{else}}
+                            Vous n'avez pas encore de messages. Cliquez sur "Nouveau message" pour démarrer une conversation.
+                        {{/if}}
+                    </p>
                 </div>
             {{/if}}
         </div>

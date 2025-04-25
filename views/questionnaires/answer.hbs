@@ -58,15 +58,4 @@
     </form>
 </div>
 
-<script>
-  // Helper function for range in Handlebars
-  Handlebars.registerHelper('range', function(start, end, options) {
-    let result = '';
-    for (let i = start; i <= end; i++) {
-      result += options.fn(i);
-    }
-    return result;
-  });
-</script>
-
-{{!-- Hatalı/Gereksiz Helper tanımları kaldırıldı --}} 
+{{!-- Removed incorrect inline helper registration --}} 

@@ -3,7 +3,8 @@
     "browser": false,
     "commonjs": true,
     "es2021": true,
-    "node": true
+    "node": true,
+    "jest": true
   },
   "extends": [
     "airbnb-base"
@@ -50,9 +51,15 @@
       }
     },
     {
-        "files": ["scripts/**/*.js"], // script'ler node ortamında da çalışabilir
+        "files": ["scripts/**/*.js"],
         "env": {
             "node": true
+        },
+        "rules": {
+            "no-await-in-loop": "off",
+            "no-use-before-define": "off",
+            "no-case-declarations": "off",
+            "no-continue": "off"
         }
     }
   ]

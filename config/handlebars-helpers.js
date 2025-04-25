@@ -1,4 +1,5 @@
 const Handlebars = require('handlebars');
+const logger = require('./logger'); // Import logger
 
 module.exports = {
   // İki değeri karşılaştır
@@ -104,20 +105,17 @@ module.exports = {
     return index + 1;
   },
 
-  // JSON string'ini parse et (Handlebars içinde each ile kullanmak için)
-  parseJSON(jsonString, options) {
+  // JSON string'ini parse et (Artık sadece parse edip döndürüyor)
+  parseJSON(jsonString) {
     try {
-      const data = JSON.parse(jsonString);
-      let result = '';
-      if (Array.isArray(data)) {
-        data.forEach((item) => {
-          result += options.fn(item);
-        });
+      // Handlebars SafeString ise önce string'e çevir
+      if (jsonString && typeof jsonString.toString === 'function') {
+        jsonString = jsonString.toString();
       }
-      return result;
+      return JSON.parse(jsonString || '[]'); // Null/undefined için boş dizi döndür
     } catch (e) {
-      console.error('Handlebars JSON parse error:', e);
-      return '';
+      logger.error('Handlebars JSON parse error:', { error: e, input: jsonString }); // Use logger
+      return []; // Hata durumunda boş dizi döndür
     }
   },
 
@@ -199,7 +197,8 @@ module.exports = {
       // ISO string'in tarih kısmını al (YYYY-MM-DD)
       return d.toISOString().split('T')[0];
     } catch (e) {
-      console.error('Error formatting date for input:', e);
+      // console.error('Error formatting date for input:', e);
+      logger.error('Error formatting date for input:', { error: e, dateInput: date }); // Use logger
       return '';
     }
   },
@@ -336,54 +335,37 @@ module.exports = {
   // Forfait tipine göre bilgiyi getir (lookupForfait helper) - KALDIRILDI
   // lookupForfait: function(forfaitType, property) { ... },
 
-  // Birden fazla koşuldan herhangi biri doğruysa true döndür (or helper - Inline için Düzeltilmiş)
-  or() {
-    // Check if last argument is options object (from Handlebars)
-    const options = arguments[arguments.length - 1];
-    const isBlockHelper =
-      options && typeof options === 'object' && typeof options.fn === 'function';
-
-    // Determine how many arguments to check (all except options if it's a block helper)
-    const argsToCheck = isBlockHelper ? arguments.length - 1 : arguments.length;
-
-    // Check each argument
-    for (let i = 0; i < argsToCheck; i += 1) {
-      if (arguments[i]) {
-        // Herhangi biri truthy ise true döndür
+  // Birden fazla koşuldan herhangi biri doğruysa true döndür (or helper)
+  or(...args) {
+    const options = args.pop(); // Get options object
+    const isBlockHelper = options && typeof options === 'object' && typeof options.fn === 'function';
+    
+    for (let i = 0; i < args.length; i += 1) { // Iterate over actual arguments
+      if (args[i]) {
         return isBlockHelper ? options.fn(this) : true;
       }
     }
-
     // None of the arguments were truthy
-    return isBlockHelper
-      ? typeof options.inverse === 'function'
-        ? options.inverse(this)
-        : ''
-      : false;
+    if (isBlockHelper) {
+      return typeof options.inverse === 'function' ? options.inverse(this) : '';
+    }
+    return false;
   },
 
   // AND helper'ı (Inline için Düzeltilmiş)
-  and() {
-    // Check if last argument is options object (from Handlebars)
-    const options = arguments[arguments.length - 1];
-    const isBlockHelper =
-      options && typeof options === 'object' && typeof options.fn === 'function';
-
-    // Determine how many arguments to check (all except options if it's a block helper)
-    const argsToCheck = isBlockHelper ? arguments.length - 1 : arguments.length;
-
-    // Check each argument
-    for (let i = 0; i < argsToCheck; i += 1) {
-      if (!arguments[i]) {
+  and(...args) {
+    const options = args.pop();
+    const isBlockHelper = options && typeof options === 'object' && typeof options.fn === 'function';
+    
+    for (let i = 0; i < args.length; i += 1) { // Iterate over actual arguments
+      if (!args[i]) {
         // Herhangi biri falsy ise false döndür
-        return isBlockHelper
-          ? typeof options.inverse === 'function'
-            ? options.inverse(this)
-            : ''
-          : false;
+        if (isBlockHelper) {
+          return typeof options.inverse === 'function' ? options.inverse(this) : '';
+        }
+        return false;
       }
     }
-
     // All arguments were truthy
     return isBlockHelper ? options.fn(this) : true;
   },
@@ -438,16 +420,10 @@ module.exports = {
   findDocument(documents, options) {
     if (!Array.isArray(documents)) return options.inverse(this);
 
-    const criteria = options.hash; // Helper'a hash olarak geçilen parametreler (örn: category='CV')
+    const criteria = options.hash; 
     const foundDoc = documents.find((doc) => {
-      let match = true;
-      for (const key in criteria) {
-        if (doc[key] !== criteria[key]) {
-          match = false;
-          break;
-        }
-      }
-      return match;
+      // Use Object.keys for safer iteration than for...in
+      return Object.keys(criteria).every(key => doc[key] === criteria[key]);
     });
 
     if (foundDoc) {
@@ -479,7 +455,6 @@ module.exports = {
       // ); // Uyarı kaldırıldı, helper durumu zaten ele alıyor
       return options.inverse(this); // Treat null/undefined as not meeting requirement
     }
-    const levels = ['Free', 'Standard', 'Premium', 'Admin']; // Define hierarchy
     const forfaitLevels = {
       Essentiel: 1,
       Standard: 2,
@@ -496,11 +471,10 @@ module.exports = {
     // Handle both block and inline usage
     if (options && typeof options === 'object') {
       if (typeof options.fn === 'function') {
-        return result
-          ? options.fn(this)
-          : typeof options.inverse === 'function'
-            ? options.inverse(this)
-            : '';
+        if (result) {
+          return options.fn(this);
+        }
+        return typeof options.inverse === 'function' ? options.inverse(this) : '';
       }
     }
 
@@ -699,6 +673,18 @@ module.exports = {
       default:
         return { badge: 'bg-secondary', text: status || 'Inconnu' };
     }
+  },
+
+  // Find the consultant from a participants array
+  findConsultant(participants) {
+    if (!Array.isArray(participants)) return null;
+    return participants.find(p => p.userType === 'consultant');
+  },
+
+  // Find the beneficiary from a participants array
+  findBeneficiary(participants) {
+    if (!Array.isArray(participants)) return null;
+    return participants.find(p => p.userType === 'beneficiary');
   },
 
   // Randevu durumu için HTML badge döndür

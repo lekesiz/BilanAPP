@@ -1,9 +1,11 @@
 const express = require('express');
-
-const router = express.Router();
+const logger = require('../config/logger'); // Import logger
 const { Op } = require('sequelize');
 const { ensureAuthenticated, ensureBeneficiary } = require('../middlewares/auth');
-const { User, Beneficiary, Appointment, Message, Questionnaire } = require('../models');
+const {
+  User, Beneficiary, Appointment, Message, Questionnaire,
+} = require('../models');
+const router = express.Router(); // Restore router definition
 
 // --- Helper Functions (Moved Before Usage) ---
 
@@ -35,25 +37,25 @@ async function getConsultantStats(consultantId, isAdmin = false) {
       },
     }),
     Message.count({
-      where: isAdmin
-        ? { isRead: false } // Admin sees ALL unread messages
-        : { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
+      where: isAdmin ?
+        { isRead: false } : // Admin sees ALL unread messages
+        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } }, // Consultant sees messages sent TO them
     }),
     Questionnaire.count({
       // Admin sees all pending. Consultant sees questionnaires FOR their beneficiaries.
-      where: isAdmin
-        ? { status: 'pending' }
-        : {
-            status: 'pending',
-            beneficiaryId: {
-              [Op.in]: (
-                await Beneficiary.findAll({
-                  where: { consultantId },
-                  attributes: ['id'],
-                })
-              ).map((b) => b.id),
-            },
+      where: isAdmin ?
+        { status: 'pending' } :
+        {
+          status: 'pending',
+          beneficiaryId: {
+            [Op.in]: (
+              await Beneficiary.findAll({
+                where: { consultantId },
+                attributes: ['id'],
+              })
+            ).map((b) => b.id),
           },
+        },
     }),
     Beneficiary.count({
       where: { ...baseWhereBeneficiary, consentGiven: false },
@@ -207,18 +209,18 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
       // Son Tamamlanan Anketler (Admin tümünü görür)
       Questionnaire.findAll({
         where: {
-          ...(isAdmin
-            ? {}
-            : {
-                beneficiaryId: {
-                  [Op.in]: (
-                    await Beneficiary.findAll({
-                      where: { consultantId },
-                      attributes: ['id'],
-                    })
-                  ).map((b) => b.id),
-                },
-              }),
+          ...(isAdmin ?
+            {} :
+            {
+              beneficiaryId: {
+                [Op.in]: (
+                  await Beneficiary.findAll({
+                    where: { consultantId },
+                    attributes: ['id'],
+                  })
+                ).map((b) => b.id),
+              },
+            }),
           status: 'completed',
           updatedAt: {
             [Op.gte]: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
@@ -248,18 +250,18 @@ router.get('/consultant', ensureAuthenticated, async (req, res) => {
       // Teslim tarihi geçmiş anketler (Admin tümünü görür)
       Questionnaire.findAll({
         where: {
-          ...(isAdmin
-            ? {}
-            : {
-                beneficiaryId: {
-                  [Op.in]: (
-                    await Beneficiary.findAll({
-                      where: { consultantId },
-                      attributes: ['id'],
-                    })
-                  ).map((b) => b.id),
-                },
-              }),
+          ...(isAdmin ?
+            {} :
+            {
+              beneficiaryId: {
+                [Op.in]: (
+                  await Beneficiary.findAll({
+                    where: { consultantId },
+                    attributes: ['id'],
+                  })
+                ).map((b) => b.id),
+              },
+            }),
           status: 'pending',
           dueDate: { [Op.ne]: null, [Op.lt]: today },
         },
@@ -334,15 +336,34 @@ router.get('/beneficiary', ensureAuthenticated, ensureBeneficiary, async (req, r
         beneficiaryId: beneficiary.id,
         status: 'pending',
       },
+      attributes: ['id', 'title', 'category', 'dueDate', 'description'],
       limit: 5,
     });
+
+    // --- DEBUG LOGGING --- 
+    logger.info(`[DASHBOARD-BENEFICIARY] Found pending questionnaires for beneficiary ${beneficiary.id}:`, pendingQuestionnaires.map(q => ({id: q.id, title: q.title})));
+    // --- END DEBUG LOGGING ---
+
+    // Convert all model instances to plain objects
+    const plainBeneficiary = beneficiary.get({ plain: true });
+    const plainAppointments = upcomingAppointments.map(a => a.get({ plain: true }));
+    const plainQuestionnaires = pendingQuestionnaires.map(q => q.get({ plain: true }));
+
+    // Calculate progress values (placeholder for real implementation)
+    const progress = {
+      profile: 75,
+      skills: 60,
+      objectives: 40,
+      overall: 58
+    };
 
     res.render('dashboard/beneficiary', {
       title: 'Mon Bilan de Compétences',
       user: req.user,
-      beneficiary,
-      upcomingAppointments,
-      pendingQuestionnaires,
+      beneficiary: plainBeneficiary,
+      upcomingAppointments: plainAppointments,
+      pendingQuestionnaires: plainQuestionnaires,
+      progress
     });
   } catch (error) {
     console.error('Beneficiary dashboard error:', error);

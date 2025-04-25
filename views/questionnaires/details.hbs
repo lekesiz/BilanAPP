@@ -71,6 +71,46 @@
                 <p class="text-muted">Aucune question définie pour ce questionnaire.</p>
              {{/if}}
         </div>
+
+        {{!-- YENİ SORU EKLEME FORMU (Sadece taslak ise göster) --}}
+        {{#ifCond questionnaire.status '===' 'draft'}}
+        <div class="card-footer">
+             <h6 class="card-title">Ajouter une nouvelle question</h6>
+             <form action="/questionnaires/{{questionnaire.id}}/questions/add" method="POST">
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                <div class="mb-3">
+                    <label for="questionText" class="form-label">Texte de la question *</label>
+                    <input type="text" class="form-control" id="questionText" name="text" required>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="questionType" class="form-label">Type de question *</label>
+                        <select class="form-select" id="questionType" name="type" required onchange="toggleOptions(this.value)">
+                            <option value="" selected disabled>Choisir un type...</option>
+                            <option value="text">Texte Court</option>
+                            <option value="textarea">Texte Long</option>
+                            <option value="radio">Choix Unique (Radio)</option>
+                            <option value="checkbox">Choix Multiples (Checkbox)</option>
+                            <option value="scale">Échelle (ex: 1-5)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6" id="optionsContainer" style="display: none;">
+                        <label for="questionOptions" class="form-label">Options (une par ligne)</label>
+                        <textarea class="form-control" id="questionOptions" name="options" rows="3"></textarea>
+                        <small class="form-text text-muted">Uniquement pour Choix Unique ou Multiples.</small>
+                    </div>
+                </div>
+                 <div class="mb-3">
+                    <label for="questionOrder" class="form-label">Ordre (optionnel)</label>
+                    <input type="number" class="form-control" id="questionOrder" name="order" min="0" value="{{length questionnaire.questions}}">
+                 </div>
+
+                <button type="submit" class="btn btn-primary">Ajouter la question</button>
+            </form>
+        </div>
+        {{/ifCond}}
+        {{!-- /YENİ SORU EKLEME FORMU --}}
+
     </div>
 
     {{!-- Atama Modalı --}}
@@ -132,4 +172,31 @@
     </div>
 </div>
 
-{{!-- Hatalı/Gereksiz Helper tanımları buradan kaldırıldı --}} 
+{{!-- Hatalı/Gereksiz Helper tanımları buradan kaldırıldı --}}
+
+{{!-- Sayfaya özel scriptler burada render edilecek --}}
+{{{renderScripts}}}
+
+{{!-- Soru Ekleme Formu için basit JS --}}
+{{#addScript}}
+<script>
+function toggleOptions(type) {
+  const container = document.getElementById('optionsContainer');
+  if (type === 'radio' || type === 'checkbox') {
+    container.style.display = 'block';
+  } else {
+    container.style.display = 'none';
+  }
+}
+// Initial check in case the form is pre-filled on error
+document.addEventListener('DOMContentLoaded', function() {
+    const questionTypeSelect = document.getElementById('questionType');
+    if (questionTypeSelect) {
+        toggleOptions(questionTypeSelect.value);
+    }
+});
+</script>
+{{/addScript}}
+
+</body>
+</html> 

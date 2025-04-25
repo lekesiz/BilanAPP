@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
-const { Appointment, Beneficiary, User } = require('../models');
 const { validationResult } = require('express-validator');
+const { Appointment, Beneficiary, User } = require('../models');
 const logger = require('../config/logger');
 
 // GET /appointments - List Appointments
@@ -10,7 +10,9 @@ exports.listAppointments = async (req, res) => {
     const limit = 15;
     const offset = (page - 1) * limit;
     const whereClause = {};
-    const { beneficiary, status, dateStart, dateEnd } = req.query;
+    const {
+      beneficiary, status, dateStart, dateEnd,
+    } = req.query;
     const { userType } = req.user;
     const userId = req.user.id;
     const isAdmin = req.user.forfaitType === 'Admin';
@@ -150,7 +152,7 @@ exports.showNewForm = async (req, res) => {
       isConsultant: req.user.userType === 'consultant',
     });
   } catch (error) {
-    logger.error('New appointment form error:', { error: error });
+    logger.error('New appointment form error:', { error });
     req.flash('error_msg', 'Erreur chargement formulaire RDV.');
     res.redirect('/appointments');
   }
@@ -188,7 +190,9 @@ exports.addAppointment = async (req, res) => {
     }
   }
 
-  const { beneficiaryId, date, time, type, description, location, notes } = req.body;
+  const {
+    beneficiaryId, date, time, type, description, location, notes,
+  } = req.body;
   const dateTime = `${date} ${time}:00`;
 
   try {
@@ -374,7 +378,9 @@ exports.updateAppointment = async (req, res) => {
     }
   }
 
-  const { beneficiaryId, date, time, type, description, location, notes, status } = req.body;
+  const {
+    beneficiaryId, date, time, type, description, location, notes, status,
+  } = req.body;
   const dateTime = `${date} ${time}:00`;
 
   try {
@@ -435,7 +441,7 @@ exports.updateAppointment = async (req, res) => {
     req.flash('success_msg', 'Rendez-vous modifié.');
     res.redirect('/appointments');
   } catch (err) {
-    logger.error('Appointment edit error:', { error: err, appointmentId: appointmentId });
+    logger.error('Appointment edit error:', { error: err, appointmentId });
     req.flash('error_msg', 'Erreur lors de la modification du RDV.');
     res.redirect(`/appointments/${appointmentId}/edit`);
   }
@@ -468,7 +474,7 @@ exports.deleteAppointment = async (req, res) => {
     req.flash('success_msg', 'Rendez-vous supprimé.');
     res.redirect('/appointments');
   } catch (err) {
-    logger.error('Appointment delete error:', { error: err, appointmentId: appointmentId });
+    logger.error('Appointment delete error:', { error: err, appointmentId });
     req.flash('error_msg', 'Erreur lors de la suppression du RDV.');
     res.redirect('/appointments');
   }

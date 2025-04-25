@@ -67,9 +67,9 @@ async function logCreditChange(
     // Admin ID'sini açıklamaya ekleyebiliriz
     let finalDescription = description;
     if (adminUserId) {
-      finalDescription = description
-        ? `${description} (par Admin ID: ${adminUserId})`
-        : `Ajustement par Admin ID: ${adminUserId}`;
+      finalDescription = description ?
+        `${description} (par Admin ID: ${adminUserId})` :
+        `Ajustement par Admin ID: ${adminUserId}`;
     }
 
     await CreditLog.create({

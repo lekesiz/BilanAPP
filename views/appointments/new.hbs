@@ -4,7 +4,7 @@
 
     {{> messages errors=errors}}
 
-    <form action="/appointments/new" method="POST">
+    <form action="/appointments/add" method="POST">
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
         <div class="card">
             <div class="card-body">
@@ -40,9 +40,10 @@
                 <div class="mb-3">
                     <label for="type" class="form-label">Type de rendez-vous *</label>
                     <select class="form-select" id="type" name="type" required>
-                        <option value="Entretien préliminaire">Entretien préliminaire</option>
-                        <option value="Entretien d'investigation">Entretien d'investigation</option>
-                        <option value="Entretien de conclusion">Entretien de conclusion</option>
+                        <option value="Entretien Préliminaire">Entretien Préliminaire</option>
+                        <option value="Entretien d'Investigation">Entretien d'Investigation</option>
+                        <option value="Entretien de Synthèse">Entretien de Synthèse</option>
+                        <option value="Passation Tests">Passation Tests</option>
                         <option value="Suivi">Suivi</option>
                         <option value="Autre">Autre</option>
                     </select>

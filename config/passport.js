@@ -30,7 +30,7 @@ module.exports = () => {
         logger.warn(`[PASSPORT] Password mismatch for user ID: ${user.id}, Email: ${email}`);
         return done(null, false, { message: 'Mot de passe incorrect.' });
       } catch (err) {
-        logger.error('[PASSPORT] Error during authentication:', { error: err, email: email });
+        logger.error('[PASSPORT] Error during authentication:', { error: err, email });
         return done(err);
       }
     }),

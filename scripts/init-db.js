@@ -18,7 +18,7 @@ const {
   Question,
   Document,
   AiAnalysis,
-  CreditLog,
+  // CreditLog, // Unused
 } = require('../models'); // models ana dizinde olduğu için ../
 const { logCreditChange } = require('../services/creditService'); // CreditLog burada oluşturuluyor
 const logger = require('../config/logger'); // Logger import edildi
@@ -66,7 +66,7 @@ const createDemoMessages = async (consultantId, beneficiaryId, count = 3) => {
       Message.create({
         senderId: fromConsultant ? consultant.id : beneficiaryUser.id,
         consultantId: consultant.id,
-        beneficiaryId: beneficiaryId,
+        beneficiaryId,
         subject: `Message de test ${i + 1}`,
         body: `Contenu du message de test ${i + 1} envoyé par ${fromConsultant ? 'consultant' : 'bénéficiaire'}.`,
         isRead: Math.random() < 0.5,
@@ -111,38 +111,9 @@ const createDemoCreditLogs = async () => {
   logger.info('Demo kredi logları oluşturuldu.'); // console.log -> logger.info
 };
 
-// --- Ana Fonksiyon ---
-const initDatabase = async (force = false, createDemoData = true) => {
-  try {
-    logger.info('Starting database initialization...'); // console.log -> logger.info
-
-    // Skip database creation for SQLite - it's handled by the connection
-    // The CREATE DATABASE statement is not valid in SQLite
-
-    // Sync models with database - force true will drop tables if they exist
-    await sequelize.sync({ force: true });
-
-    // Create all demo data through the main function
-    await createDefaultForfaits();
-    if (createDemoData) {
-      await createDemoDataInternal();
-    }
-
-    logger.info('Database initialized successfully!'); // console.log -> logger.info
-  } catch (error) {
-    logger.error('Database initialization failed:', { error: error }); // console.error -> logger.error
-  }
-};
-
-// Başlatma fonksiyonunu çalıştır
-// initDatabase(); // Script doğrudan çalıştırılmayacaksa bu kaldırılabilir
-
-// Testlerde kullanmak için export et
-module.exports = { createDefaultForfaits, initDatabase };
-
+// --- Definition Moved Up ---
 // Varsayılan Forfait'leri oluşturma fonksiyonu
 async function createDefaultForfaits() {
-  // ... (Fonksiyon içeriği aynı)
   try {
     logger.info("Varsayılan Forfait'ler oluşturuluyor..."); // console.log -> logger.info
     await Forfait.bulkCreate(
@@ -187,11 +158,12 @@ async function createDefaultForfaits() {
     );
     logger.info("Varsayılan Forfait'ler başarıyla oluşturuldu/güncellendi."); // console.log -> logger.info
   } catch (error) {
-    logger.error('Varsayılan Forfait oluşturulurken hata:', { error: error }); // console.error -> logger.error
+    logger.error('Varsayılan Forfait oluşturulurken hata:', { error }); // console.error -> logger.error
     throw error;
   }
 }
 
+// --- Definition Moved Up ---
 // Demo veri oluşturma fonksiyonu
 async function createDemoDataInternal() {
   try {
@@ -406,7 +378,7 @@ Informations complémentaires:
             notes: appointmentNotes[j % appointmentNotes.length],
             location: appointmentLocations[j % appointmentLocations.length],
             reminderSent: true,
-          })
+          }),
         );
       }
 
@@ -429,7 +401,7 @@ Informations complémentaires:
               beneficiaryId: beneficiary.id,
               location: appointmentLocations[(j + 3) % appointmentLocations.length],
               reminderSent: false,
-            })
+            }),
           );
         }
       }
@@ -572,9 +544,9 @@ Informations complémentaires:
           beneficiaryId: beneficiary.id,
           dueDate,
           completedDate:
-            status === 'completed'
-              ? new Date(Date.now() - ((i % 7) + 1) * 24 * 60 * 60 * 1000)
-              : null,
+            status === 'completed' ?
+              new Date(Date.now() - ((i % 7) + 1) * 24 * 60 * 60 * 1000) :
+              null,
         });
 
         // Anket sorularını oluştur
@@ -586,9 +558,9 @@ Informations complémentaires:
             options: questionTemplate.options || null,
             order: questionTemplate.order,
             answer:
-              status === 'completed'
-                ? generateDummyAnswer(questionTemplate.type, questionTemplate.options)
-                : null,
+              status === 'completed' ?
+                generateDummyAnswer(questionTemplate.type, questionTemplate.options) :
+                null,
           });
         }
       }
@@ -824,27 +796,44 @@ Informations complémentaires:
 
     logger.info('-----------------------------------------'); // console.log -> logger.info
     logger.info('Demo Veri Oluşturma Tamamlandı!'); // console.log -> logger.info
-    logger.info(`Danışman Girişi: consultant@test.com / consultant123`); // console.log -> logger.info
-    logger.info(`İkinci Danışman: consultant2@test.com / consultant123`); // console.log -> logger.info
-    logger.info(`Admin Girişi: admin@test.com / admin123`); // console.log -> logger.info
+    logger.info('Danışman Girişi: consultant@test.com / consultant123'); // console.log -> logger.info
+    logger.info('İkinci Danışman: consultant2@test.com / consultant123'); // console.log -> logger.info
+    logger.info('Admin Girişi: admin@test.com / admin123'); // console.log -> logger.info
     logger.info('Faydalanıcı Girişleri: beneficiary1@test.com / beneficiary1 ...'); // console.log -> logger.info
     logger.info('-----------------------------------------'); // console.log -> logger.info
 
-    // Tamamlanmış anketlerin durumunu güncelle (questionnaireStatuses kullanımı kaldırıldı)
+    // Tamamlanmış anketlerin durumunu güncelle
+    // Need to define 'questionnaires' array before using it here
+    const questionnaires = await Questionnaire.findAll({
+      attributes: ['id', 'category'],
+      where: { category: { [Op.in]: ['skills', 'interests'] } }, // Example: Find questionnaires to update
+    });
     await Questionnaire.update(
       { status: 'completed' },
       {
         where: {
           id: {
             [Op.in]: questionnaires
-              .filter((q) => q.category === 'skills' || q.category === 'interests')
               .map((q) => q.id),
           },
         },
       },
     );
   } catch (error) {
-    logger.error('Demo veri oluşturulurken hata:', { error: error }); // console.error -> logger.error
+    logger.error('Demo veri oluşturulurken hata:', { error }); // console.error -> logger.error
     throw error;
   }
 }
+
+// Ana fonksiyon çağrısı
+(async () => {
+  try {
+    await createDefaultForfaits();
+    await createDemoDataInternal();
+    console.log('Demo data creation completed successfully!');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during demo data creation:', error);
+    process.exit(1);
+  }
+})();

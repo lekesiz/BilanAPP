@@ -1,11 +1,12 @@
 const express = require('express');
+
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
+// const multer = require('multer'); // Multer is used in controller, not directly in router
 const { ensureAuthenticated, ensureConsultantOrBeneficiary } = require('../middlewares/auth');
 const { checkAndDeductCredits } = require('../middlewares/credits');
 // Remove requires now handled by controller
 // const { Document, Beneficiary, User } = require('../models');
-// const multer = require('multer');
 // const path = require('path');
 // const fs = require('fs');
 // const { Op } = require('sequelize');

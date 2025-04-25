@@ -3,7 +3,11 @@
  */
 
 const { Op } = require('sequelize');
-const { Activity, Beneficiary, User, Appointment, Document, Message } = require('../models');
+const {
+  Activity, Beneficiary, User, Appointment, Message,
+  // Questionnaire, // Removed unused import
+  // Answer, // Removed unused import
+} = require('../models');
 
 /**
  * Log an activity for a user
@@ -137,6 +141,7 @@ exports.getActivityStats = async (userId, options = {}) => {
     // Count activities by type
     const types = ['appointment', 'document', 'message', 'questionnaire', 'profile'];
     for (const type of types) {
+      // eslint-disable-next-line no-await-in-loop
       stats.byType[type] = await Activity.count({
         where: { ...whereClause, type },
       });
@@ -145,6 +150,7 @@ exports.getActivityStats = async (userId, options = {}) => {
     // Count activities by action
     const actions = ['create', 'view', 'update', 'delete', 'complete'];
     for (const action of actions) {
+      // eslint-disable-next-line no-await-in-loop
       stats.byAction[action] = await Activity.count({
         where: { ...whereClause, action },
       });
@@ -181,28 +187,33 @@ exports.getRecentlyActiveBeneficiaries = async (consultantId, limit = 5) => {
       ],
     });
 
-    const beneficiaryIds = beneficiaries.map((b) => b.id);
+    // const beneficiaryIds = beneficiaries.map((b) => b.id); // Removed unused variable
 
     // For each beneficiary, get their most recent activity
-    const result = [];
-    for (const beneficiary of beneficiaries) {
+    // Use Promise.all to fetch activities in parallel
+    const activityPromises = beneficiaries.map(async (beneficiary) => {
+      // eslint-disable-next-line no-await-in-loop
       const latestActivity = await Activity.findOne({
         where: { userId: beneficiary.userId },
         order: [['createdAt', 'DESC']],
       });
+      return latestActivity ? {
+        beneficiary: beneficiary.get({ plain: true }),
+        latestActivity: latestActivity.get({ plain: true }),
+      } : null;
+    });
 
-      if (latestActivity) {
-        result.push({
-          beneficiary: beneficiary.get({ plain: true }),
-          latestActivity: latestActivity.get({ plain: true }),
-        });
-      }
-    }
+    const resultsWithNulls = await Promise.all(activityPromises);
+    const result = resultsWithNulls.filter((r) => r !== null);
 
     // Sort by most recent activity and limit
-    return result
-      .sort((a, b) => new Date(b.latestActivity.createdAt) - new Date(a.latestActivity.createdAt))
-      .slice(0, limit);
+    const sortedResult = result.sort((a, b) => {
+      const dateA = new Date(a.latestActivity.createdAt);
+      const dateB = new Date(b.latestActivity.createdAt);
+      return dateB - dateA; // Sort descending (most recent first)
+    });
+
+    return sortedResult.slice(0, limit);
   } catch (error) {
     console.error('Error getting recently active beneficiaries:', error);
     return [];
@@ -227,7 +238,7 @@ exports.getRecentActivitiesForConsultant = async (consultantId, limit = 5) => {
         },
       ],
       order: [['createdAt', 'DESC']], // En yeniye göre sırala
-      limit: limit, // Limiti uygula
+      limit, // Limiti uygula
     });
 
     // Sadece yeni faydalanıcı aktivitesini döndür

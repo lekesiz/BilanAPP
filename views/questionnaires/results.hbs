@@ -38,13 +38,14 @@
                         {{#if answers.length}}
                              <div class="alert alert-light mt-2 p-3">
                                 {{#each answers}}
-                                    {{#ifCond ../../../user.userType '===' 'consultant'}}
-                                        <p class="mb-0"><strong>Réponse:</strong> {{answer}}</p>
-                                    {{else}}
-                                         {{#ifCond beneficiaryId '===' ../../../user.beneficiaryProfile.id}}
-                                             <p class="mb-0"><strong>Votre Réponse:</strong> {{answer}}</p>
-                                         {{/ifCond}}
-                                    {{/ifCond}}
+                                    <p class="mb-0">
+                                        {{#ifCond ../../../user.userType '===' 'beneficiary'}}
+                                            <strong>Votre Réponse:</strong>
+                                        {{else}}
+                                            <strong>Réponse:</strong>
+                                        {{/ifCond}}
+                                        {{answer}}
+                                    </p>
                                 {{/each}}
                             </div>
                         {{else}}

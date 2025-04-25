@@ -5,8 +5,9 @@
  * @param {string} requiredForfait Gereken minimum paket tipi (örn: 'Premium').
  */
 const checkAccessLevel = (requiredForfait) => (req, res, next) => {
-  if (!req.user || !req.user.forfaitType) {
-    req.flash('error_msg', 'Accès non autorisé. Forfait utilisateur inconnu.');
+  const { user } = req;
+  if (!user || !user.forfaitType) {
+    req.flash('error_msg', 'Accès non autorisé. Forfait manquant.');
     return res.redirect('/dashboard');
   }
 
@@ -19,21 +20,17 @@ const checkAccessLevel = (requiredForfait) => (req, res, next) => {
     Admin: 5, // Admin her şeye erişebilir varsayımı
   };
 
-  const userLevel = forfaitLevels[req.user.forfaitType] || 0;
+  const userLevel = forfaitLevels[user.forfaitType] || 0;
   const requiredLevel = forfaitLevels[requiredForfait] || 0;
 
   if (userLevel >= requiredLevel) {
     return next();
-  } else {
-    req.flash(
-      'error_msg',
-      `Accès non autorisé. Cette fonctionnalité nécessite un forfait \'${requiredForfait}\' ou supérieur.`,
-    );
-    // Kullanıcıyı geldiği sayfaya veya dashboard'a yönlendir
-    const redirectUrl = req.headers.referer || '/dashboard';
-    res.redirect(redirectUrl);
-    return;
   }
+  req.flash(
+    'error_msg',
+    `Accès non autorisé. Cette fonctionnalité requiert le forfait '${requiredForfait}' ou supérieur.`,
+  );
+  return res.redirect('back');
 };
 
 module.exports = {

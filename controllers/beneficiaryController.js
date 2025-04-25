@@ -4,6 +4,7 @@
 const { Op } = require('sequelize');
 // const bcrypt = require('bcryptjs'); // Kullanılmadığı için kaldırıldı
 const crypto = require('crypto');
+const { validationResult } = require('express-validator'); // Import eklendi
 const {
   Beneficiary,
   User,
@@ -19,12 +20,14 @@ const {
 const { logCreditChange } = require('../services/creditService');
 const aiService = require('../services/aiService');
 const { incrementAiUsage } = require('../middlewares/limits'); // This might be better in the service layer too
-const { validationResult } = require('express-validator'); // Import eklendi
 const logger = require('../config/logger'); // Logger import edildi
 
 // --- Yardımcı Fonksiyonlar ---
 
-// Belirli bir alanı AJAX ile güncellemek için genel fonksiyon (Controller içinde)
+/**
+ * Update a specific field for a beneficiary 
+ * (used for inline editing)
+ */
 async function updateBeneficiaryField(req, res, fieldName) {
   const beneficiaryId = req.params.id;
   const requestingUser = req.user;
@@ -54,7 +57,7 @@ async function updateBeneficiaryField(req, res, fieldName) {
     });
   } catch (error) {
     logger.error(`Beneficiary ${fieldName} update error:`, {
-      error: error,
+      error,
       beneficiaryId: req.params.id,
     }); // console.error -> logger.error
     res.status(500).json({
@@ -254,13 +257,13 @@ exports.addBeneficiary = async (req, res) => {
     );
     res.redirect('/beneficiaries');
   } catch (err) {
-    logger.error("Beneficiary add error:", { error: err, email: email, consultantId: req.user.id });
+    logger.error('Beneficiary add error:', { error: err, email, consultantId: req.user.id });
     if (newUser?.id) {
       try {
         await User.destroy({ where: { id: newUser.id } });
         logger.info(`Rolled back user creation for ${email}`);
       } catch (destroyError) {
-        logger.error("Error rolling back user creation:", { error: destroyError, email: email });
+        logger.error('Error rolling back user creation:', { error: destroyError, email });
       }
     }
     req.flash('error_msg', "Erreur lors de l'ajout du bénéficiaire.");
@@ -562,7 +565,7 @@ exports.updateBeneficiary = async (req, res) => {
   } catch (err) {
     logger.error(
       `Beneficiary Edit POST error for ID ${beneficiaryId} by User ${requestingUser.id}:`,
-      { error: err }
+      { error: err },
     );
     req.flash('error_msg', 'Erreur lors de la mise à jour.');
     res.redirect(`/beneficiaries/${beneficiaryId}/edit`);
@@ -598,7 +601,7 @@ exports.deleteBeneficiary = async (req, res) => {
 
     // Delete the User record, relying on onDelete: CASCADE for Beneficiary and others
     logger.info(
-      `Attempting delete User ID: ${userId} (${userEmail}) requested by User ID: ${requestingUser.id}`
+      `Attempting delete User ID: ${userId} (${userEmail}) requested by User ID: ${requestingUser.id}`,
     );
     const deletedUserCount = await User.destroy({ where: { id: userId } });
 
@@ -608,7 +611,7 @@ exports.deleteBeneficiary = async (req, res) => {
     } else {
       // This shouldn't happen if beneficiary was found
       logger.error(
-        `User delete failed for ID: ${userId}. Beneficiary ID: ${beneficiaryId}.`
+        `User delete failed for ID: ${userId}. Beneficiary ID: ${beneficiaryId}.`,
       );
       req.flash('error_msg', "Erreur lors de la suppression de l'utilisateur associé.");
     }
@@ -616,7 +619,7 @@ exports.deleteBeneficiary = async (req, res) => {
   } catch (error) {
     logger.error(
       `Beneficiary delete error for ID ${beneficiaryId} by User ${requestingUser.id}:`,
-      { error: error }
+      { error },
     );
     req.flash('error_msg', 'Erreur lors de la suppression.');
     res.redirect('/beneficiaries');
@@ -680,7 +683,7 @@ exports.updatePhase = async (req, res) => {
   } catch (error) {
     logger.error(
       `Beneficiary phase update error for ID ${beneficiaryId}:`,
-      { error: error }
+      { error },
     );
     req.flash('error_msg', 'Erreur lors de la mise à jour de la phase.');
     res.redirect(`/beneficiaries/${beneficiaryId}`);
@@ -780,7 +783,7 @@ exports.generateSynthesis = async (req, res) => {
     );
     res.redirect(redirectUrl);
   } catch (error) {
-    logger.error('AI Synthesis Generation Error:', { error: error });
+    logger.error('AI Synthesis Generation Error:', { error });
     req.flash('error_msg', `Erreur génération IA: ${error.message}`);
     res.redirect(redirectUrl);
   }
@@ -850,7 +853,7 @@ exports.generateActionPlan = async (req, res) => {
     );
     res.redirect(redirectUrl);
   } catch (error) {
-    logger.error('AI Action Plan Generation Error:', { error: error });
+    logger.error('AI Action Plan Generation Error:', { error });
     req.flash('error_msg', `Erreur génération IA: ${error.message}`);
     res.redirect(redirectUrl);
   }

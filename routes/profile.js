@@ -1,6 +1,7 @@
 const express = require('express');
+
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 // Remove requires handled by controller
 // const bcrypt = require('bcryptjs');
 const { ensureAuthenticated } = require('../middlewares/auth');
@@ -11,8 +12,10 @@ const profileController = require('../controllers/profileController');
 
 // --- Validation Rules ---
 const infoValidationRules = () => [
-  body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
-  body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
+  body('firstName').trim().notEmpty().withMessage('Le prénom est requis.')
+    .escape(),
+  body('lastName').trim().notEmpty().withMessage('Le nom est requis.')
+    .escape(),
 ];
 
 const passwordValidationRules = () => [

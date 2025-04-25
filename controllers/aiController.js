@@ -7,10 +7,11 @@ const {
   Answer,
   Credit,
   AiAnalysis,
+  Appointment,
 } = require('../models');
-const aiService = require('../services/aiService');
-const { incrementAiUsage } = require('../middlewares/limits');
 const { logCreditChange } = require('../services/creditService');
+const aiService = require('../services/aiService'); // Correct import
+const { incrementAiUsage } = require('../middlewares/limits');
 // const { checkAiLimit, checkAndDeductCredits } = require('../middlewares/credits'); // Kullanılmadığı için kaldırıldı
 
 // ------ SYNTHESIS GENERATOR ------
@@ -253,13 +254,15 @@ exports.showCareerExplorer = (req, res) => {
   res.render('ai/career-explorer', {
     title: 'Explorateur de Carrières IA',
     user: req.user,
-    aiCredits: 10, // Cost of career exploration
+    aiCredits: 10, // Example cost for career exploration
   });
 };
 
 // POST /ai/career-explorer - Handle career exploration request
 exports.exploreCareer = async (req, res) => {
-  const { skills, interests, constraints, educationLevel } = req.body;
+  const {
+    skills, interests, constraints, educationLevel,
+  } = req.body;
 
   try {
     // Validate input
@@ -274,7 +277,8 @@ exports.exploreCareer = async (req, res) => {
     // For now, return a placeholder
     const careerSuggestions = {
       message:
-        "L'explorateur de carrières est en cours de développement. Cette fonctionnalité sera disponible prochainement.",
+        "L'explorateur de carrières est en cours de développement. " +
+        "Cette fonctionnalité sera disponible prochainement.",
       suggestions: [
         {
           title: 'Exemple de carrière 1',
@@ -309,7 +313,10 @@ exports.exploreCareer = async (req, res) => {
     });
   } catch (error) {
     console.error('Career exploration error:', error);
-    req.flash('error_msg', `Erreur d'exploration: ${error.message}`);
+    req.flash(
+        'error_msg', 
+        `Erreur d'exploration: ${error.message}`
+    );
     res.redirect('/ai/career-explorer');
   }
 };
@@ -358,7 +365,9 @@ exports.analyzeCompetencies = async (req, res) => {
     });
   } catch (error) {
     console.error('Competency analysis error:', error);
-    req.flash('error_msg', `Erreur d'analyse: ${error.message}`);
+    req.flash('error_msg',
+      `Erreur d'analyse: ${error.message}`
+    );
     res.redirect('/ai/competency-analyzer');
   }
 };
@@ -437,15 +446,18 @@ const generateCompetencyAnalysis = (cvText, jobDescription) => {
     ],
   };
 
+  let summaryText = 'Le candidat présente des écarts significatifs par rapport aux exigences du poste.';
+  if (matchScore >= 70) {
+    summaryText = 'Le candidat possède la majorité des compétences requises.';
+  } else if (matchScore >= 40) {
+    summaryText = 'Le candidat a plusieurs compétences clés mais certaines lacunes importantes.';
+  }
+  const summary = 
+      `Le profil correspond à ${matchScore}% des exigences du poste. ${summaryText}`;
+
   return {
     matchScore,
-    summary: `Le profil correspond à ${matchScore}% des exigences du poste. ${
-      matchScore >= 70
-        ? 'Le candidat possède la majorité des compétences requises.'
-        : matchScore >= 40
-          ? 'Le candidat a plusieurs compétences clés mais certaines lacunes importantes.'
-          : 'Le candidat présente des écarts significatifs par rapport aux exigences du poste.'
-    }`,
+    summary,
     strengths,
     gaps,
     strengthsCount: strengths.length,
@@ -496,14 +508,18 @@ exports.getCompetencyAnalyzer = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getCompetencyAnalyzer:', error);
-    req.flash('error', "Une erreur est survenue lors du chargement de l'analyseur de compétences.");
+    req.flash('error',
+      "Une erreur est survenue lors du chargement de l'analyseur de compétences.",
+    );
     res.redirect('/dashboard');
   }
 };
 
 exports.postCompetencyAnalyzer = async (req, res) => {
   try {
-    const { beneficiaryId, cvText, jobDescription, saveToNotes } = req.body;
+    const {
+      beneficiaryId, cvText, jobDescription, saveToNotes,
+    } = req.body;
     const creditCost = 5;
 
     // Validate inputs
@@ -528,9 +544,11 @@ exports.postCompetencyAnalyzer = async (req, res) => {
     }
 
     // Check credits
-    const hasCredits = await hasEnoughCredits(req.user.id, creditCost);
-    if (!hasCredits) {
-      req.flash('error', `Crédits insuffisants. Cette analyse requiert ${creditCost} crédits.`);
+    const hasSufficientCredits = await hasEnoughCredits(req.user.id, creditCost);
+    if (!hasSufficientCredits) {
+      req.flash('error',
+        `Crédits insuffisants. Cette analyse requiert ${creditCost} crédits.`,
+      );
       return res.redirect('/ai/competency-analyzer');
     }
 
@@ -570,7 +588,9 @@ exports.postCompetencyAnalyzer = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in postCompetencyAnalyzer:', error);
-    req.flash('error', "Une erreur est survenue lors de l'analyse des compétences.");
+    req.flash('error',
+      "Une erreur est survenue lors de l'analyse des compétences.",
+    );
     res.redirect('/ai/competency-analyzer');
   }
 };
@@ -638,7 +658,9 @@ exports.saveCompetencyAnalysis = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in saveCompetencyAnalysis:', error);
-    req.flash('error', "Une erreur est survenue lors de la sauvegarde de l'analyse.");
+    req.flash('error',
+      "Une erreur est survenue lors de la sauvegarde de l'analyse.",
+    );
     res.redirect('/ai/competency-analyzer');
   }
 };
@@ -679,7 +701,9 @@ exports.showStrategyPlanGenerator = async (req, res) => {
 
 // POST /ai/strategy-plan-generator - Handle strategy plan generation request
 exports.generateStrategyPlan = async (req, res) => {
-  const { beneficiaryId, instructions, skills, careerGoals, timeframe } = req.body;
+  const {
+    beneficiaryId, instructions, skills, careerGoals, timeframe,
+  } = req.body;
 
   try {
     // Validate input
@@ -723,9 +747,9 @@ exports.generateStrategyPlan = async (req, res) => {
       careerGoals: careerGoals || beneficiary.careerObjectives || '',
       timeframe: timeframe || '6-12 months',
       competencyAnalysis:
-        beneficiary.AiAnalyses && beneficiary.AiAnalyses.length > 0
-          ? JSON.parse(beneficiary.AiAnalyses[0].data)
-          : null,
+        beneficiary.AiAnalyses && beneficiary.AiAnalyses.length > 0 ?
+          JSON.parse(beneficiary.AiAnalyses[0].data) :
+          null,
       ...customInstructions,
     };
 

@@ -2,9 +2,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { Op } = require('sequelize');
+const { validationResult } = require('express-validator');
 const { Document, Beneficiary, User } = require('../models');
 const { logCreditChange } = require('../services/creditService');
-const { validationResult } = require('express-validator');
 const logger = require('../config/logger');
 
 // --- Multer Configuration (Should ideally be configured once in app.js or a config file) ---
@@ -247,11 +247,12 @@ exports.uploadDocument = async (req, res) => {
     // Hata varsa, yüklenen dosyayı sil ve formu tekrar render et
     if (req.file?.path) {
       fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr)
+        if (unlinkErr) {
           logger.error('Error deleting orphaned file after validation error:', {
             error: unlinkErr,
             path: req.file.path,
           });
+        }
       });
     }
     try {
@@ -288,7 +289,9 @@ exports.uploadDocument = async (req, res) => {
   }
 
   // Doğrulama başarılı, devam et
-  const { beneficiaryId, description, category, bilanPhase } = req.body;
+  const {
+    beneficiaryId, description, category, bilanPhase,
+  } = req.body;
   const uploadedBy = req.user.id;
   const cost = req.creditCost;
   const isAdmin = req.user.forfaitType === 'Admin';
@@ -360,8 +363,7 @@ exports.uploadDocument = async (req, res) => {
     if (req.file?.path) {
       try {
         fs.unlink(req.file.path, (unlinkErr) => {
-          if (unlinkErr)
-            logger.error('Error deleting orphaned file after DB error:', { error: unlinkErr }); // console.error -> logger.error
+          if (unlinkErr) logger.error('Error deleting orphaned file after DB error:', { error: unlinkErr }); // console.error -> logger.error
         });
       } catch (unlinkErr) {
         logger.error('Sync Error deleting orphaned file:', { error: unlinkErr }); // console.error -> logger.error
@@ -441,7 +443,9 @@ exports.showEditForm = async (req, res) => {
 // POST /documents/:id/edit - Update document metadata
 exports.updateDocument = async (req, res) => {
   const documentId = req.params.id;
-  const { description, category, bilanPhase, beneficiaryId } = req.body;
+  const {
+    description, category, bilanPhase, beneficiaryId,
+  } = req.body;
 
   // express-validator sonuçlarını kontrol et
   const errors = validationResult(req);
@@ -548,7 +552,7 @@ exports.updateDocument = async (req, res) => {
     req.flash('success_msg', 'Document mis à jour.');
     res.redirect('/documents');
   } catch (error) {
-    logger.error('Document update error:', { error: error, documentId: documentId }); // console.error -> logger.error
+    logger.error('Document update error:', { error, documentId }); // console.error -> logger.error
     req.flash('error_msg', 'Erreur mise à jour document.');
     res.redirect(`/documents/${documentId}/edit`);
   }

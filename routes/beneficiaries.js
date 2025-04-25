@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 
 const router = express.Router();
 const {
@@ -16,8 +16,10 @@ const beneficiaryController = require('../controllers/beneficiaryController');
 
 // --- Validation Rules ---
 const beneficiaryValidationRules = () => [
-  body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
-  body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
+  body('firstName').trim().notEmpty().withMessage('Le prénom est requis.')
+    .escape(),
+  body('lastName').trim().notEmpty().withMessage('Le nom est requis.')
+    .escape(),
   body('email').isEmail().withMessage('Adresse email invalide.').normalizeEmail(),
   body('phone').optional({ checkFalsy: true }).trim().escape(), // Opsiyonel, ama varsa temizle
   body('status')

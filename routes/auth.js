@@ -1,6 +1,6 @@
 const express = require('express');
 const passport = require('passport');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 const { ensureAuthenticated } = require('../middlewares/auth');
 const authController = require('../controllers/authController');
 
@@ -33,8 +33,10 @@ router.post(
   '/register',
   [
     // Doğrulama kuralları dizisi
-    body('firstName').trim().notEmpty().withMessage('Le prénom est requis.').escape(),
-    body('lastName').trim().notEmpty().withMessage('Le nom est requis.').escape(),
+    body('firstName').trim().notEmpty().withMessage('Le prénom est requis.')
+      .escape(),
+    body('lastName').trim().notEmpty().withMessage('Le nom est requis.')
+      .escape(),
     body('email').isEmail().withMessage('Adresse email invalide.').normalizeEmail(),
     body('password')
       .isLength({ min: 6 })

@@ -1,8 +1,7 @@
 const express = require('express');
+
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
-const { Op } = require('sequelize');
-const { Appointment, Beneficiary, User } = require('../models');
+const { body } = require('express-validator');
 const { ensureAuthenticated, ensureConsultantOrBeneficiary } = require('../middlewares/auth');
 // Remove requires handled by the controller
 // const { Appointment, Beneficiary, User } = require('../models');
@@ -40,6 +39,7 @@ const appointmentValidationRules = () => [
 
 const addAppointmentValidationRules = () => [
   body('beneficiaryId')
+    .exists().withMessage('Champ Bénéficiaire manquant.')
     .notEmpty()
     .withMessage('Bénéficiaire requis.')
     .isInt()

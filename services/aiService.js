@@ -39,8 +39,7 @@ function formatDate(dateString) {
 
 // Anket cevaplarını özetleyen yardımcı fonksiyon (geliştirildi)
 function summarizeAnswers(questionnaires) {
-  if (!questionnaires || questionnaires.length === 0)
-    return 'Aucun questionnaire pertinent trouvé.';
+  if (!questionnaires || questionnaires.length === 0) return 'Aucun questionnaire pertinent trouvé.';
 
   const summaries = [];
   questionnaires.forEach((q) => {
@@ -75,13 +74,13 @@ function extractRecommendations(synthesisText) {
   if (!synthesisText) return '[Consulter la synthèse]';
   // Çok basit bir arama, gerçek senaryoda daha iyi bir NLP gerekebilir
   const match = synthesisText.match(/## 7\. Conclusion et Préconisations([\s\S]*)/);
-  return match && match[1]
-    ? `${match[1].trim().substring(0, 300)}...`
-    : '[Voir préconisations dans la synthèse]';
+  return match && match[1] ?
+    `${match[1].trim().substring(0, 300)}...` :
+    '[Voir préconisations dans la synthèse]';
 }
 
 // --- Career Exploration Helpers ---
-function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
+function generateCareerPathsFromSkills(skills /* , experience, preferences */) {
   // This would be a sophisticated AI algorithm in production
   // For demo, we'll use simple logic based on common skill/career mappings
 
@@ -163,7 +162,7 @@ function generateCareerPathsFromSkills(skills /*, experience, preferences*/) {
   return paths;
 }
 
-function extractStrengths(skills /*, experience*/) {
+function extractStrengths(skills /* , experience */) {
   // In production, this would use sophisticated analysis
   // For demo, we'll return sample strengths based on input
   const strengths = [];
@@ -172,8 +171,7 @@ function extractStrengths(skills /*, experience*/) {
   if (skills.includes('leadership')) strengths.push('Leadership Potential');
   if (skills.includes('problem solving')) strengths.push('Problem-Solving Aptitude');
   if (skills.includes('teamwork')) strengths.push('Collaborative Team Player');
-  if (skills.includes('coding') || skills.includes('programming'))
-    strengths.push('Technical Proficiency');
+  if (skills.includes('coding') || skills.includes('programming')) strengths.push('Technical Proficiency');
   if (skills.includes('creativity')) strengths.push('Creative Thinking');
   if (skills.includes('analysis')) strengths.push('Analytical Mindset');
 
@@ -198,7 +196,7 @@ function suggestSkillsForDevelopment(/* preferences */) {
   return developmentAreas;
 }
 
-function generateRecommendations(careerPaths /*, data*/) {
+function generateRecommendations(careerPaths /* , data */) {
   // Generate recommendations based on career paths and user data
   const recommendations = [];
 
@@ -239,7 +237,7 @@ function generateRecommendations(careerPaths /*, data*/) {
 }
 
 // --- Competency Analysis Helpers ---
-function extractCurrentCompetencies(skills /*, experience*/) {
+function extractCurrentCompetencies(skills /* , experience */) {
   // In production, this would analyze skills and experience in depth
   // For demo, we'll return a simplified competency assessment
 

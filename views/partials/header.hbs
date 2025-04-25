@@ -57,7 +57,12 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-1"></i> {{user.firstName}} {{user.lastName}}
+                        <i class="fas fa-user-circle me-1"></i> 
+                        {{#if user.forfaitType}}
+                            {{#if (eq user.forfaitType 'Admin')}}Admin User{{else}}{{user.firstName}} {{user.lastName}}{{/if}}
+                        {{else}}
+                            {{user.firstName}} {{user.lastName}}
+                        {{/if}}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                         <li>

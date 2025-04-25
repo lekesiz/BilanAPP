@@ -4,7 +4,9 @@ const router = express.Router();
 const { Op, Sequelize } = require('sequelize');
 const { ensureAuthenticated, ensureConsultant } = require('../middlewares/auth');
 const { checkAccessLevel } = require('../middlewares/permissions');
-const { Beneficiary, Appointment, Questionnaire, User } = require('../models');
+const {
+  Beneficiary, Appointment, Questionnaire, User,
+} = require('../models');
 
 const MIN_FORFAIT_REPORTS = 'Standard';
 
@@ -77,18 +79,18 @@ router.get(
         })
       ).map((b) => b.id);
       const overdueQuestionnairesCount =
-        ownBeneficiaryIds.length > 0
-          ? await Questionnaire.count({
-              where: {
-                beneficiaryId: { [Op.in]: ownBeneficiaryIds },
-                status: 'pending',
-                dueDate: {
-                  [Op.ne]: null,
-                  [Op.lt]: today,
-                },
+        ownBeneficiaryIds.length > 0 ?
+          await Questionnaire.count({
+            where: {
+              beneficiaryId: { [Op.in]: ownBeneficiaryIds },
+              status: 'pending',
+              dueDate: {
+                [Op.ne]: null,
+                [Op.lt]: today,
               },
-            })
-          : 0;
+            },
+          }) :
+          0;
 
       // 4. Yaklaşan Takip Görüşmeleri (Sayı)
       const upcomingFollowUpsCount = await Beneficiary.count({

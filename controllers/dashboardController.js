@@ -1,5 +1,7 @@
 const { Op } = require('sequelize');
-const { User, Beneficiary, Appointment, Message, Questionnaire } = require('../models');
+const {
+  User, Beneficiary, Appointment, Message, Questionnaire,
+} = require('../models');
 const { getRecentActivitiesFor } = require('../utils/activity');
 
 // --- Helper Functions ---
@@ -23,24 +25,24 @@ async function getConsultantStats(consultantId, isAdmin = false) {
       where: { ...baseWhereAppointment, date: { [Op.gte]: new Date() } },
     }),
     Message.count({
-      where: isAdmin
-        ? { isRead: false } // Admin sees ALL unread messages
-        : { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } },
+      where: isAdmin ?
+        { isRead: false } : // Admin sees ALL unread messages
+        { consultantId, isRead: false, senderId: { [Op.ne]: consultantId } },
     }),
     Questionnaire.count({
-      where: isAdmin
-        ? { status: 'pending' }
-        : {
-            status: 'pending',
-            beneficiaryId: {
-              [Op.in]: (
-                await Beneficiary.findAll({
-                  where: { consultantId },
-                  attributes: ['id'],
-                })
-              ).map((b) => b.id),
-            },
+      where: isAdmin ?
+        { status: 'pending' } :
+        {
+          status: 'pending',
+          beneficiaryId: {
+            [Op.in]: (
+              await Beneficiary.findAll({
+                where: { consultantId },
+                attributes: ['id'],
+              })
+            ).map((b) => b.id),
           },
+        },
     }),
     Beneficiary.count({
       where: { ...baseWhereBeneficiary, consentGiven: false },
@@ -196,18 +198,18 @@ exports.showConsultantDashboard = async (req, res) => {
       }),
       Questionnaire.findAll({
         where: {
-          ...(isAdmin
-            ? {}
-            : {
-                beneficiaryId: {
-                  [Op.in]: (
-                    await Beneficiary.findAll({
-                      where: { consultantId },
-                      attributes: ['id'],
-                    })
-                  ).map((b) => b.id),
-                },
-              }),
+          ...(isAdmin ?
+            {} :
+            {
+              beneficiaryId: {
+                [Op.in]: (
+                  await Beneficiary.findAll({
+                    where: { consultantId },
+                    attributes: ['id'],
+                  })
+                ).map((b) => b.id),
+              },
+            }),
           status: 'completed',
           updatedAt: {
             [Op.gte]: new Date(new Date() - 7 * 24 * 60 * 60 * 1000),
@@ -235,18 +237,18 @@ exports.showConsultantDashboard = async (req, res) => {
       }),
       Questionnaire.findAll({
         where: {
-          ...(isAdmin
-            ? {}
-            : {
-                beneficiaryId: {
-                  [Op.in]: (
-                    await Beneficiary.findAll({
-                      where: { consultantId },
-                      attributes: ['id'],
-                    })
-                  ).map((b) => b.id),
-                },
-              }),
+          ...(isAdmin ?
+            {} :
+            {
+              beneficiaryId: {
+                [Op.in]: (
+                  await Beneficiary.findAll({
+                    where: { consultantId },
+                    attributes: ['id'],
+                  })
+                ).map((b) => b.id),
+              },
+            }),
           status: 'pending',
           dueDate: { [Op.ne]: null, [Op.lt]: today },
         },

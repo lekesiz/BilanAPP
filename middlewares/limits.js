@@ -38,9 +38,9 @@ async function checkAiLimit(userId) {
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    const resetDate = user.aiGenerationCountResetDate
-      ? new Date(user.aiGenerationCountResetDate)
-      : null;
+    const resetDate = user.aiGenerationCountResetDate ?
+      new Date(user.aiGenerationCountResetDate) :
+      null;
     let usageCount = user.aiGenerationsThisMonth;
 
     // Sayacı sıfırlama kontrolü

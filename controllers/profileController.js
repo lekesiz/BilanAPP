@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
-const { User, Beneficiary, CreditLog, Forfait } = require('../models');
 const { validationResult } = require('express-validator');
+const {
+  User, Beneficiary, CreditLog, Forfait,
+} = require('../models');
 const logger = require('../config/logger');
 
 // GET /profile - Show Profile Page
@@ -54,19 +56,49 @@ exports.showProfile = async (req, res) => {
       ...additionalData,
     });
   } catch (error) {
-    logger.error('Profile page error:', { error: error, userId: req.user?.id });
+    logger.error('Profile page error:', { error, userId: req.user?.id });
     req.flash('error_msg', 'Erreur chargement profil.');
     res.redirect('/dashboard');
   }
 };
 
 // GET /profile/settings - Show Settings Page
-exports.showSettings = (req, res) => {
-  res.render('profile/settings', {
-    title: 'Paramètres du Compte',
-    // Pass plain user object to avoid potential prototype issues
-    user: req.user ? req.user.get({ plain: true }) : null,
-  });
+exports.showSettings = async (req, res) => {
+  try {
+    let consultantProfile = null;
+    let beneficiaryProfile = null;
+    
+    if (req.user.userType === 'beneficiary') {
+      beneficiaryProfile = await Beneficiary.findOne({
+        where: { userId: req.user.id },
+        include: {
+          model: User,
+          as: 'consultant',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      });
+      if (beneficiaryProfile) {
+        beneficiaryProfile = beneficiaryProfile.get({ plain: true });
+      }
+    } else if (req.user.userType === 'consultant') {
+      // Get consultant data if needed
+      // For now we're just setting it to an empty object to avoid undefined errors
+      consultantProfile = {};
+    }
+    
+    const userPlain = req.user instanceof User ? req.user.get({ plain: true }) : req.user;
+    
+    res.render('profile/settings', {
+      title: 'Paramètres du profil',
+      user: userPlain,
+      consultant: consultantProfile,
+      beneficiary: beneficiaryProfile,
+    });
+  } catch (error) {
+    logger.error('Settings page error:', { error, userId: req.user?.id });
+    req.flash('error_msg', 'Erreur chargement paramètres.');
+    res.redirect('/dashboard');
+  }
 };
 
 // POST /profile/settings/info - Update Profile Info
@@ -95,7 +127,7 @@ exports.updateInfo = async (req, res) => {
     req.flash('success_msg', 'Informations mises à jour.');
     res.redirect('/profile/settings');
   } catch (error) {
-    logger.error('Profile info update error:', { error: error, userId: userId });
+    logger.error('Profile info update error:', { error, userId });
     req.flash('error_msg', 'Erreur mise à jour informations.');
     res.redirect('/profile/settings');
   }
@@ -139,7 +171,7 @@ exports.changePassword = async (req, res) => {
     req.flash('success_msg', 'Mot de passe mis à jour.');
     res.redirect('/profile/settings');
   } catch (error) {
-    logger.error('Password change error:', { error: error, userId: userId });
+    logger.error('Password change error:', { error, userId });
     req.flash('error_msg', 'Erreur changement mot de passe.');
     res.redirect('/profile/settings');
   }
@@ -179,8 +211,8 @@ exports.showCredits = async (req, res) => {
       paginationBaseUrl: '/profile/credits?',
     });
   } catch (error) {
-    logger.error('Credit log page error:', { error: error, userId: req.user?.id });
+    logger.error('Credit log page error:', { error, userId: req.user?.id });
     req.flash('error_msg', 'Erreur chargement historique crédits.');
-    res.redirect('/profile');
+    res.redirect('/dashboard');
   }
 };

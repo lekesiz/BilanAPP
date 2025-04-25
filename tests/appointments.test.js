@@ -1,7 +1,9 @@
 const request = require('supertest');
 const app = require('../app');
 const sequelize = require('../config/database');
-const { User, Beneficiary, Appointment, Forfait } = require('../models');
+const {
+  User, Beneficiary, Appointment,
+} = require('../models');
 const { createDefaultForfaits } = require('../scripts/init-db');
 
 let agent; // Agent for session cookies
@@ -9,7 +11,6 @@ let consultantUser;
 let beneficiaryUser;
 let testBeneficiary;
 let csrfToken;
-let createdAppointmentId;
 
 // Helper to get CSRF token (can be reused or moved to a helper file)
 async function getCsrfToken(agentInstance, url) {
@@ -73,6 +74,16 @@ beforeAll(async () => {
   }
 });
 
+// Add afterEach hook for cleanup
+afterEach(async () => {
+  try {
+    // Delete appointments created during tests
+    await Appointment.destroy({ where: {}, force: true });
+  } catch (error) {
+    console.error('Error during afterEach appointment cleanup:', error);
+  }
+});
+
 afterAll(async () => {
   await sequelize.close();
 });
@@ -92,9 +103,10 @@ describe('Appointment Routes', () => {
   });
 
   it('POST /appointments/add - Should fail without beneficiaryId', async () => {
-    csrfToken = await getCsrfToken(agent, '/appointments/add');
+    // Fetch CSRF token just for this test
+    const addCsrfToken = await getCsrfToken(agent, '/appointments/add');
     const res = await agent.post('/appointments/add').send({
-      _csrf: csrfToken,
+      _csrf: addCsrfToken,
       type: 'Entretien Préliminaire',
       date: '2025-11-11',
       time: '11:00',
@@ -105,72 +117,103 @@ describe('Appointment Routes', () => {
   });
 
   it('POST /appointments/add - Should add a new appointment successfully', async () => {
-    csrfToken = await getCsrfToken(agent, '/appointments/add');
+    // Fetch CSRF token just for this test
+    const addCsrfToken = await getCsrfToken(agent, '/appointments/add');
     const newAppointmentData = {
       beneficiaryId: testBeneficiary.id,
       type: "Entretien d'Investigation",
       date: '2025-10-20',
       time: '14:30',
       description: 'Test appointment description',
-      _csrf: csrfToken,
+      _csrf: addCsrfToken,
     };
     const res = await agent.post('/appointments/add').send(newAppointmentData);
 
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/appointments');
 
-    // Verify in DB
-    const appointment = await Appointment.findOne({ where: { beneficiaryId: testBeneficiary.id } });
+    const appointment = await Appointment.findOne({
+      where: {
+        beneficiaryId: testBeneficiary.id,
+        type: "Entretien d'Investigation",
+      },
+    });
     expect(appointment).not.toBeNull();
-    expect(appointment.type).toEqual("Entretien d'Investigation");
-    createdAppointmentId = appointment.id;
-    csrfToken = await getCsrfToken(agent, '/profile/settings');
+    // No need to save ID globally
   });
 
   it('GET /appointments/:id/edit - Should show edit form', async () => {
-    expect(createdAppointmentId).toBeDefined();
-    const res = await agent.get(`/appointments/${createdAppointmentId}/edit`);
+    // Create an appointment for this test
+    const appt = await Appointment.create({
+      beneficiaryId: testBeneficiary.id,
+      consultantId: consultantUser.id,
+      type: 'Test Edit Form',
+      date: '2025-11-01',
+      time: '09:00',
+      description: 'For Edit Form',
+    });
+
+    const res = await agent.get(`/appointments/${appt.id}/edit`);
     expect(res.statusCode).toEqual(200);
     expect(res.text).toContain('Modifier le rendez-vous');
-    expect(res.text).toContain('Test appointment description');
+    expect(res.text).toContain('For Edit Form');
     expect(res.text).toContain('_csrf');
   });
 
   it('POST /appointments/:id/edit - Should update the appointment', async () => {
-    expect(createdAppointmentId).toBeDefined();
-    csrfToken = await getCsrfToken(agent, `/appointments/${createdAppointmentId}/edit`);
-    const updatedData = {
+    // Create an appointment for this test
+    const appt = await Appointment.create({
       beneficiaryId: testBeneficiary.id,
-      type: 'Entretien de Synthèse',
-      date: '2025-10-22',
+      consultantId: consultantUser.id,
+      type: 'Test Edit Post',
+      date: '2025-11-02',
       time: '10:00',
+      description: 'Initial Edit Post',
+      status: 'scheduled',
+    });
+
+    // Fetch CSRF token from edit page
+    const editCsrfToken = await getCsrfToken(agent, `/appointments/${appt.id}/edit`);
+    const updatedData = {
+      // beneficiaryId: testBeneficiary.id, // Usually not changed here, handled by controller/route?
+      type: 'Entretien de Synthèse',
+      date: '2025-11-03',
+      time: '11:00',
       description: 'Updated description',
       status: 'completed',
-      _csrf: csrfToken,
+      _csrf: editCsrfToken,
     };
-    const res = await agent.post(`/appointments/${createdAppointmentId}/edit`).send(updatedData);
+    const res = await agent.post(`/appointments/${appt.id}/edit`).send(updatedData);
 
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/appointments');
 
-    // Verify update in DB
-    const updatedAppointment = await Appointment.findByPk(createdAppointmentId);
+    const updatedAppointment = await Appointment.findByPk(appt.id);
     expect(updatedAppointment.type).toEqual('Entretien de Synthèse');
     expect(updatedAppointment.status).toEqual('completed');
-    csrfToken = await getCsrfToken(agent, '/profile/settings');
   });
 
   it('POST /appointments/:id/delete - Should delete the appointment', async () => {
-    expect(createdAppointmentId).toBeDefined();
+    // Create an appointment for this test
+    const appt = await Appointment.create({
+      beneficiaryId: testBeneficiary.id,
+      consultantId: consultantUser.id,
+      type: 'Test Delete',
+      date: '2025-11-04',
+      time: '12:00',
+    });
+
+    // Use global token (or fetch from a reliable page like settings/dashboard)
+    const deleteCsrfToken = csrfToken;
+
     const res = await agent
-      .post(`/appointments/${createdAppointmentId}/delete`)
-      .send({ _csrf: csrfToken });
+      .post(`/appointments/${appt.id}/delete`)
+      .send({ _csrf: deleteCsrfToken });
 
     expect(res.statusCode).toEqual(302);
     expect(res.headers.location).toEqual('/appointments');
 
-    // Verify deletion
-    const deletedAppointment = await Appointment.findByPk(createdAppointmentId);
+    const deletedAppointment = await Appointment.findByPk(appt.id);
     expect(deletedAppointment).toBeNull();
   });
 });
