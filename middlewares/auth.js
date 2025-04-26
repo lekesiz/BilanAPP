@@ -1,14 +1,31 @@
 const logger = require('../config/logger'); // Import logger
 
+const isAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  req.flash('error', 'Bu sayfaya erişmek için giriş yapmalısınız.');
+  res.redirect('/auth/login');
+};
+
+const isNotAuthenticated = (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/');
+};
+
+const isAdmin = (req, res, next) => {
+  if (req.isAuthenticated() && req.user.type === 'admin') {
+    return next();
+  }
+  req.flash('error', 'Bu sayfaya erişim yetkiniz yok.');
+  res.redirect('/');
+};
+
 module.exports = {
   // Vérifier si l'utilisateur est authentifié
-  ensureAuthenticated: (req, res, next) => {
-    if (req.isAuthenticated()) {
-      return next();
-    }
-    req.flash('error_msg', 'Veuillez vous connecter pour accéder à cette ressource.');
-    return res.redirect('/auth/login');
-  },
+  ensureAuthenticated: isAuthenticated,
 
   // Vérifier si l'utilisateur est un consultant
   ensureConsultant: (req, res, next) => {
@@ -55,11 +72,7 @@ module.exports = {
   },
 
   // Vérifier si l'utilisateur est un Admin (basé sur forfaitType)
-  ensureAdmin: (req, res, next) => {
-    if (req.isAuthenticated() && req.user.forfaitType === 'Admin') {
-      return next();
-    }
-    req.flash('error_msg', 'Accès refusé. Zone réservée aux administrateurs.');
-    return res.redirect('/dashboard');
-  },
+  ensureAdmin: isAdmin,
+
+  isNotAuthenticated
 };

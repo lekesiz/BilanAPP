@@ -1,0 +1,184 @@
+{{#> layouts/main}}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">{{title}}</h1>
+      <div class="flex space-x-3">
+        <a href="/admin/users/{{user.id}}" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+          Retour au profil
+        </a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+      <form id="activityFilters" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label for="activityType" class="block text-sm font-medium text-gray-700">Type d'activité</label>
+          <select id="activityType" name="activityType" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            <option value="">Tous les types</option>
+            <option value="login">Connexion</option>
+            <option value="document">Document</option>
+            <option value="credit">Crédit</option>
+            <option value="profile">Profil</option>
+            <option value="subscription">Abonnement</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="dateFrom" class="block text-sm font-medium text-gray-700">Date de début</label>
+          <input type="date" id="dateFrom" name="dateFrom" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+
+        <div>
+          <label for="dateTo" class="block text-sm font-medium text-gray-700">Date de fin</label>
+          <input type="date" id="dateTo" name="dateTo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+
+        <div>
+          <label for="search" class="block text-sm font-medium text-gray-700">Rechercher</label>
+          <input type="text" id="search" name="search" placeholder="Rechercher dans l'activité..."
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+      </form>
+    </div>
+
+    <!-- Activity Timeline -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="p-6">
+        <div class="flow-root">
+          <ul class="-mb-8">
+            {{#each activities}}
+              <li>
+                <div class="relative pb-8">
+                  {{#unless @last}}
+                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                  {{/unless}}
+                  <div class="relative flex space-x-3">
+                    <div>
+                      <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white
+                        {{#if (eq type 'login')}}bg-blue-500{{/if}}
+                        {{#if (eq type 'document')}}bg-green-500{{/if}}
+                        {{#if (eq type 'credit')}}bg-yellow-500{{/if}}
+                        {{#if (eq type 'profile')}}bg-purple-500{{/if}}
+                        {{#if (eq type 'subscription')}}bg-indigo-500{{/if}}">
+                        <span class="text-white text-sm">
+                          {{#if (eq type 'login')}}🔑{{/if}}
+                          {{#if (eq type 'document')}}📄{{/if}}
+                          {{#if (eq type 'credit')}}💰{{/if}}
+                          {{#if (eq type 'profile')}}👤{{/if}}
+                          {{#if (eq type 'subscription')}}📊{{/if}}
+                        </span>
+                      </span>
+                    </div>
+                    <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                      <div>
+                        <p class="text-sm text-gray-500">{{description}}</p>
+                        {{#if details}}
+                          <div class="mt-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-md">
+                            <pre class="whitespace-pre-wrap">{{details}}</pre>
+                          </div>
+                        {{/if}}
+                      </div>
+                      <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                        <time datetime="{{createdAt}}">{{formatDate createdAt}}</time>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            {{else}}
+              <li class="text-center py-8 text-gray-500">
+                Aucune activité trouvée
+              </li>
+            {{/each}}
+          </ul>
+        </div>
+
+        <!-- Pagination -->
+        {{#if pagination}}
+          <div class="mt-6 flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+              {{#if pagination.hasPrevPage}}
+                <a href="?page={{pagination.prevPage}}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  Précédent
+                </a>
+              {{/if}}
+              {{#if pagination.hasNextPage}}
+                <a href="?page={{pagination.nextPage}}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  Suivant
+                </a>
+              {{/if}}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Affichage de <span class="font-medium">{{pagination.start}}</span> à <span class="font-medium">{{pagination.end}}</span> sur <span class="font-medium">{{pagination.total}}</span> activités
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  {{#if pagination.hasPrevPage}}
+                    <a href="?page={{pagination.prevPage}}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                      <span class="sr-only">Précédent</span>
+                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                      </svg>
+                    </a>
+                  {{/if}}
+                  {{#each pagination.pages}}
+                    <a href="?page={{this}}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium {{#if (eq this ../pagination.currentPage)}}text-blue-600 bg-blue-50{{else}}text-gray-700 hover:bg-gray-50{{/if}}">
+                      {{this}}
+                    </a>
+                  {{/each}}
+                  {{#if pagination.hasNextPage}}
+                    <a href="?page={{pagination.nextPage}}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                      <span class="sr-only">Suivant</span>
+                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                      </svg>
+                    </a>
+                  {{/if}}
+                </nav>
+              </div>
+            </div>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('activityFilters');
+    const inputs = form.querySelectorAll('input, select');
+
+    function updateFilters() {
+      const params = new URLSearchParams(window.location.search);
+      inputs.forEach(input => {
+        if (input.value) {
+          params.set(input.name, input.value);
+        } else {
+          params.delete(input.name);
+        }
+      });
+      params.set('page', '1'); // Reset to first page when filters change
+      window.location.search = params.toString();
+    }
+
+    inputs.forEach(input => {
+      input.addEventListener('change', updateFilters);
+    });
+
+    // Set initial values from URL parameters
+    const params = new URLSearchParams(window.location.search);
+    inputs.forEach(input => {
+      const value = params.get(input.name);
+      if (value) {
+        input.value = value;
+      }
+    });
+  });
+</script>
+{{/layouts/main}} 

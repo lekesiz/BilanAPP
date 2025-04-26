@@ -1,113 +1,131 @@
-# Bilan de Compétences Platform
+# BilanApp
 
-A web platform for managing "Bilan de Compétences" (Skills Assessment) processes in France. This application helps consultants manage beneficiaries, appointments, documents, questionnaires, and communication throughout the assessment lifecycle.
-
-This project is currently considered an MVP (Minimum Viable Product).
-
-## Tech Stack
-
-- **Backend:** Node.js, Express.js
-- **Database:** Sequelize ORM with SQLite
-- **Templating:** Handlebars
-- **Authentication:** Passport.js (Local Strategy)
-- **Password Hashing:** Bcrypt
-- **File Uploads:** Multer
-- **AI Integration:** OpenAI
-- **Other:** dotenv, connect-flash, morgan, cookie-parser, debug
+BilanApp is a comprehensive social service management platform designed to streamline beneficiary management, assessment processes, and service delivery for social service organizations.
 
 ## Features
 
-- **User Roles:** Consultant, Beneficiary (user account), Admin (implied).
-- **Consultant Dashboard:** Overview for consultants.
-- **Beneficiary Management:** CRUD operations, status/phase tracking (Preliminary, Investigation, Conclusion), detailed profiles including education, experience, notes, consent tracking, agreement tracking, checklists per phase.
-- **Appointment Tracking:** Manage appointments linked to beneficiaries and consultants.
-- **Document Management:** Upload and manage documents related to beneficiaries.
-- **Questionnaire Management:** Create and assign questionnaires to beneficiaries.
-- **Messaging System:** Basic communication features.
-- **Reporting Module:** Statistics for consultants (beneficiary counts by phase/status, upcoming appointments/follow-ups, overdue questionnaires, missing consents, package distribution).
-- **Package/Subscription System (`Forfait`):** Different tiers potentially unlocking features (e.g., AI, reporting access, beneficiary limits).
-- **Credit System (`CreditLog`):** Track and deduct credits for specific actions (e.g., AI generation).
-- **AI-Powered Draft Generation:** Utilize OpenAI to generate draft synthesis and action plan documents based on beneficiary data.
-- **AI Usage Limits:** Control the number of AI generations based on user subscription/package.
-- **Middleware:** Authentication, authorization (consultant role, package level access), credit deduction, AI limit checks.
+- **Beneficiary Management**: Track and manage beneficiary information, history, and interactions
+- **Assessment Tools**: Create and manage assessment questionnaires and track responses
+- **Document Management**: Upload, store, and organize beneficiary documents
+- **Appointment Scheduling**: Schedule and manage appointments with beneficiaries
+- **Communication**: Send messages and notifications to beneficiaries
+- **Reporting**: Generate reports and analytics on service delivery
 
-## Installation
+## Getting Started
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/lekesiz/BilanAPP
-    cd bilan-app
-    ```
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Set up environment variables:**
-    - Create a `.env` file in the root directory. You can copy `.env.example` if it exists (it should be created - see TODO).
-    - Add the following required variables:
-      ```dotenv
-      SESSION_SECRET=your_strong_session_secret
-      # Add other necessary variables like:
-      # OPENAI_API_KEY=your_openai_api_key
-      # DATABASE_URL= # Likely not needed as SQLite is used via config/database.js
-      # PORT=3000 # Optional, defaults to 3000
-      ```
-4.  **Database Setup:**
-    - This project uses SQLite, and the database file is expected at `database.sqlite` in the root directory.
-    - **Important:** The application does _not_ automatically create or migrate the database schema (`sequelize.sync()` is not used in `bin/www`).
-    - You need to ensure the `database.sqlite` file exists and has the correct tables defined according to the Sequelize models in the `models/` directory. You might need a separate script or manual process for initial schema creation.
+### Prerequisites
 
-## Usage
+- Node.js v18.x or higher
+- npm v9.x or higher
+- SQLite3
+- Git
 
-- **Development:**
-  ```bash
-  npm run dev
-  ```
-  This uses `nodemon` to automatically restart the server on file changes.
-- **Production:**
-  ```bash
-  npm start
-  ```
+### Installation
 
-The application should be running on `http://localhost:3000` (or the port specified in `PORT` environment variable).
+1. Clone the repository:
+```bash
+git clone https://github.com/your-org/bilan-app.git
+cd bilan-app
+```
 
-_(Note: Default login credentials for development might need to be documented here if available)_
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Configure environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. Initialize the database:
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+5. Start the application:
+```bash
+npm start
+```
+
+The application will be available at `http://localhost:3000`.
+
+## Documentation
+
+- [Development Guide](docs/en/development-guide/development-guide.md)
+- [Deployment Guide](docs/en/deployment-guide/deployment-guide.md)
+- [API Documentation](docs/en/api/endpoints.md)
 
 ## Project Structure
 
 ```
-.
-├── bin/              # Startup script (www)
-├── config/           # Configuration files (database, passport, handlebars helpers)
-├── controllers/      # (Currently empty) Intended for request handling logic
-├── database/         # Potentially for database related files (e.g., migrations - currently empty)
-├── middlewares/      # Custom middleware (auth, credits, permissions, limits)
-├── models/           # Sequelize model definitions and associations (index.js)
-├── node_modules/     # NPM dependencies
-├── public/           # Static assets (CSS, JS, images)
-├── routes/           # Express route definitions
-├── services/         # Business logic services (aiService, creditService)
-├── views/            # Handlebars templates (.hbs)
-│   ├── layouts/
-│   ├── partials/
-│   └── ... (view directories matching routes)
-├── .env.example      # Example environment variables file (Should be created)
-├── .gitignore        # Git ignore rules
-├── app.js            # Express application setup
-├── database.sqlite   # SQLite database file
-├── docker-compose.yml # Docker Compose config
-├── Dockerfile        # Dockerfile for building image
-├── package-lock.json # NPM lock file
-├── package.json      # Project metadata and dependencies
-├── README.md         # This file
-├── TODO.md           # Project tasks list
-└── ... (Other documentation files: DOCUMENTATION.md, GUIDE_DOCKER.md, INSTALLATION.md)
+bilan-app/
+├── bin/                # Application startup scripts
+├── config/             # Configuration files
+├── controllers/        # Route controllers
+├── models/             # Database models
+├── public/             # Static files
+├── routes/             # Route definitions
+├── services/           # Business logic
+├── utils/              # Utility functions
+├── views/              # View templates
+├── docs/               # Documentation
+│   ├── en/            # English documentation
+│   └── tr/            # Turkish documentation
+├── tests/              # Test files
+├── .env.example        # Example environment variables
+├── .gitignore          # Git ignore file
+├── package.json        # Project dependencies
+└── README.md           # Project documentation
 ```
+
+## Development
+
+### Coding Standards
+
+- Follow ESLint configuration
+- Use async/await for asynchronous operations
+- Follow RESTful API design principles
+- Write unit tests for new features
+
+### Testing
+
+Run tests with:
+```bash
+npm test
+```
+
+### Database Management
+
+- Migrations: `npm run db:migrate`
+- Seeds: `npm run db:seed`
+- Rollback: `npm run db:rollback`
+
+## Deployment
+
+See the [Deployment Guide](docs/en/deployment-guide/deployment-guide.md) for detailed instructions on deploying the application.
 
 ## Contributing
 
-(Add contribution guidelines if applicable)
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT (As specified in `package.json`)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, email support@bilanapp.com or open an issue in the repository.
+
+## Acknowledgments
+
+- [Express.js](https://expressjs.com/)
+- [Sequelize](https://sequelize.org/)
+- [Handlebars](https://handlebarsjs.com/)
+- [Jest](https://jestjs.io/)

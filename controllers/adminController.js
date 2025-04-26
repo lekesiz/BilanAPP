@@ -1,6 +1,6 @@
 // const { Op } = require('sequelize'); // Kullanılmadığı için kaldırıldı
 // const bcryptjs = require('bcryptjs'); // Kullanılmadığı için kaldırıldı
-const { User, Forfait } = require('../models');
+const { User, Forfait, Beneficiary, CreditTransaction } = require('../models');
 const { logCreditChange, getDefaultCreditsForForfait } = require('../services/creditService');
 
 // Kullanıcıları listeleme
@@ -312,72 +312,45 @@ exports.updateUser = async (req, res) => {
 
 // POST Kredi Ayarlama (Admin)
 exports.adjustCredits = async (req, res) => {
-  const userIdToAdjust = req.params.id;
-  const adminUserId = req.user.id;
+  const userId = req.params.id;
   const { amount, reason } = req.body;
-  let userToAdjust; // Try bloğu dışında da erişilebilir yap
-
-  const creditAmount = parseInt(amount, 10);
-
-  if (Number.isNaN(creditAmount)) {
-    req.flash('error_msg', 'Veuillez entrer un montant de crédit valide (nombre).');
-    return res.redirect('/admin/users');
-  }
-  if (!reason || reason.trim() === '') {
-    req.flash('error_msg', "Veuillez fournir une raison pour l'ajustement.");
-    return res.redirect('/admin/users');
-  }
-  if (userIdToAdjust === adminUserId) {
-    // String ve number karşılaştırması
-    req.flash('error_msg', 'Vous ne pouvez pas ajuster vos propres crédits.');
-    return res.redirect('/admin/users');
-  }
+  const adminId = req.user.id;
 
   try {
-    userToAdjust = await User.findByPk(userIdToAdjust);
-    if (!userToAdjust) {
+    const user = await User.findByPk(userId);
+    if (!user) {
       req.flash('error_msg', 'Utilisateur non trouvé.');
       return res.redirect('/admin/users');
     }
 
-    const newCreditTotal = userToAdjust.availableCredits + creditAmount;
-    if (newCreditTotal < 0) {
-      req.flash('error_msg', 'Le solde de crédits ne peut pas être négatif.');
-      return res.redirect('/admin/users');
+    const creditAmount = parseInt(amount, 10);
+    if (Number.isNaN(creditAmount)) {
+      req.flash('error_msg', 'Montant de crédit invalide.');
+      return res.redirect(`/admin/users/${userId}/credits`);
     }
 
-    // Krediyi güncelle
-    userToAdjust.availableCredits = newCreditTotal;
-    await userToAdjust.save();
-
-    // Kredi değişikliğini ayrı bir try-catch ile logla
-    try {
-      await logCreditChange(
-        userIdToAdjust,
-        creditAmount,
-        'ADMIN_ADJUSTMENT',
-        `Ajustement manuel: ${reason}`,
-        adminUserId,
-      );
-      req.flash(
-        'success_msg',
-        `Crédits de ${userToAdjust.firstName} ${userToAdjust.lastName} ajustés avec succès (${creditAmount > 0 ? '+' : ''}${creditAmount}). Nouveau solde: ${userToAdjust.availableCredits}`,
-      );
-    } catch (logError) {
-      console.error('Admin Credit Log Error:', logError);
-      // Kredi güncellendi ama loglama başarısız oldu. Kullanıcıyı bilgilendir.
-      req.flash(
-        'warning_msg',
-        `Crédits ajustés (${creditAmount > 0 ? '+' : ''}${creditAmount}), mais erreur lors de l\'enregistrement du log.`,
-      );
+    const newBalance = user.availableCredits + creditAmount;
+    if (newBalance < 0) {
+      req.flash('error_msg', 'Le solde ne peut pas être négatif.');
+      return res.redirect(`/admin/users/${userId}/credits`);
     }
 
-    return res.redirect('/admin/users');
+    await CreditTransaction.create({
+      userId,
+      amount: creditAmount,
+      type: creditAmount > 0 ? 'ADJUSTMENT_ADD' : 'ADJUSTMENT_REMOVE',
+      reason,
+      adminId
+    });
+
+    await user.update({ availableCredits: newBalance });
+
+    req.flash('success_msg', `Crédits ajustés avec succès. Nouveau solde: ${newBalance}`);
+    res.redirect(`/admin/users/${userId}/credits`);
   } catch (error) {
-    // Veritabanı güncelleme veya kullanıcı bulma hatası
-    console.error('Admin Credit Adjust POST Error:', error);
-    req.flash('error_msg', "Erreur lors de l'ajustement des crédits.");
-    return res.redirect('/admin/users');
+    console.error('Admin Credit Adjustment Error:', error);
+    req.flash('error_msg', 'Erreur lors de l\'ajustement des crédits.');
+    res.redirect(`/admin/users/${userId}/credits`);
   }
 };
 
@@ -394,15 +367,30 @@ exports.deleteUser = async (req, res) => {
   }
 
   try {
-    const userToDelete = await User.findByPk(userIdToDelete);
+    const userToDelete = await User.findByPk(userIdToDelete, {
+      include: [
+        {
+          model: Beneficiary,
+          as: 'beneficiaries',
+          attributes: ['id']
+        }
+      ]
+    });
+
     if (!userToDelete) {
       req.flash('error_msg', 'Utilisateur non trouvé.');
       return res.redirect('/admin/users');
     }
 
-    // TODO: İlişkili verilerin silinmesi (Beneficiary profili, atamalar vb.) nasıl handle edilecek?
-    // Modelde onDelete: 'CASCADE' ayarlanmış olabilir veya burada manuel silme gerekir.
-    // Şimdilik sadece User kaydını siliyoruz.
+    // İlişkili verilerin silinmesi
+    // 1. Faydalanıcı profilleri ve ilişkili veriler otomatik silinecek (CASCADE)
+    // 2. Danışman olarak atanmış faydalanıcıların consultantId'si NULL olarak güncellenecek
+    await Beneficiary.update(
+      { consultantId: null },
+      { where: { consultantId: userIdToDelete } }
+    );
+
+    // Kullanıcıyı sil
     const userFullName = `${userToDelete.firstName} ${userToDelete.lastName}`;
     await userToDelete.destroy();
 
@@ -586,5 +574,381 @@ exports.updateUserForfait = async (req, res) => {
     console.error('Admin User Forfait Update POST Error:', error);
     req.flash('error_msg', 'Erreur lors de la mise à jour du forfait utilisateur.');
     res.redirect('/admin/users');
+  }
+};
+
+// --- Package Management ---
+
+// GET Package List
+exports.listPackages = async (req, res) => {
+  try {
+    const packages = await Forfait.findAll({
+      order: [['name', 'ASC']],
+      include: [
+        {
+          model: User,
+          as: 'users',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+          required: false
+        }
+      ]
+    });
+
+    res.render('admin/packages', {
+      title: 'Gestion des Packages',
+      packages: packages.map(p => p.get({ plain: true })),
+      user: req.user,
+      layout: 'main'
+    });
+  } catch (error) {
+    console.error('Admin Packages List Error:', error);
+    req.flash('error_msg', 'Erreur lors du chargement des packages.');
+    res.redirect('/admin');
+  }
+};
+
+// GET Package Creation Form
+exports.showCreatePackageForm = async (req, res) => {
+  try {
+    res.render('admin/package-form', {
+      title: 'Créer un Nouveau Package',
+      user: req.user,
+      editing: false,
+      packageData: {},
+      layout: 'main'
+    });
+  } catch (error) {
+    console.error('Admin Package Create Form Error:', error);
+    req.flash('error_msg', 'Erreur lors du chargement du formulaire.');
+    res.redirect('/admin/packages');
+  }
+};
+
+// POST Create Package
+exports.createPackage = async (req, res) => {
+  const {
+    name,
+    description,
+    defaultCredits,
+    features,
+    maxBeneficiaries,
+    maxAiGenerationsMonthly,
+    price,
+    duration,
+    isActive
+  } = req.body;
+
+  const errors = [];
+
+  // Validations
+  if (!name || !description) {
+    errors.push({ msg: 'Le nom et la description sont requis.' });
+  }
+
+  const credits = parseInt(defaultCredits, 10);
+  if (Number.isNaN(credits) || credits < 0) {
+    errors.push({ msg: 'Le nombre de crédits par défaut doit être un nombre positif.' });
+  }
+
+  const maxBen = maxBeneficiaries === '' ? null : parseInt(maxBeneficiaries, 10);
+  if (maxBen !== null && (Number.isNaN(maxBen) || maxBen < 0)) {
+    errors.push({ msg: 'La limite de bénéficiaires doit être un nombre positif ou vide.' });
+  }
+
+  const maxAi = maxAiGenerationsMonthly === '' ? null : parseInt(maxAiGenerationsMonthly, 10);
+  if (maxAi !== null && (Number.isNaN(maxAi) || maxAi < 0)) {
+    errors.push({ msg: 'La limite de générations IA doit être un nombre positif ou vide.' });
+  }
+
+  if (errors.length > 0) {
+    return res.render('admin/package-form', {
+      title: 'Créer un Nouveau Package',
+      errors,
+      user: req.user,
+      editing: false,
+      packageData: req.body,
+      layout: 'main'
+    });
+  }
+
+  try {
+    await Forfait.create({
+      name,
+      description,
+      defaultCredits: credits,
+      features,
+      maxBeneficiaries: maxBen,
+      maxAiGenerationsMonthly: maxAi,
+      price: parseFloat(price) || 0,
+      duration: parseInt(duration, 10) || 30,
+      isActive: isActive === 'true'
+    });
+
+    req.flash('success_msg', 'Package créé avec succès.');
+    res.redirect('/admin/packages');
+  } catch (error) {
+    console.error('Admin Package Create Error:', error);
+    req.flash('error_msg', 'Erreur lors de la création du package.');
+    res.render('admin/package-form', {
+      title: 'Créer un Nouveau Package',
+      errors: [{ msg: 'Erreur serveur lors de la création.' }],
+      user: req.user,
+      editing: false,
+      packageData: req.body,
+      layout: 'main'
+    });
+  }
+};
+
+// GET Package Edit Form
+exports.showEditPackageForm = async (req, res) => {
+  try {
+    const packageName = req.params.name;
+    const packageToEdit = await Forfait.findByPk(packageName);
+    
+    if (!packageToEdit) {
+      req.flash('error_msg', 'Package non trouvé.');
+      return res.redirect('/admin/packages');
+    }
+
+    res.render('admin/package-form', {
+      title: `Modifier Package: ${packageToEdit.name}`,
+      user: req.user,
+      editing: true,
+      packageData: packageToEdit.get({ plain: true }),
+      layout: 'main'
+    });
+  } catch (error) {
+    console.error('Admin Package Edit Form Error:', error);
+    req.flash('error_msg', 'Erreur lors du chargement du formulaire.');
+    res.redirect('/admin/packages');
+  }
+};
+
+// POST Update Package
+exports.updatePackage = async (req, res) => {
+  const packageName = req.params.name;
+  const {
+    description,
+    defaultCredits,
+    features,
+    maxBeneficiaries,
+    maxAiGenerationsMonthly,
+    price,
+    duration,
+    isActive
+  } = req.body;
+
+  const errors = [];
+
+  const credits = parseInt(defaultCredits, 10);
+  if (Number.isNaN(credits) || credits < 0) {
+    errors.push({ msg: 'Le nombre de crédits par défaut doit être un nombre positif.' });
+  }
+
+  const maxBen = maxBeneficiaries === '' ? null : parseInt(maxBeneficiaries, 10);
+  if (maxBen !== null && (Number.isNaN(maxBen) || maxBen < 0)) {
+    errors.push({ msg: 'La limite de bénéficiaires doit être un nombre positif ou vide.' });
+  }
+
+  const maxAi = maxAiGenerationsMonthly === '' ? null : parseInt(maxAiGenerationsMonthly, 10);
+  if (maxAi !== null && (Number.isNaN(maxAi) || maxAi < 0)) {
+    errors.push({ msg: 'La limite de générations IA doit être un nombre positif ou vide.' });
+  }
+
+  if (errors.length > 0) {
+    return res.render('admin/package-form', {
+      title: `Modifier Package: ${packageName}`,
+      errors,
+      user: req.user,
+      editing: true,
+      packageData: { ...req.body, name: packageName },
+      layout: 'main'
+    });
+  }
+
+  try {
+    const packageToEdit = await Forfait.findByPk(packageName);
+    if (!packageToEdit) {
+      req.flash('error_msg', 'Package non trouvé.');
+      return res.redirect('/admin/packages');
+    }
+
+    if (packageName === 'Admin') {
+      req.flash('error_msg', 'Le package Admin ne peut pas être modifié.');
+      return res.redirect('/admin/packages');
+    }
+
+    await packageToEdit.update({
+      description,
+      defaultCredits: credits,
+      features,
+      maxBeneficiaries: maxBen,
+      maxAiGenerationsMonthly: maxAi,
+      price: parseFloat(price) || 0,
+      duration: parseInt(duration, 10) || 30,
+      isActive: isActive === 'true'
+    });
+
+    req.flash('success_msg', `Package '${packageName}' mis à jour avec succès.`);
+    res.redirect('/admin/packages');
+  } catch (error) {
+    console.error('Admin Package Update Error:', error);
+    req.flash('error_msg', 'Erreur lors de la mise à jour du package.');
+    res.render('admin/package-form', {
+      title: `Modifier Package: ${packageName}`,
+      errors: [{ msg: 'Erreur serveur lors de la mise à jour.' }],
+      user: req.user,
+      editing: true,
+      packageData: { ...req.body, name: packageName },
+      layout: 'main'
+    });
+  }
+};
+
+// POST Delete Package
+exports.deletePackage = async (req, res) => {
+  const packageName = req.params.name;
+
+  try {
+    const packageToDelete = await Forfait.findByPk(packageName, {
+      include: [{ model: User, as: 'users' }]
+    });
+
+    if (!packageToDelete) {
+      req.flash('error_msg', 'Package non trouvé.');
+      return res.redirect('/admin/packages');
+    }
+
+    if (packageName === 'Admin') {
+      req.flash('error_msg', 'Le package Admin ne peut pas être supprimé.');
+      return res.redirect('/admin/packages');
+    }
+
+    if (packageToDelete.users && packageToDelete.users.length > 0) {
+      req.flash('error_msg', 'Ce package est utilisé par des utilisateurs et ne peut pas être supprimé.');
+      return res.redirect('/admin/packages');
+    }
+
+    await packageToDelete.destroy();
+    req.flash('success_msg', `Package '${packageName}' supprimé avec succès.`);
+    res.redirect('/admin/packages');
+  } catch (error) {
+    console.error('Admin Package Delete Error:', error);
+    req.flash('error_msg', 'Erreur lors de la suppression du package.');
+    res.redirect('/admin/packages');
+  }
+};
+
+// --- Credit Management ---
+
+// GET Credit Adjustment Form
+exports.showCreditAdjustmentForm = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findByPk(userId);
+    
+    if (!user) {
+      req.flash('error_msg', 'Utilisateur non trouvé.');
+      return res.redirect('/admin/users');
+    }
+
+    const creditHistory = await CreditTransaction.findAll({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+      limit: 10
+    });
+
+    res.render('admin/credit-adjustment', {
+      title: `Ajustement des Crédits - ${user.firstName} ${user.lastName}`,
+      user: req.user,
+      targetUser: user.get({ plain: true }),
+      creditHistory: creditHistory.map(t => t.get({ plain: true })),
+      layout: 'main'
+    });
+  } catch (error) {
+    console.error('Admin Credit Adjustment Form Error:', error);
+    req.flash('error_msg', 'Erreur lors du chargement du formulaire.');
+    res.redirect('/admin/users');
+  }
+};
+
+// GET Credit History
+exports.showCreditHistory = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findByPk(userId);
+    
+    if (!user) {
+      req.flash('error_msg', 'Utilisateur non trouvé.');
+      return res.redirect('/admin/users');
+    }
+
+    const creditHistory = await CreditTransaction.findAll({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+      include: [{
+        model: User,
+        as: 'admin',
+        attributes: ['firstName', 'lastName']
+      }]
+    });
+
+    res.render('admin/credit-history', {
+      title: `Historique des Crédits - ${user.firstName} ${user.lastName}`,
+      user: req.user,
+      targetUser: user.get({ plain: true }),
+      creditHistory: creditHistory.map(t => t.get({ plain: true })),
+      layout: 'main'
+    });
+  } catch (error) {
+    console.error('Admin Credit History Error:', error);
+    req.flash('error_msg', 'Erreur lors du chargement de l\'historique.');
+    res.redirect('/admin/users');
+  }
+};
+
+// POST Credit Refund
+exports.processCreditRefund = async (req, res) => {
+  const userId = req.params.id;
+  const { transactionId, reason } = req.body;
+  const adminId = req.user.id;
+
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      req.flash('error_msg', 'Utilisateur non trouvé.');
+      return res.redirect('/admin/users');
+    }
+
+    const transaction = await CreditTransaction.findByPk(transactionId);
+    if (!transaction) {
+      req.flash('error_msg', 'Transaction non trouvée.');
+      return res.redirect(`/admin/users/${userId}/credits/history`);
+    }
+
+    if (transaction.type !== 'PURCHASE') {
+      req.flash('error_msg', 'Seules les transactions d\'achat peuvent être remboursées.');
+      return res.redirect(`/admin/users/${userId}/credits/history`);
+    }
+
+    const newBalance = user.availableCredits + transaction.amount;
+    await CreditTransaction.create({
+      userId,
+      amount: transaction.amount,
+      type: 'REFUND',
+      reason: `Remboursement: ${reason}`,
+      adminId,
+      relatedTransactionId: transactionId
+    });
+
+    await user.update({ availableCredits: newBalance });
+
+    req.flash('success_msg', `Remboursement effectué avec succès. Nouveau solde: ${newBalance}`);
+    res.redirect(`/admin/users/${userId}/credits/history`);
+  } catch (error) {
+    console.error('Admin Credit Refund Error:', error);
+    req.flash('error_msg', 'Erreur lors du remboursement.');
+    res.redirect(`/admin/users/${userId}/credits/history`);
   }
 };

@@ -1,169 +1,120 @@
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const helmet = require('helmet');
+const cors = require('cors');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const session = require('express-session');
-const flash = require('connect-flash');
 const passport = require('passport');
-const { create } = require('express-handlebars');
-const dotenv = require('dotenv');
-const csrf = require('csurf');
-const helpers = require('./config/handlebars-helpers');
-const logger = require('./config/logger');
+const { errorHandler } = require('./middlewares/errorHandler');
+const { logger: winstonLogger } = require('./utils/logger');
+const flash = require('connect-flash');
+const mongoose = require('mongoose');
+const MongoStore = require('connect-mongo');
+const { engine } = require('express-handlebars');
+const config = require('@config');
 
-// Chargement des variables d'environnement
-dotenv.config();
-
-// Configuration de Passport
-require('./config/passport')();
-
-// Importation des routes
-const indexRouter = require('./routes/index');
-const authRouter = require('./routes/auth');
-const dashboardRouter = require('./routes/dashboard');
-const beneficiariesRouter = require('./routes/beneficiaries');
-const appointmentsRouter = require('./routes/appointments');
-const messagesRouter = require('./routes/messages');
-const questionnairesRouter = require('./routes/questionnaires');
-const documentsRouter = require('./routes/documents');
-const profileRouter = require('./routes/profile');
-const reportsRouter = require('./routes/reports');
-const adminRouter = require('./routes/admin');
-const aiRouter = require('./routes/ai');
-// const careerExplorerRouter = require('./routes/careerExplorer');
+// Passport config
+require('./config/passport')(passport);
 
 const app = express();
 
-// Handlebars instance oluştur ve helperları kaydet
-const hbs = create({
+// MongoDB bağlantısı
+mongoose.connect(config.mongodb.url, config.mongodb.options)
+  .then(() => console.log('MongoDB bağlantısı başarılı'))
+  .catch(err => console.error('MongoDB bağlantı hatası:', err));
+
+// View engine
+app.engine('hbs', engine({
   extname: '.hbs',
   defaultLayout: 'main',
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
-  helpers,
-  runtimeOptions: {
-    allowProtoPropertiesByDefault: false,
-    allowProtoMethodsByDefault: false,
-  },
-});
-
-// Dinamik helperları kaydetmek için (registerDynamicHelpers yerine doğrudan registerHelper kullanılıyor)
-hbs.handlebars.registerHelper('addHelper', (name, helperFunc) => {
-  hbs.handlebars.registerHelper(name, helperFunc);
-});
-
-// Configuration du moteur de template Handlebars
-app.engine('hbs', hbs.engine);
+  helpers: {
+    ...require('./helpers/admin'),
+    ...require('./helpers/dashboard')
+  }
+}));
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middlewares
-app.use(require('morgan')('combined', { stream: logger.stream }));
+// Security middleware
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Compression
+app.use(compression());
+
+// Logging
+app.use(logger('dev'));
+
+// Body parsing
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configuration de la session
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'secret_temporaire',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 heures
-    },
+// Session
+app.use(session({
+  secret: config.session.secret,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: config.mongodb.url,
+    collectionName: 'sessions'
   }),
-);
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 // 1 gün
+  }
+}));
 
-// Configuration de Flash (CSRF'den ÖNCE)
-app.use(flash());
-
-// Configuration de Passport
+// Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CSRF Koruması - Form parser, session, flash, passport'tan SONRA
-const csrfProtection = csrf({ cookie: true });
-app.use(csrfProtection);
+// Flash messages
+app.use(flash());
 
-// CSRF Token'ını locals'a ekle (view'larda kullanmak için)
+// Global variables
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
-  next();
-});
-
-// Her istek için pageScripts dizisini başlat
-app.use((req, res, next) => {
-  res.locals.pageScripts = [];
-  next();
-});
-
-// Variables globales
-app.use((req, res, next) => {
-  res.locals.success_msg = req.flash('success_msg');
-  res.locals.error_msg = req.flash('error_msg');
-  res.locals.error = req.flash('error');
   res.locals.success = req.flash('success');
-  res.locals.user = req.user ? req.user.get({ plain: true }) : null;
-  res.locals.currentRoute = req.path;
+  res.locals.error = req.flash('error');
+  res.locals.user = req.user;
   next();
 });
 
 // Routes
-app.use('/', indexRouter);
-app.use('/auth', authRouter);
-app.use('/dashboard', dashboardRouter);
-app.use('/beneficiaries', beneficiariesRouter);
-app.use('/appointments', appointmentsRouter);
-app.use('/messages', messagesRouter);
-app.use('/questionnaires', questionnairesRouter);
-app.use('/documents', documentsRouter);
-app.use('/profile', profileRouter);
-app.use('/reports', reportsRouter);
-app.use('/admin', adminRouter);
-app.use('/ai', aiRouter);
-// app.use('/career-explorer', careerExplorerRouter);
+app.use('/', require('./routes/index'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/beneficiaries', require('./routes/beneficiaries'));
+app.use('/api/documents', require('./routes/documents'));
+app.use('/api/appointments', require('./routes/appointments'));
+app.use('/api/questionnaires', require('./routes/questionnaires'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/activity-logs', require('./routes/activityLogs'));
+app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api/audit-logs', require('./routes/auditLogs'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/email-templates', require('./routes/emailTemplates'));
 
-// Gestion des erreurs 404
-app.use((req, res, next) => {
-  const err = new Error("La page que vous recherchez n'existe pas.");
-  err.status = 404;
-  logger.warn(`404 Not Found - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-  next(err);
-});
-
-// Gestionnaire d'erreurs
-app.use((err, req, res, _next) => {
-  logger.error(
-    `${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`,
-    { error: err },
-  );
-
-  if (err.code === 'EBADCSRFTOKEN') {
-    // Add a flash message to inform the user about CSRF error
-    if (req.flash) {
-      req.flash('error_msg', 'Erreur de sécurité. Veuillez réessayer.');
-    }
-    return res.redirect(req.headers.referer || '/');
-  }
-
-  const status = err.status || 500;
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  if (req.flash) {
-    req.flash('error_msg', res.locals.message || 'Une erreur inattendue est survenue.');
-  }
-
-  res.status(status);
-  res.render('error', {
-    title: 'Erreur',
-    message: err.message,
-    error: { status },
-  });
-});
+// Error handling
+app.use(errorHandler);
 
 module.exports = app;

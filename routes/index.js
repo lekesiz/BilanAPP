@@ -24,4 +24,10 @@ router.get('/register', (req, res) => {
   res.redirect('/auth/register');
 });
 
+// API routes
+router.use('/api', require('./api'));
+
+// Admin routes
+router.use('/admin', require('./admin'));
+
 module.exports = router;

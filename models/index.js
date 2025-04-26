@@ -1,126 +1,269 @@
-const User = require('./User');
-const Beneficiary = require('./Beneficiary');
-const Appointment = require('./Appointment');
-const Message = require('./Message');
-const Questionnaire = require('./Questionnaire');
-const Document = require('./Document');
-const Question = require('./Question');
-const Answer = require('./Answer');
-const CreditLog = require('./CreditLog');
-const Forfait = require('./Forfait');
-const AiAnalysis = require('./AiAnalysis');
+const fs = require('fs');
+const path = require('path');
+const Sequelize = require('sequelize');
+const process = require('process');
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || 'development';
+const config = require(__dirname + '/../config/config.json')[env];
+const db = {};
 
-// Relations entre les modèles
-// Relation Consultant-Bénéficiaire
-User.hasMany(Beneficiary, { foreignKey: 'consultantId', as: 'beneficiaries' });
-Beneficiary.belongsTo(User, { foreignKey: 'consultantId', as: 'consultant' });
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else {
+  sequelize = new Sequelize(config.database, config.username, config.password, config);
+}
 
-// Relation Bénéficiaire-Utilisateur (compte bénéficiaire)
-Beneficiary.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasOne(Beneficiary, { foreignKey: 'userId', as: 'beneficiaryProfile' });
+fs
+  .readdirSync(__dirname)
+  .filter(file => {
+    return (
+      file.indexOf('.') !== 0 &&
+      file !== basename &&
+      file.slice(-3) === '.js' &&
+      file.indexOf('.test.js') === -1
+    );
+  })
+  .forEach(file => {
+    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
+  });
 
-// Relations pour les rendez-vous
-Appointment.belongsTo(User, { foreignKey: 'consultantId', as: 'consultant' });
-Appointment.belongsTo(Beneficiary, {
-  foreignKey: 'beneficiaryId',
-  as: 'beneficiary',
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
 });
-User.hasMany(Appointment, {
+
+// User Model Relationships
+db.User.hasMany(db.Beneficiary, {
   foreignKey: 'consultantId',
-  as: 'consultantAppointments',
-});
-Beneficiary.hasMany(Appointment, {
-  foreignKey: 'beneficiaryId',
-  as: 'beneficiaryAppointments',
+  as: 'beneficiaries',
+  onDelete: 'CASCADE'
 });
 
-// Relations pour les messages
-Message.belongsTo(User, { foreignKey: 'consultantId', as: 'consultant' });
-Message.belongsTo(Beneficiary, {
-  foreignKey: 'beneficiaryId',
-  as: 'beneficiary',
+db.User.hasMany(db.Appointment, {
+  foreignKey: 'consultantId',
+  as: 'appointments',
+  onDelete: 'CASCADE'
 });
-Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
-User.hasMany(Message, { foreignKey: 'consultantId', as: 'consultantMessages' });
-Beneficiary.hasMany(Message, {
-  foreignKey: 'beneficiaryId',
-  as: 'beneficiaryMessages',
-});
-User.hasMany(Message, { foreignKey: 'senderId', as: 'sentMessages' });
 
-// Relations pour les questionnaires
-Questionnaire.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
-Questionnaire.belongsTo(Beneficiary, {
-  foreignKey: 'beneficiaryId',
-  as: 'beneficiary',
+db.User.hasMany(db.Conversation, {
+  foreignKey: 'senderId',
+  as: 'conversations',
+  onDelete: 'CASCADE'
 });
-User.hasMany(Questionnaire, {
+
+db.User.hasMany(db.Questionnaire, {
   foreignKey: 'createdBy',
-  as: 'createdQuestionnaires',
-});
-Beneficiary.hasMany(Questionnaire, {
-  foreignKey: 'beneficiaryId',
-  as: 'assignedQuestionnaires',
+  as: 'questionnaires',
+  onDelete: 'CASCADE'
 });
 
-// Relations pour les documents
-Document.belongsTo(User, { foreignKey: 'uploadedBy', as: 'uploader' });
-Document.belongsTo(Beneficiary, {
+db.User.hasMany(db.Document, {
+  foreignKey: 'uploadedBy',
+  as: 'documents',
+  onDelete: 'CASCADE'
+});
+
+db.User.hasMany(db.AiAnalysis, {
+  foreignKey: 'userId',
+  as: 'aiAnalyses',
+  onDelete: 'CASCADE'
+});
+
+db.User.hasMany(db.CareerExploration, {
+  foreignKey: 'userId',
+  as: 'careerExplorations',
+  onDelete: 'CASCADE'
+});
+
+// Add indexes for User model
+db.User.addIndex('idx_user_email_type', ['email', 'userType']);
+db.User.addIndex('idx_user_status', ['status']);
+db.User.addIndex('idx_user_last_login', ['lastLoginAt']);
+
+// Beneficiary Model Relationships
+db.Beneficiary.belongsTo(db.User, {
+  foreignKey: 'consultantId',
+  as: 'consultant',
+  onDelete: 'CASCADE'
+});
+
+db.Beneficiary.hasMany(db.Appointment, {
+  foreignKey: 'beneficiaryId',
+  as: 'appointments',
+  onDelete: 'CASCADE'
+});
+
+db.Beneficiary.hasMany(db.Conversation, {
+  foreignKey: 'beneficiaryId',
+  as: 'conversations',
+  onDelete: 'CASCADE'
+});
+
+db.Beneficiary.hasMany(db.Questionnaire, {
+  foreignKey: 'beneficiaryId',
+  as: 'questionnaires',
+  onDelete: 'CASCADE'
+});
+
+db.Beneficiary.hasMany(db.Document, {
+  foreignKey: 'beneficiaryId',
+  as: 'documents',
+  onDelete: 'CASCADE'
+});
+
+db.Beneficiary.hasMany(db.AiAnalysis, {
+  foreignKey: 'beneficiaryId',
+  as: 'aiAnalyses',
+  onDelete: 'CASCADE'
+});
+
+db.Beneficiary.hasMany(db.CareerExploration, {
+  foreignKey: 'beneficiaryId',
+  as: 'careerExplorations',
+  onDelete: 'CASCADE'
+});
+
+// Add indexes for Beneficiary model
+db.Beneficiary.addIndex('idx_beneficiary_consultant_status', ['consultantId', 'status']);
+db.Beneficiary.addIndex('idx_beneficiary_current_phase', ['currentPhase']);
+db.Beneficiary.addIndex('idx_beneficiary_last_activity', ['lastActivityAt']);
+
+// Appointment Model Relationships
+db.Appointment.belongsTo(db.User, {
+  foreignKey: 'consultantId',
+  as: 'consultant',
+  onDelete: 'CASCADE'
+});
+
+db.Appointment.belongsTo(db.Beneficiary, {
   foreignKey: 'beneficiaryId',
   as: 'beneficiary',
-});
-User.hasMany(Document, { foreignKey: 'uploadedBy', as: 'uploadedDocuments' });
-Beneficiary.hasMany(Document, {
-  foreignKey: 'beneficiaryId',
-  as: 'beneficiaryDocuments',
+  onDelete: 'CASCADE'
 });
 
-// Relations pour les questions et réponses
-Questionnaire.hasMany(Question, {
-  foreignKey: 'questionnaireId',
-  as: 'questions',
+// Add indexes for Appointment model
+db.Appointment.addIndex('idx_appointment_consultant_beneficiary_time', ['consultantId', 'beneficiaryId', 'startTime']);
+db.Appointment.addIndex('idx_appointment_status', ['status']);
+db.Appointment.addIndex('idx_appointment_type', ['type']);
+
+// Conversation Model Relationships
+db.Conversation.belongsTo(db.User, {
+  foreignKey: 'senderId',
+  as: 'sender',
+  onDelete: 'CASCADE'
 });
-Question.belongsTo(Questionnaire, { foreignKey: 'questionnaireId', as: 'questionnaire' });
-Questionnaire.hasMany(Answer, {
-  foreignKey: 'questionnaireId',
-  as: 'questionnaireAnswers',
-});
-Answer.belongsTo(Questionnaire, { foreignKey: 'questionnaireId' });
-Question.hasMany(Answer, { foreignKey: 'questionId', as: 'answers' });
-Answer.belongsTo(Question, { foreignKey: 'questionId' });
-Answer.belongsTo(Beneficiary, { foreignKey: 'beneficiaryId' });
 
-// Kullanıcı - Forfait İlişkisi
-User.belongsTo(Forfait, { foreignKey: 'forfaitType', as: 'forfait' });
-Forfait.hasMany(User, { foreignKey: 'forfaitType' });
-
-// Kredi Log ilişkisi
-CreditLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(CreditLog, { foreignKey: 'userId' });
-CreditLog.belongsTo(User, { foreignKey: 'adminUserId', as: 'adminUser' });
-
-// AI Analysis associations
-AiAnalysis.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(AiAnalysis, { foreignKey: 'userId', as: 'analyses' });
-AiAnalysis.belongsTo(Beneficiary, {
+db.Conversation.belongsTo(db.Beneficiary, {
   foreignKey: 'beneficiaryId',
   as: 'beneficiary',
-});
-Beneficiary.hasMany(AiAnalysis, {
-  foreignKey: 'beneficiaryId',
-  as: 'analyses',
+  onDelete: 'CASCADE'
 });
 
-module.exports = {
-  User,
-  Beneficiary,
-  Appointment,
-  Message,
-  Questionnaire,
-  Document,
-  Question,
-  Answer,
-  CreditLog,
-  Forfait,
-  AiAnalysis,
-};
+// Add indexes for Conversation model
+db.Conversation.addIndex('idx_conversation_sender_beneficiary', ['senderId', 'beneficiaryId']);
+db.Conversation.addIndex('idx_conversation_status', ['status']);
+db.Conversation.addIndex('idx_conversation_last_message', ['lastMessageAt']);
+
+// Questionnaire Model Relationships
+db.Questionnaire.belongsTo(db.User, {
+  foreignKey: 'createdBy',
+  as: 'creator',
+  onDelete: 'CASCADE'
+});
+
+db.Questionnaire.belongsTo(db.Beneficiary, {
+  foreignKey: 'beneficiaryId',
+  as: 'beneficiary',
+  onDelete: 'CASCADE'
+});
+
+// Add indexes for Questionnaire model
+db.Questionnaire.addIndex('idx_questionnaire_beneficiary_status', ['beneficiaryId', 'status']);
+db.Questionnaire.addIndex('idx_questionnaire_type', ['type']);
+db.Questionnaire.addIndex('idx_questionnaire_created_at', ['createdAt']);
+
+// Document Model Relationships
+db.Document.belongsTo(db.User, {
+  foreignKey: 'uploadedBy',
+  as: 'uploader',
+  onDelete: 'CASCADE'
+});
+
+db.Document.belongsTo(db.Beneficiary, {
+  foreignKey: 'beneficiaryId',
+  as: 'beneficiary',
+  onDelete: 'CASCADE'
+});
+
+// Add indexes for Document model
+db.Document.addIndex('idx_document_beneficiary_type', ['beneficiaryId', 'type']);
+db.Document.addIndex('idx_document_status', ['status']);
+db.Document.addIndex('idx_document_created_at', ['createdAt']);
+
+// AiAnalysis Model Relationships
+db.AiAnalysis.belongsTo(db.User, {
+  foreignKey: 'userId',
+  as: 'user',
+  onDelete: 'CASCADE'
+});
+
+db.AiAnalysis.belongsTo(db.Beneficiary, {
+  foreignKey: 'beneficiaryId',
+  as: 'beneficiary',
+  onDelete: 'CASCADE'
+});
+
+// Add indexes for AiAnalysis model
+db.AiAnalysis.addIndex('idx_ai_analysis_user_beneficiary', ['userId', 'beneficiaryId']);
+db.AiAnalysis.addIndex('idx_ai_analysis_status', ['status']);
+db.AiAnalysis.addIndex('idx_ai_analysis_created_at', ['createdAt']);
+
+// CareerExploration Model Relationships
+db.CareerExploration.belongsTo(db.User, {
+  foreignKey: 'userId',
+  as: 'user',
+  onDelete: 'CASCADE'
+});
+
+db.CareerExploration.belongsTo(db.Beneficiary, {
+  foreignKey: 'beneficiaryId',
+  as: 'beneficiary',
+  onDelete: 'CASCADE'
+});
+
+// Add indexes for CareerExploration model
+db.CareerExploration.addIndex('idx_career_exploration_user_beneficiary', ['userId', 'beneficiaryId']);
+db.CareerExploration.addIndex('idx_career_exploration_status', ['status']);
+db.CareerExploration.addIndex('idx_career_exploration_created_at', ['createdAt']);
+
+// Add partitioning for large tables
+sequelize.query(`
+  ALTER TABLE ActivityLogs PARTITION BY RANGE (TO_DAYS(createdAt)) (
+    PARTITION p_2023 VALUES LESS THAN (TO_DAYS('2024-01-01')),
+    PARTITION p_2024 VALUES LESS THAN (TO_DAYS('2025-01-01')),
+    PARTITION p_future VALUES LESS THAN MAXVALUE
+  );
+
+  ALTER TABLE SystemLogs PARTITION BY RANGE (TO_DAYS(createdAt)) (
+    PARTITION p_2023 VALUES LESS THAN (TO_DAYS('2024-01-01')),
+    PARTITION p_2024 VALUES LESS THAN (TO_DAYS('2025-01-01')),
+    PARTITION p_future VALUES LESS THAN MAXVALUE
+  );
+
+  ALTER TABLE Documents PARTITION BY LIST (type) (
+    PARTITION p_pdf VALUES IN ('pdf'),
+    PARTITION p_doc VALUES IN ('doc', 'docx'),
+    PARTITION p_image VALUES IN ('jpg', 'jpeg', 'png', 'gif'),
+    PARTITION p_other VALUES IN (DEFAULT)
+  );
+
+  ALTER TABLE Conversations PARTITION BY HASH (senderId) PARTITIONS 4;
+`);
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;

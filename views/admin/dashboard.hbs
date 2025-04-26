@@ -1,0 +1,203 @@
+{{#extend "admin-layout"}}
+  {{#content "title"}}
+    Dashboard
+  {{/content}}
+
+  {{#content "content"}}
+    <!-- İstatistik Kartları -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <!-- Toplam Kullanıcı -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Toplam Kullanıcı</p>
+            <h3 class="text-2xl font-bold">{{stats.totalUsers}}</h3>
+          </div>
+          <div class="bg-blue-100 p-3 rounded-full">
+            <i class="fas fa-users text-blue-500"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm">
+          <span class="{{#if stats.userGrowth.isPositive}}text-green-500{{else}}text-red-500{{/if}}">
+            <i class="fas fa-arrow-{{#if stats.userGrowth.isPositive}}up{{else}}down{{/if}}"></i>
+            {{stats.userGrowth.percentage}}%
+          </span>
+          <span class="text-gray-500 ml-1">geçen aydan</span>
+        </div>
+      </div>
+
+      <!-- Aktif Paketler -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Aktif Paketler</p>
+            <h3 class="text-2xl font-bold">{{stats.activePackages}}</h3>
+          </div>
+          <div class="bg-green-100 p-3 rounded-full">
+            <i class="fas fa-box text-green-500"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm">
+          <span class="text-gray-500">Toplam {{stats.totalPackages}} paket</span>
+        </div>
+      </div>
+
+      <!-- Kullanılan Krediler -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Kullanılan Krediler</p>
+            <h3 class="text-2xl font-bold">{{stats.usedCredits}}</h3>
+          </div>
+          <div class="bg-purple-100 p-3 rounded-full">
+            <i class="fas fa-coins text-purple-500"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm">
+          <span class="{{#if stats.creditUsageGrowth.isPositive}}text-green-500{{else}}text-red-500{{/if}}">
+            <i class="fas fa-arrow-{{#if stats.creditUsageGrowth.isPositive}}up{{else}}down{{/if}}"></i>
+            {{stats.creditUsageGrowth.percentage}}%
+          </span>
+          <span class="text-gray-500 ml-1">geçen aydan</span>
+        </div>
+      </div>
+
+      <!-- Gelir -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-500 mb-1">Toplam Gelir</p>
+            <h3 class="text-2xl font-bold">₺{{stats.totalRevenue}}</h3>
+          </div>
+          <div class="bg-yellow-100 p-3 rounded-full">
+            <i class="fas fa-money-bill text-yellow-500"></i>
+          </div>
+        </div>
+        <div class="mt-4 text-sm">
+          <span class="{{#if stats.revenueGrowth.isPositive}}text-green-500{{else}}text-red-500{{/if}}">
+            <i class="fas fa-arrow-{{#if stats.revenueGrowth.isPositive}}up{{else}}down{{/if}}"></i>
+            {{stats.revenueGrowth.percentage}}%
+          </span>
+          <span class="text-gray-500 ml-1">geçen aydan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grafikler -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- Kullanıcı Büyüme Grafiği -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h4 class="text-lg font-semibold mb-4">Kullanıcı Büyümesi</h4>
+        <canvas id="userGrowthChart"></canvas>
+      </div>
+
+      <!-- Kredi Kullanım Grafiği -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h4 class="text-lg font-semibold mb-4">Kredi Kullanımı</h4>
+        <canvas id="creditUsageChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Son Aktiviteler -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h4 class="text-lg font-semibold">Son Aktiviteler</h4>
+        <a href="/admin/activities" class="text-blue-500 hover:text-blue-600 text-sm">
+          Tümünü Gör
+          <i class="fas fa-arrow-right ml-1"></i>
+        </a>
+      </div>
+
+      {{#if recentActivities.length}}
+        <div class="space-y-4">
+          {{#each recentActivities}}
+            <div class="flex items-start">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center {{activityTypeColor type}}">
+                  <i class="fas {{activityTypeIcon type}} text-white"></i>
+                </div>
+              </div>
+              <div class="ml-4 flex-1">
+                <p class="text-sm text-gray-900">
+                  <span class="font-medium">{{user.fullName}}</span>
+                  {{description}}
+                </p>
+                <p class="text-sm text-gray-500">{{formatDate createdAt}}</p>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      {{else}}
+        <p class="text-gray-500 text-center py-4">Henüz aktivite bulunmuyor.</p>
+      {{/if}}
+    </div>
+  {{/content}}
+
+  {{#content "scripts"}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      // Kullanıcı Büyüme Grafiği
+      const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+      new Chart(userGrowthCtx, {
+        type: 'line',
+        data: {
+          labels: {{{json userGrowth.labels}}},
+          datasets: [{
+            label: 'Yeni Kullanıcılar',
+            data: {{{json userGrowth.data}}},
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0
+              }
+            }
+          }
+        }
+      });
+
+      // Kredi Kullanım Grafiği
+      const creditUsageCtx = document.getElementById('creditUsageChart').getContext('2d');
+      new Chart(creditUsageCtx, {
+        type: 'bar',
+        data: {
+          labels: {{{json creditUsage.labels}}},
+          datasets: [{
+            label: 'Kullanılan Krediler',
+            data: {{{json creditUsage.data}}},
+            backgroundColor: '#8B5CF6',
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0
+              }
+            }
+          }
+        }
+      });
+    </script>
+  {{/content}}
+{{/extend}} 

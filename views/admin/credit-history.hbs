@@ -1,0 +1,133 @@
+{{!-- credit-history.hbs --}}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">{{title}}</h1>
+      <a href="/admin/users/{{targetUser.id}}/credits/adjust" class="text-blue-600 hover:text-blue-800">
+        Ajuster les crédits
+      </a>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+      <div class="mb-4">
+        <h2 class="text-lg font-semibold text-gray-700">Informations Utilisateur</h2>
+        <p class="text-gray-600">Nom: {{targetUser.firstName}} {{targetUser.lastName}}</p>
+        <p class="text-gray-600">Email: {{targetUser.email}}</p>
+        <p class="text-gray-600">Solde actuel: <span class="font-bold">{{targetUser.availableCredits}} crédits</span></p>
+      </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-700">Historique des transactions</h2>
+        <div class="flex space-x-4">
+          <select id="typeFilter" class="border border-gray-300 rounded-md px-3 py-2">
+            <option value="">Tous les types</option>
+            <option value="purchase">Achat</option>
+            <option value="refund">Remboursement</option>
+            <option value="adjustment">Ajustement</option>
+          </select>
+          <input type="date" id="dateFilter" class="border border-gray-300 rounded-md px-3 py-2">
+        </div>
+      </div>
+
+      {{#if creditHistory.length}}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raison</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {{#each creditHistory}}
+                <tr class="transaction-row" data-type="{{type}}" data-date="{{formatDate createdAt 'YYYY-MM-DD'}}">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{formatDate createdAt}}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{type}}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm {{#if (gt amount 0)}}text-green-600{{else}}text-red-600{{/if}}">
+                    {{#if (gt amount 0)}}+{{/if}}{{amount}}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500">
+                    {{reason}}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{admin.firstName}} {{admin.lastName}}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{#if (eq type "purchase")}}
+                      <form action="/admin/users/{{../targetUser.id}}/credits/refund/{{id}}" method="POST" class="inline">
+                        <button type="submit" class="text-red-600 hover:text-red-800" onclick="return confirm('Êtes-vous sûr de vouloir rembourser cette transaction ?')">
+                          Rembourser
+                        </button>
+                      </form>
+                    {{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 flex justify-between items-center">
+          <div class="text-sm text-gray-500">
+            Affichage de {{pagination.start}} à {{pagination.end}} sur {{pagination.total}} transactions
+          </div>
+          <div class="flex space-x-2">
+            {{#if pagination.hasPrevPage}}
+              <a href="?page={{pagination.prevPage}}" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                Précédent
+              </a>
+            {{/if}}
+            {{#if pagination.hasNextPage}}
+              <a href="?page={{pagination.nextPage}}" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                Suivant
+              </a>
+            {{/if}}
+          </div>
+        </div>
+      {{else}}
+        <p class="text-gray-500 text-center py-4">Aucun historique disponible</p>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const typeFilter = document.getElementById('typeFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const transactionRows = document.querySelectorAll('.transaction-row');
+
+    function filterTransactions() {
+      const selectedType = typeFilter.value;
+      const selectedDate = dateFilter.value;
+
+      transactionRows.forEach(row => {
+        const rowType = row.dataset.type;
+        const rowDate = row.dataset.date;
+        let showRow = true;
+
+        if (selectedType && rowType !== selectedType) {
+          showRow = false;
+        }
+        if (selectedDate && rowDate !== selectedDate) {
+          showRow = false;
+        }
+
+        row.style.display = showRow ? '' : 'none';
+      });
+    }
+
+    typeFilter.addEventListener('change', filterTransactions);
+    dateFilter.addEventListener('change', filterTransactions);
+  });
+</script> 

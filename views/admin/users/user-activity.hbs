@@ -1,0 +1,194 @@
+{{#> layouts/main}}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Başlık ve İşlem Butonları -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">{{user.firstName}} {{user.lastName}} - Aktivite Geçmişi</h1>
+      <a href="/admin/users/{{user.id}}" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">
+        ← Kullanıcı Detaylarına Dön
+      </a>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+      <form id="filterForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label for="activityType" class="block text-sm font-medium text-gray-700">Aktivite Tipi</label>
+          <select id="activityType" name="type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+            <option value="">Tümü</option>
+            <option value="login">Giriş</option>
+            <option value="document">Belge</option>
+            <option value="credit">Kredi</option>
+            <option value="profile">Profil</option>
+            <option value="subscription">Abonelik</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="dateFrom" class="block text-sm font-medium text-gray-700">Başlangıç Tarihi</label>
+          <input type="date" id="dateFrom" name="dateFrom" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+
+        <div>
+          <label for="dateTo" class="block text-sm font-medium text-gray-700">Bitiş Tarihi</label>
+          <input type="date" id="dateTo" name="dateTo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+
+        <div>
+          <label for="search" class="block text-sm font-medium text-gray-700">Arama</label>
+          <input type="text" id="search" name="search" placeholder="Aktivite açıklaması"
+            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        </div>
+      </form>
+    </div>
+
+    <!-- Aktivite Listesi -->
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="flow-root">
+        <ul class="-mb-8">
+          {{#each activities}}
+            <li>
+              <div class="relative pb-8">
+                {{#unless @last}}
+                  <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                {{/unless}}
+                <div class="relative flex space-x-3">
+                  <div>
+                    <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white
+                      {{#if (eq this.type 'login')}}bg-blue-500
+                      {{else if (eq this.type 'document')}}bg-green-500
+                      {{else if (eq this.type 'credit')}}bg-yellow-500
+                      {{else if (eq this.type 'profile')}}bg-purple-500
+                      {{else if (eq this.type 'subscription')}}bg-indigo-500
+                      {{else}}bg-gray-500{{/if}}">
+                      {{#if (eq this.type 'login')}}
+                        <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                      {{else if (eq this.type 'document')}}
+                        <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                        </svg>
+                      {{else if (eq this.type 'credit')}}
+                        <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+                        </svg>
+                      {{else if (eq this.type 'profile')}}
+                        <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                      {{else if (eq this.type 'subscription')}}
+                        <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                        </svg>
+                      {{else}}
+                        <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                        </svg>
+                      {{/if}}
+                    </span>
+                  </div>
+                  <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                    <div>
+                      <p class="text-sm text-gray-500">{{this.description}}</p>
+                      {{#if this.details}}
+                        <div class="mt-1 text-xs text-gray-400">{{this.details}}</div>
+                      {{/if}}
+                    </div>
+                    <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                      {{formatDate this.createdAt}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          {{else}}
+            <li class="text-center py-4 text-gray-500">
+              Aktivite bulunamadı.
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+
+      <!-- Sayfalama -->
+      <div class="mt-6 flex items-center justify-between">
+        <div class="flex-1 flex justify-between sm:hidden">
+          <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Önceki
+          </button>
+          <button class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            Sonraki
+          </button>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700">
+              Toplam <span class="font-medium">{{totalActivities}}</span> aktiviteden
+              <span class="font-medium">{{startIndex}}</span> ile <span class="font-medium">{{endIndex}}</span> arası gösteriliyor
+            </p>
+          </div>
+          <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Önceki</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              {{#each pages}}
+                <button class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  {{this}}
+                </button>
+              {{/each}}
+              <button class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Sonraki</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const activityType = document.getElementById('activityType');
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    const search = document.getElementById('search');
+
+    // URL'den filtreleri yükle
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('type')) activityType.value = urlParams.get('type');
+    if (urlParams.has('dateFrom')) dateFrom.value = urlParams.get('dateFrom');
+    if (urlParams.has('dateTo')) dateTo.value = urlParams.get('dateTo');
+    if (urlParams.has('search')) search.value = urlParams.get('search');
+
+    // Filtre değişikliklerini dinle
+    [activityType, dateFrom, dateTo, search].forEach(element => {
+      element.addEventListener('change', updateFilters);
+    });
+    search.addEventListener('input', updateFilters);
+
+    function updateFilters() {
+      const params = new URLSearchParams();
+      if (activityType.value) params.set('type', activityType.value);
+      if (dateFrom.value) params.set('dateFrom', dateFrom.value);
+      if (dateTo.value) params.set('dateTo', dateTo.value);
+      if (search.value) params.set('search', search.value);
+
+      // Sayfa numarasını sıfırla
+      params.set('page', '1');
+
+      // URL'yi güncelle
+      window.location.search = params.toString();
+    }
+  });
+</script>
+{{/layouts/main}} 

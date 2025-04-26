@@ -1,0 +1,173 @@
+{{#> layouts/main}}
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">E-posta Şablonları</h1>
+      <div class="flex space-x-3">
+        <button type="button" onclick="showNewTemplateModal()" 
+          class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+          Yeni Şablon
+        </button>
+      </div>
+    </div>
+
+    {{#if messages.success_msg}}
+      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <span class="block sm:inline">{{messages.success_msg}}</span>
+      </div>
+    {{/if}}
+
+    {{#if messages.error_msg}}
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <span class="block sm:inline">{{messages.error_msg}}</span>
+      </div>
+    {{/if}}
+
+    <!-- Şablon Listesi -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Şablon Adı
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Konu
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Durum
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Son Güncelleme
+              </th>
+              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                İşlemler
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {{#each templates}}
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{this.name}}</div>
+                  <div class="text-sm text-gray-500">{{this.description}}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{this.subject}}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    {{#if this.active}}bg-green-100 text-green-800{{else}}bg-gray-100 text-gray-800{{/if}}">
+                    {{#if this.active}}Aktif{{else}}Pasif{{/if}}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{formatDate this.updatedAt}}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button onclick="editTemplate('{{this.id}}')" class="text-blue-600 hover:text-blue-900 mr-3">Düzenle</button>
+                  <button onclick="previewTemplate('{{this.id}}')" class="text-green-600 hover:text-green-900 mr-3">Önizle</button>
+                  <button onclick="deleteTemplate('{{this.id}}')" class="text-red-600 hover:text-red-900">Sil</button>
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Yeni Şablon Modal -->
+<div id="templateModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+      <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+    </div>
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+      <form id="templateForm" action="/admin/settings/email-templates" method="POST">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="mb-4">
+            <label for="templateName" class="block text-sm font-medium text-gray-700">Şablon Adı</label>
+            <input type="text" id="templateName" name="name" required
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+          </div>
+
+          <div class="mb-4">
+            <label for="templateDescription" class="block text-sm font-medium text-gray-700">Açıklama</label>
+            <textarea id="templateDescription" name="description" rows="2"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+          </div>
+
+          <div class="mb-4">
+            <label for="templateSubject" class="block text-sm font-medium text-gray-700">Konu</label>
+            <input type="text" id="templateSubject" name="subject" required
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+          </div>
+
+          <div class="mb-4">
+            <label for="templateContent" class="block text-sm font-medium text-gray-700">İçerik</label>
+            <div class="mt-1">
+              <textarea id="templateContent" name="content" rows="10" required
+                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+            </div>
+            <div class="mt-2 text-sm text-gray-500">
+              Kullanılabilir değişkenler: {{user.name}}, {{user.email}}, {{app.name}}, {{app.url}}
+            </div>
+          </div>
+
+          <div class="flex items-center">
+            <input type="checkbox" id="templateActive" name="active"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+            <label for="templateActive" class="ml-2 block text-sm text-gray-900">Şablonu Aktifleştir</label>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+            Kaydet
+          </button>
+          <button type="button" onclick="hideTemplateModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            İptal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showNewTemplateModal() {
+    document.getElementById('templateForm').reset();
+    document.getElementById('templateModal').classList.remove('hidden');
+  }
+
+  function hideTemplateModal() {
+    document.getElementById('templateModal').classList.add('hidden');
+  }
+
+  function editTemplate(templateId) {
+    // TODO: Implement template editing
+    console.log('Edit template:', templateId);
+  }
+
+  function previewTemplate(templateId) {
+    // TODO: Implement template preview
+    console.log('Preview template:', templateId);
+  }
+
+  function deleteTemplate(templateId) {
+    if (confirm('Bu şablonu silmek istediğinizden emin misiniz?')) {
+      // TODO: Implement template deletion
+      console.log('Delete template:', templateId);
+    }
+  }
+
+  // Initialize CKEditor for template content
+  document.addEventListener('DOMContentLoaded', function() {
+    // TODO: Initialize CKEditor
+    // CKEDITOR.replace('templateContent');
+  });
+</script>
+{{/layouts/main}} 

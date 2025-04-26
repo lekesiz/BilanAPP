@@ -1,28 +1,31 @@
-const { Sequelize } = require('sequelize');
-require('dotenv').config(); // Ana .env dosyasını her zaman yükle
+require('dotenv').config();
 
-// Test ortamı için ayrı veritabanı yolu
-const storagePath =
-  process.env.NODE_ENV === 'test' ?
-    './database_test.sqlite' :
-    process.env.DB_STORAGE || './database.sqlite';
-
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: storagePath,
-  logging: process.env.NODE_ENV === 'development' ? console.log : false, // Sadece geliştirme ortamında logla
-});
-
-// Bağlantıyı test et (isteğe bağlı)
-async function testConnection() {
-  try {
-    await sequelize.authenticate();
-    console.log('Connexion à la base de données établie avec succès.');
-  } catch (error) {
-    console.error('Impossible de se connecter à la base de données:', error);
+module.exports = {
+  development: {
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || null,
+    database: process.env.DB_NAME || 'bilan_app_development',
+    host: process.env.DB_HOST || '127.0.0.1',
+    dialect: 'sqlite',
+    storage: 'database.sqlite',
+    logging: console.log
+  },
+  test: {
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || null,
+    database: process.env.DB_NAME || 'bilan_app_test',
+    host: process.env.DB_HOST || '127.0.0.1',
+    dialect: 'sqlite',
+    storage: 'database_test.sqlite',
+    logging: false
+  },
+  production: {
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    dialect: 'sqlite',
+    storage: 'database_production.sqlite',
+    logging: false
   }
-}
-
-testConnection();
-
-module.exports = sequelize;
+};

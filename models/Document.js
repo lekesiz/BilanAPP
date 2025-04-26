@@ -8,12 +8,27 @@ class Document extends Model {}
 
 Document.init(
   {
-    fileName: {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    title: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    originalName: {
-      type: DataTypes.STRING,
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    type: {
+      type: DataTypes.ENUM('resume', 'cover_letter', 'certificate', 'reference', 'portfolio', 'assessment', 'report', 'contract', 'agreement', 'other'),
+      defaultValue: 'other',
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('draft', 'pending_review', 'approved', 'rejected', 'archived', 'deleted', 'expired', 'suspended'),
+      defaultValue: 'draft',
       allowNull: false,
     },
     filePath: {
@@ -25,39 +40,108 @@ Document.init(
       allowNull: false,
     },
     fileSize: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       allowNull: false,
     },
-    description: {
+    mimeType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    isPublic: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    isTemplate: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    templateId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Documents',
+        key: 'id',
+      },
+      onDelete: 'SET NULL',
+    },
+    metadata: {
       type: DataTypes.TEXT,
-      allowNull: true,
+      allowNull: false,
+      defaultValue: '{}',
+      get() {
+        const rawValue = this.getDataValue('metadata');
+        return rawValue ? JSON.parse(rawValue) : {
+          description: '',
+          notes: '',
+          customFields: {},
+          history: {
+            statusChanges: [],
+            versionChanges: [],
+            accessChanges: [],
+            contentChanges: [],
+            activityHistory: []
+          },
+          statistics: {
+            totalViews: 0,
+            totalDownloads: 0,
+            totalShares: 0,
+            totalEdits: 0,
+            averageRating: 0
+          },
+          security: {
+            accessLogs: [],
+            permissions: {
+              read: [],
+              write: [],
+              share: [],
+              delete: []
+            },
+            encryption: {
+              algorithm: null,
+              key: null,
+              lastEncrypted: null
+            }
+          },
+          content: {
+            language: 'en',
+            keywords: [],
+            categories: [],
+            tags: [],
+            summary: '',
+            sections: []
+          },
+          validation: {
+            lastValidated: null,
+            validationRules: [],
+            validationResults: [],
+            requiredFields: []
+          }
+        };
+      },
+      set(value) {
+        this.setDataValue('metadata', JSON.stringify(value));
+      },
     },
-    category: {
-      type: DataTypes.ENUM(
-        'CV',
-        'Lettre de Motivation',
-        'Résultats Tests',
-        'Synthèse',
-        "Plan d'Action",
-        'Administratif',
-        'Convention',
-        'Portfolio',
-        'Autre',
-      ),
-      allowNull: true,
+    tags: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: '[]',
+      get() {
+        const rawValue = this.getDataValue('tags');
+        return rawValue ? JSON.parse(rawValue) : [];
+      },
+      set(value) {
+        this.setDataValue('tags', JSON.stringify(value));
+      },
     },
-    // --- Bilan Aşaması İlişkisi ---
-    bilanPhase: {
-      type: DataTypes.ENUM(
-        'Preliminaire',
-        'Investigation',
-        'Conclusion',
-        'Suivi', // Takip görüşmesi için
-        'General', // Genel/Aşama dışı dokümanlar için
-      ),
-      allowNull: true, // Belirli bir aşamaya atanmamış olabilir
-    },
-    uploadedBy: {
+    userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -75,13 +159,163 @@ Document.init(
       },
       onDelete: 'CASCADE',
     },
+    explorationId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'CareerExplorations',
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
+    lastModifiedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    lastAccessedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    expiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     modelName: 'Document',
+    timestamps: true,
+    paranoid: true,
+    indexes: [
+      {
+        fields: ['userId'],
+      },
+      {
+        fields: ['beneficiaryId'],
+      },
+      {
+        fields: ['explorationId'],
+      },
+      {
+        fields: ['type'],
+      },
+      {
+        fields: ['status'],
+      },
+      {
+        fields: ['fileType'],
+      },
+      {
+        fields: ['mimeType'],
+      },
+      {
+        fields: ['version'],
+      },
+      {
+        fields: ['isPublic'],
+      },
+      {
+        fields: ['isTemplate'],
+      },
+      {
+        fields: ['templateId'],
+      },
+      {
+        fields: ['lastModifiedAt'],
+      },
+      {
+        fields: ['lastAccessedAt'],
+      },
+      {
+        fields: ['expiresAt'],
+      },
+      {
+        fields: ['type', 'status'],
+      },
+      {
+        fields: ['userId', 'type'],
+      },
+      {
+        fields: ['beneficiaryId', 'type'],
+      },
+      {
+        fields: ['explorationId', 'type'],
+      },
+      {
+        fields: ['lastModifiedAt', 'status'],
+      },
+      {
+        fields: ['expiresAt', 'status'],
+      },
+    ],
     hooks: {
+      beforeCreate: async (document) => {
+        document.lastModifiedAt = new Date();
+        if (!document.metadata) {
+          document.metadata = {
+            description: '',
+            notes: '',
+            customFields: {},
+            history: {
+              statusChanges: [],
+              versionChanges: [],
+              accessChanges: [],
+              contentChanges: [],
+              activityHistory: []
+            },
+            statistics: {
+              totalViews: 0,
+              totalDownloads: 0,
+              totalShares: 0,
+              totalEdits: 0,
+              averageRating: 0
+            },
+            security: {
+              accessLogs: [],
+              permissions: {
+                read: [],
+                write: [],
+                share: [],
+                delete: []
+              },
+              encryption: {
+                algorithm: null,
+                key: null,
+                lastEncrypted: null
+              }
+            },
+            content: {
+              language: 'en',
+              keywords: [],
+              categories: [],
+              tags: [],
+              summary: '',
+              sections: []
+            },
+            validation: {
+              lastValidated: null,
+              validationRules: [],
+              validationResults: [],
+              requiredFields: []
+            }
+          };
+        }
+        if (!document.tags) {
+          document.tags = [];
+        }
+      },
+      beforeUpdate: async (document) => {
+        document.lastModifiedAt = new Date();
+        if (
+          document.changed('status') ||
+          document.changed('version') ||
+          document.changed('metadata')
+        ) {
+          document.version += 1;
+        }
+      },
       afterDestroy: async (document) => {
-        if (document.filePath) {
+        if (document.filePath && document.storageType === 'local') {
           const fullPath = path.join(__dirname, '../public/uploads', document.filePath);
           logger.info(`[Hook afterDestroy] Attempting to delete file: ${fullPath}`);
           try {
@@ -92,14 +326,53 @@ Document.init(
               logger.warn(`[Hook afterDestroy] File not found for deletion (ENOENT): ${fullPath}`);
             } else {
               logger.error(`[Hook afterDestroy] Error deleting file ${fullPath}:`, err);
+              throw err;
             }
           }
         } else {
-          logger.warn(`[Hook afterDestroy] Document ID ${document.id} destroyed, but no filePath found.`);
+          logger.warn(`[Hook afterDestroy] Document ID ${document.id} destroyed, but no filePath found or not local storage.`);
         }
       },
     },
   },
 );
+
+Document.associate = function(models) {
+  Document.belongsTo(models.User, {
+    foreignKey: 'userId',
+    as: 'user',
+    onDelete: 'CASCADE',
+  });
+  
+  Document.belongsTo(models.Beneficiary, {
+    foreignKey: 'beneficiaryId',
+    as: 'beneficiary',
+    onDelete: 'CASCADE',
+  });
+  
+  Document.belongsTo(models.CareerExploration, {
+    foreignKey: 'explorationId',
+    as: 'exploration',
+    onDelete: 'CASCADE',
+  });
+  
+  Document.belongsTo(models.Document, {
+    foreignKey: 'templateId',
+    as: 'template',
+    onDelete: 'SET NULL',
+  });
+  
+  Document.hasMany(models.DocumentVersion, {
+    foreignKey: 'documentId',
+    as: 'versions',
+    onDelete: 'CASCADE',
+  });
+  
+  Document.hasMany(models.DocumentAccess, {
+    foreignKey: 'documentId',
+    as: 'accesses',
+    onDelete: 'CASCADE',
+  });
+};
 
 module.exports = Document;
